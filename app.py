@@ -22,7 +22,7 @@ class Schedule(Resource):
         db_connection.close()
         return(daily_schedule.to_json(orient='table'))
 
-api.add_resource(Schedule, '/<string:game_date>')
+api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')
 
 if __name__ == '__main__':
     app.run(debug=True)
