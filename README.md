@@ -22,7 +22,7 @@ Create a service file for starting gunicorn at startup
 vim /etc/systemd/system/flask-api.service
 ```
 
-The contents of flask-api.service:
+The contents of `flask-api.service`:
 
 ```
 Description=Gunicorn instance to serve flask-api
@@ -40,7 +40,7 @@ ExecStart=/home/{user}/flask-api/flask/bin/gunicorn --workers 3 --bind unix:flas
 WantedBy=multi-user.target 
 ```
 
-The .env file should contain the environment variables needed to run the items in app.py
+The `.env` file should contain the environment variables needed to run the items in `app.py`
 
 ```
 PL_DB_HOST={database_location}
