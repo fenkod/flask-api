@@ -5,8 +5,8 @@ import pandas as pd
 import os
 import psycopg2
 
-app = Flask(__name__)
-api = Api(app)
+application = Flask(__name__)
+api = Api(application)
 
 class Schedule(Resource):
     def get(self, game_date):
@@ -25,4 +25,4 @@ class Schedule(Resource):
 api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    application.run(host='0.0.0.0', port='8080')
