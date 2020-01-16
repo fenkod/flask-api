@@ -64,7 +64,7 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Pror $scheme;
-        proxy_pass http://unix:/home/api/flask-api/flask-api.sock;
+        proxy_pass http://unix:/home/{user}/flask-api/flask-api.sock;
         
     }
 }
