@@ -4,6 +4,7 @@ from flask_restful import Resource, Api
 import pandas as pd
 import os
 import psycopg2
+import json
 
 application = Flask(__name__)
 api = Api(application)
@@ -18,9 +19,11 @@ class Schedule(Resource):
         cursor = db_connection.cursor()
         cursor.execute("SELECT * from schedule where game_date = %s", [game_date])
         rows = cursor.fetchall()
-        daily_schedule = pd.DataFrame(rows)
+        colnames = [desc[0] for desc in cursor.description]
+        daily_schedule = pd.DataFrame(rows, columns = colnames)
         db_connection.close()
-        return(daily_schedule.to_json(orient='records', date_format = 'iso'))
+        json_response = json.loads(daily_schedule.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
 
 class HelloWorld(Resource):
     def get(self):
