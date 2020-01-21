@@ -25,11 +25,28 @@ class Schedule(Resource):
         json_response = json.loads(daily_schedule.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
+class Pitches(Resource):
+    def get(self, start_date, end_date):
+        pl_host = os.getenv('PL_DB_HOST')
+        pl_db = 'pitcher-list'
+        pl_user = os.getenv('PL_DB_USER')
+        pl_password = os.getenv('PL_DB_PW')
+        db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+        cursor = db_connection.cursor()
+        cursor.execute("SELECT * from pitches p where p.ghuid in (select s.ghuid from schedule s where s.game_date >= %s and s.game_date <= %s)", [start_date, end_date])
+        rows = cursor.fetchall()
+        colnames = [desc[0] for desc in cursor.description]
+        daily_schedule = pd.DataFrame(rows, columns = colnames)
+        db_connection.close()
+        json_response = json.loads(daily_schedule.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
 class HelloWorld(Resource):
     def get(self):
         return {'hello': 'world'}
 
 api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')
+api.add_resource(Pitches, '/v1/Pitches/start_date-<string:start_date>&end_date-<string:end_date>')
 api.add_resource(HelloWorld, '/')
 
 if __name__ == '__main__':
