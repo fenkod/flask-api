@@ -77,6 +77,7 @@ class HelloWorld(Resource):
 
 api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')
 api.add_resource(Pitches, '/v1/Pitches/start_date-<string:start_date>&end_date-<string:end_date>')
+api.add_resource(AdvancedPitchType, '/v1/Advanced/Pitches/start_date-<string:start_date>&end_date-<string:end_date>')
 api.add_resource(HelloWorld, '/')
 
 if __name__ == '__main__':
