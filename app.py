@@ -93,8 +93,8 @@ class Status(Resource):
         return {'status': 'available'}
 
 api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')
-api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date-<string:start_date>&end_date-<string:end_date>')
-api.add_resource(AdvancedPitchType, '/v1/Advanced/Pitch/start_date-<string:start_date>&end_date-<string:end_date>')
+api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher?start_date=<string:start_date>&end_date=<string:end_date>')
+api.add_resource(AdvancedPitchType, '/v1/Advanced/Pitch?start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(Status, '/')
 
 if __name__ == '__main__':
