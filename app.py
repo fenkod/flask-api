@@ -66,8 +66,8 @@ class AdvancedPitchType(Resource):
         'num_pitches', 'avg_velocity', 'num_foul', 'num_plus']
         adv_pt = pd.DataFrame(rows, columns = colnames)
         db_connection.close()
-        adv_pt['foul_pct'] = adv_pt.apply(lambda row: round(100 * (row['num_foul'] / row['num_pitches']), 2))
-        adv_pt['plus_pct'] = adv_pt.apply(lambda row: round(100 * (row['num_plus'] / row['num_pitches']), 2))
+        adv_pt['foul_pct'] = adv_pt.apply(lambda row: round(100 * (int(row['num_foul']) / int(row['num_pitches'])), 2), axis = 1)
+        adv_pt['plus_pct'] = adv_pt.apply(lambda row: round(100 * (int(row['num_plus']) / int(row['num_pitches'])), 2), axis = 1)
         json_response = json.loads(adv_pt.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
