@@ -49,10 +49,36 @@ class AdvancedPitcher(Resource):
         rows = cursor.fetchall()
         colnames = ['pitchermlbamid', 'pitchername', 'num_pitches',
         'avg_velocity', 'num_foul', 'num_plus']
-        adv_pt = pd.DataFrame(rows, columns = colnames)
+        ie_adv_pt = pd.DataFrame(rows, columns = colnames)
         db_connection.close()
+
+        bs_db = 'baseballsavant'
+        db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=bs_db, user=pl_user, password=pl_password)
+        cursor = db_connection.cursor()
+        cursor.execute("select pl.mlb_id, count(*), \
+                       avg(p.launch_speed), avg(p.launch_angle), \
+                       avg(p.release_extension) , avg(p.spin_rate) , \
+                       avg(p.release_position_x - p.plate_x) , \
+                       avg(p.release_position_z - p.plate_z) , \
+                       sum(case m.launch_speed_angle_code when 6 then 1 \
+                       else 0 end) from pitches p join matchups m \
+                       on p.matchup_id = m.id join players pl \
+                       on m.pitcher_id = pl.id where m.game_id in \
+                       (select id from games where game_date >= %s \
+                       and game_date <= %s) \
+                       group by pl.mlb_id", [start_date, end_date])
+        rows = cursor.fetchall()
+        colnames = ['pitchermlbamid', 'num_pitches_bs', 'avg_ev','avg_la', 'avg_ext',
+        'avg_spin', 'avg_x_mov', 'avg_z_mov', 'num_barrel']
+        bs_adv_pt = pd.DataFrame(rows, colnames)
+        db_connection.close()
+
+        leaderboard = [ie_adv_pt, bs_adv_pt]
+        adv_pt = reduce(lambda left,right: pd.merge(left,right,on=['pitchermlbamid'],how='outer'), leaderboard)
+
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
+        adv_py['barrel_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['num_pitches'])), axis = 1)
         json_response = json.loads(adv_pt.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
@@ -75,7 +101,7 @@ class AdvancedPitchType(Resource):
                         when pitchresult = '-' then 1 else 0 end) \
                         from pitches where ghuid in ( select ghuid \
                         from schedule where game_date >= %s \
-                        and game_date <= %s) \
+                        and game_date <= %s) and pitchtype != 'IN' \
                         group by pitchermlbamid, pitchername, pitchtype",
                         [start_date, end_date])
         rows = cursor.fetchall()
@@ -83,6 +109,45 @@ class AdvancedPitchType(Resource):
         'num_pitches', 'avg_velocity', 'num_foul', 'num_plus']
         adv_pt = pd.DataFrame(rows, columns = colnames)
         db_connection.close()
+
+        #bs_db = 'baseballsavant'
+        #db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=bs_db, user=pl_user, password=pl_password)
+        #cursor = db_connection.cursor()
+        #cursor.execute("select pl.mlb_id, p.pitch_type_abbreviation, count(*), \
+        #                avg(p.launch_speed), avg(p.launch_angle), \
+        #                avg(p.release_extension) , avg(p.spin_rate) , \
+        #                avg(p.release_position_x - p.plate_x) , \
+        #                avg(p.release_position_z - p.plate_z) , \
+        #                sum(case m.launch_speed_angle_code when 6 then 1 \
+        #                else 0 end) from pitches p join matchups m \
+        #                on p.matchup_id = m.id join players pl \
+        #                on m.pitcher_id = pl.id where m.game_id in \
+        #                (select id from games where game_date >= %s \
+        #                and game_date <= %s) \
+        #                group by pl.mlb_id, p.pitch_type_abbreviation",
+        #                [start_date, end_date])
+        # rows = cursor.fetchall()
+        # colnames = ['mlb_id', 'pitch_type', 'num_pitches_bs', 'avg_ev',
+        # 'avg_la', 'avg_ext', 'avg_spin', 'avg_x_mov', 'avg_z_mov', 'is_barrel']
+        # bs_adv_pt = pd.DataFrame(rows, colnames)
+        # db_connection.close()
+        #
+        # pitch_map = {
+        #     "Unknown": "UNK",
+        #     "SL": "SL",
+        #     "FF": "FA",
+        #     "CH": "CH",
+        #     "CU": "CU",
+        #     "FT": "FA",
+        #     "SI": "SI",
+        #     "FC": "FC",
+        #     "FS": "FS",
+        #     "KC": "CU",
+        #     "EP": "EP",
+        #     "KN": "KN",
+        #     "FO": "FS",
+        # }
+
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
         json_response = json.loads(adv_pt.to_json(orient='records', date_format = 'iso'))
