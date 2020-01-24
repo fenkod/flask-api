@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import psycopg2
 import json
+from functools import reduce
 
 application = Flask(__name__)
 api = Api(application)
@@ -43,7 +44,9 @@ class AdvancedPitcher(Resource):
                         when pitchresult = '-' then 1 else 0 end) \
                         from pitches where ghuid in ( select ghuid \
                         from schedule where game_date >= %s \
-                        and game_date <= %s) \
+                        and game_date <= %s) and pitchtype <> 'IN'\
+                        and ghuid in (select ghuid from game_detail \
+                        where postseason = false) \
                         group by pitchermlbamid, pitchername",
                         [start_date, end_date])
         rows = cursor.fetchall()
@@ -70,7 +73,7 @@ class AdvancedPitcher(Resource):
         rows = cursor.fetchall()
         colnames = ['pitchermlbamid', 'num_pitches_bs', 'avg_ev','avg_la', 'avg_ext',
         'avg_spin', 'avg_x_mov', 'avg_z_mov', 'num_barrel']
-        bs_adv_pt = pd.DataFrame(rows, colnames)
+        bs_adv_pt = pd.DataFrame(rows, columns = colnames)
         db_connection.close()
 
         leaderboard = [ie_adv_pt, bs_adv_pt]
@@ -78,7 +81,7 @@ class AdvancedPitcher(Resource):
 
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
-        adv_py['barrel_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['num_pitches'])), axis = 1)
+        adv_pt['barrel_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['num_pitches'])), axis = 1)
         json_response = json.loads(adv_pt.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
