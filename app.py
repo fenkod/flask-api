@@ -5,7 +5,6 @@ import pandas as pd
 import os
 import psycopg2
 import json
-from functools import reduce
 
 application = Flask(__name__)
 api = Api(application)
@@ -44,9 +43,7 @@ class AdvancedPitcher(Resource):
                         when pitchresult = '-' then 1 else 0 end) \
                         from pitches where ghuid in ( select ghuid \
                         from schedule where game_date >= %s \
-                        and game_date <= %s) and pitchtype <> 'IN'\
-                        and ghuid in (select ghuid from game_detail \
-                        where postseason = false) \
+                        and game_date <= %s) \
                         group by pitchermlbamid, pitchername",
                         [start_date, end_date])
         rows = cursor.fetchall()
@@ -64,8 +61,7 @@ class AdvancedPitcher(Resource):
                        avg(p.release_position_x - p.plate_x) , \
                        avg(p.release_position_z - p.plate_z) , \
                        sum(case m.launch_speed_angle_code when 6 then 1 \
-                       else 0 end), count(distinct(matchup_id)) \
-                       from pitches p join matchups m \
+                       else 0 end) from pitches p join matchups m \
                        on p.matchup_id = m.id join players pl \
                        on m.pitcher_id = pl.id where m.game_id in \
                        (select id from games where game_date >= %s \
@@ -73,8 +69,8 @@ class AdvancedPitcher(Resource):
                        group by pl.mlb_id", [start_date, end_date])
         rows = cursor.fetchall()
         colnames = ['pitchermlbamid', 'num_pitches_bs', 'avg_ev','avg_la', 'avg_ext',
-        'avg_spin', 'avg_x_mov', 'avg_z_mov', 'num_barrel', 'num_pa']
-        bs_adv_pt = pd.DataFrame(rows, columns = colnames)
+        'avg_spin', 'avg_x_mov', 'avg_z_mov', 'num_barrel']
+        bs_adv_pt = pd.DataFrame(rows, colnames)
         db_connection.close()
 
         leaderboard = [ie_adv_pt, bs_adv_pt]
@@ -82,8 +78,34 @@ class AdvancedPitcher(Resource):
 
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
-        adv_pt['barrel_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['num_pa'])), axis = 1)
+        adv_py['barrel_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['num_pitches'])), axis = 1)
         json_response = json.loads(adv_pt.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
+class AdvancedHitter(Resource):
+    def get(self, start_date, end_date):
+        pl_host = os.getenv('PL_DB_HOST')
+        pl_db = 'pitcher-list'
+        pl_user = os.getenv('PL_DB_USER')
+        pl_password = os.getenv('PL_DB_PW')
+        db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+        cursor = db_connection.cursor()
+        cursor.execute("select * from leaderboard_advanced_hitter \
+                       where game_date >= %s and game_date <= %s",
+                        [start_date, end_date])
+        rows = cursor.fetchall()
+        colnames = [desc[0] for desc in cursor.description]
+        adv_hit = pd.DataFrame(rows, columns = colnames)
+        db_connection.close()
+
+        adv_hit['foul_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_foul']) / int(row['N'])), axis = 1)
+        adv_hit['barrel_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['at_bats'])), axis = 1)
+        adv_hit['plus_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_plus']) / int(row['N'])), axis = 1)
+        adv_hit['plus_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_plus']) / int(row['N'])), axis = 1)
+        adv_hit['first_pitch_swing_pct'] = adv_hit.apply(lambda row: 100 * (int(row['first_pitch_swing']) / int(row['at_bats'])), axis = 1)
+        adv_hit['eoc_pct'] = adv_hit.apply(lambda row: 100 * (int(row['earlyocon']) / int(row['contactozone'])), axis = 1)
+        adv_hit['loc_pct'] = adv_hit.apply(lambda row: 100 * (int(row['lateocon']) / int(row['contactozone'])), axis = 1)
+        json_response = json.loads(adv_hit.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
 class AdvancedPitchType(Resource):
