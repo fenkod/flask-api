@@ -120,8 +120,8 @@ class AdvancedHitter(Resource):
         adv_hit['plus_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_plus']) / int(row['N'])), axis = 1)
         adv_hit['plus_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_plus']) / int(row['N'])), axis = 1)
         adv_hit['first_pitch_swing_pct'] = adv_hit.apply(lambda row: 100 * (int(row['first_pitch_swing']) / int(row['at_bats'])), axis = 1)
-        adv_hit['eoc_pct'] = adv_hit.apply(lambda row: 100 * (int(row['earlyocon']) / int(row['contactozone'])), axis = 1)
-        adv_hit['loc_pct'] = adv_hit.apply(lambda row: 100 * (int(row['lateocon']) / int(row['contactozone'])), axis = 1)
+        adv_hit['eoc_pct'] = adv_hit.apply(lambda row: 0 if row['contactozone'] == 0 else 100 * (int(row['earlyocon']) / int(row['contactozone'])), axis = 1)
+        adv_hit['loc_pct'] = adv_hit.apply(lambda row: 0 if row['contactozone'] == 0 else 100 * (int(row['lateocon']) / int(row['contactozone'])), axis = 1)
         json_response = json.loads(adv_hit.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
