@@ -104,7 +104,7 @@ class AdvancedHitter(Resource):
         db_connection.close()
 
         adv_hit['foul_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_foul']) / int(row['N'])), axis = 1)
-        adv_hit['barrel_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['at_bats'])), axis = 1)
+        adv_hit['barrel_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_barrels']) / int(row['at_bats'])), axis = 1)
         adv_hit['plus_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_plus']) / int(row['N'])), axis = 1)
         adv_hit['plus_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_plus']) / int(row['N'])), axis = 1)
         adv_hit['first_pitch_swing_pct'] = adv_hit.apply(lambda row: 100 * (int(row['first_pitch_swing']) / int(row['at_bats'])), axis = 1)
