@@ -5,6 +5,7 @@ import pandas as pd
 import os
 import psycopg2
 import json
+from functools import reduce
 
 application = Flask(__name__)
 api = Api(application)
@@ -43,8 +44,12 @@ class AdvancedPitcher(Resource):
                         when pitchresult = '-' then 1 else 0 end) \
                         from pitches where ghuid in ( select ghuid \
                         from schedule where game_date >= %s \
+                        and game_date <= %s) and pitchtype <> 'IN'\
+                        and ghuid in (select ghuid from game_detail \
+                        where postseason = false) \
                         and game_date <= %s) \
                         group by pitchermlbamid, pitchername",
+
                         [start_date, end_date])
         rows = cursor.fetchall()
         colnames = ['pitchermlbamid', 'pitchername', 'num_pitches',
@@ -61,6 +66,8 @@ class AdvancedPitcher(Resource):
                        avg(p.release_position_x - p.plate_x) , \
                        avg(p.release_position_z - p.plate_z) , \
                        sum(case m.launch_speed_angle_code when 6 then 1 \
+                       else 0 end), count(distinct(matchup_id)) \
+                       from pitches p join matchups m \
                        else 0 end) from pitches p join matchups m \
                        on p.matchup_id = m.id join players pl \
                        on m.pitcher_id = pl.id where m.game_id in \
@@ -69,8 +76,8 @@ class AdvancedPitcher(Resource):
                        group by pl.mlb_id", [start_date, end_date])
         rows = cursor.fetchall()
         colnames = ['pitchermlbamid', 'num_pitches_bs', 'avg_ev','avg_la', 'avg_ext',
-        'avg_spin', 'avg_x_mov', 'avg_z_mov', 'num_barrel']
-        bs_adv_pt = pd.DataFrame(rows, colnames)
+        'avg_spin', 'avg_x_mov', 'avg_z_mov', 'num_barrel', 'num_pa']
+        bs_adv_pt = pd.DataFrame(rows, columns = colnames)
         db_connection.close()
 
         leaderboard = [ie_adv_pt, bs_adv_pt]
@@ -78,7 +85,7 @@ class AdvancedPitcher(Resource):
 
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
-        adv_py['barrel_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['num_pitches'])), axis = 1)
+        adv_pt['barrel_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['num_pa'])), axis = 1)
         json_response = json.loads(adv_pt.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
