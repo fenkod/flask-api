@@ -47,7 +47,6 @@ class AdvancedPitcher(Resource):
                         and game_date <= %s) and pitchtype <> 'IN' \
                         and ghuid in (select ghuid from game_detail \
                         where postseason = false) \
-                        and game_date <= %s) \
                         group by pitchermlbamid, pitchername", [start_date, end_date])
         rows = cursor.fetchall()
         colnames = ['pitchermlbamid', 'pitchername', 'num_pitches',
