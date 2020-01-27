@@ -9,6 +9,7 @@ Created on Sun Jan 26 13:58:51 2020
 import psycopg2
 import pandas as pd
 import numpy as np
+import os
 
 def Hitter(start_date, end_date, season="2019", min_pa=100):
 
