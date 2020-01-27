@@ -199,7 +199,7 @@ class AdvancedPitchType(Resource):
 
 class TestAdvPit(Resource):
     def get(self, start_date, end_date):
-        result = leaderboard.advanced.Pitcher(start_date, end_date)
+        result = advanced.Pitcher(start_date, end_date)
         json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
