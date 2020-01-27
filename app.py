@@ -47,7 +47,7 @@ class AdvancedPitchType(Resource):
 
 class StandardHitter(Resource):
     def get(self, start_date, end_date):
-        result = standard.Hitter(start_date, end_date)
+        result = standard.Hitter(start_date = start_date, end_date = end_date)
         json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
