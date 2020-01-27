@@ -30,7 +30,7 @@ def Hitter(start_date, end_date, season="2019", min_pa=100):
     games = cursor.fetchall()
     games = pd.DataFrame(np.array(games), columns=colnames).infer_objects()
     games = games.assign(date = pd.to_datetime(games['date']))
-    games = games.query('date > @start_year and postseason == False')
+    games = games.query('postseason == False')
 
     ### PITCHES
     cursor = con.cursor()
@@ -40,7 +40,7 @@ def Hitter(start_date, end_date, season="2019", min_pa=100):
     pitches = cursor.fetchall()
     pitches = pd.DataFrame(np.array(pitches), columns=colnames).infer_objects()
     pitches = pitches.assign(Date = pd.to_datetime(pitches['ghuid'].str[0:10]))
-    pitches = pitches.query("Date >= @start_season & Date <= @end_season")
+    pitches = pitches.query("Date >= @start_date & Date <= @end_date")
 
     ### BAT
     cursor = con.cursor()
@@ -50,7 +50,7 @@ def Hitter(start_date, end_date, season="2019", min_pa=100):
     bat = cursor.fetchall()
     bat = pd.DataFrame(np.array(bat), columns=colnames).infer_objects()
     bat = bat.assign(Date = pd.to_datetime(bat['ghuid'].str[0:10]))
-    bat = bat.query("Date >= @start_season & Date <= @end_season")
+    bat = bat.query("Date >= @start_date & Date <= @end_date")
     url = 'https://raw.githubusercontent.com/chadwickbureau/register/master/data/people.csv'
     chadwick_player_lu_table = pd.read_csv(url)
     chadwick_player_lu_table = chadwick_player_lu_table[['name_first','name_last','key_mlbam']]
