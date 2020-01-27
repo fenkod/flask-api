@@ -48,9 +48,7 @@ class AdvancedPitcher(Resource):
                         and ghuid in (select ghuid from game_detail \
                         where postseason = false) \
                         and game_date <= %s) \
-                        group by pitchermlbamid, pitchername",
-
-                        [start_date, end_date])
+                        group by pitchermlbamid, pitchername", [start_date, end_date])
         rows = cursor.fetchall()
         colnames = ['pitchermlbamid', 'pitchername', 'num_pitches',
         'avg_velocity', 'num_foul', 'num_plus']
