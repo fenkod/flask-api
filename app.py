@@ -6,6 +6,7 @@ import os
 import psycopg2
 import json
 from functools import reduce
+import leaderboard
 
 application = Flask(__name__)
 api = Api(application)
@@ -196,6 +197,12 @@ class AdvancedPitchType(Resource):
         json_response = json.loads(adv_pt.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
+class TestAdvPit(Resource):
+    def get(self, start_date, end_date):
+        result = advanced.Pitcher(start_date, end_date)
+        json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
 class Status(Resource):
     def get(self):
         return {'status': 'available'}
@@ -204,6 +211,7 @@ api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')
 api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(AdvancedHitter, '/v1/Advanced/Hitter/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(AdvancedPitchType, '/v1/Advanced/Pitch/start_date=<string:start_date>&end_date=<string:end_date>')
+api.add_resource(TestAdvPit, '/v1/TestAdv/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(Status, '/')
 
 if __name__ == '__main__':
