@@ -94,7 +94,7 @@ class AdvancedHitter(Resource):
         db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
         cursor = db_connection.cursor()
         cursor.execute("select hittermlbamid, hittername, sum(\"N\"), \
-                       sum(\"RHP\"), sum(\"LHP\"), SUM(num_whiff), \
+                       sum(\"RHP\"), sum(\"LHP\"), AVG(\"MPH\"), SUM(num_whiff), \
                        SUM(num_swing), SUM(num_cs), SUM(num_foul), \
                        case when SUM(at_bats) > 0 then SUM(at_bats) else 1 end, \
                        SUM(first_pitch_swing), SUM(num_plus), SUM(ozone), \
