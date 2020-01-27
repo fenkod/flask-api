@@ -65,7 +65,6 @@ class AdvancedPitcher(Resource):
                        sum(case m.launch_speed_angle_code when 6 then 1 \
                        else 0 end), count(distinct(matchup_id)) \
                        from pitches p join matchups m \
-                       else 0 end) from pitches p join matchups m \
                        on p.matchup_id = m.id join players pl \
                        on m.pitcher_id = pl.id where m.game_id in \
                        (select id from games where game_date >= %s \
