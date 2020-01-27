@@ -44,7 +44,7 @@ class AdvancedPitcher(Resource):
                         when pitchresult = '-' then 1 else 0 end) \
                         from pitches where ghuid in ( select ghuid \
                         from schedule where game_date >= %s \
-                        and game_date <= %s) and pitchtype <> 'IN'\
+                        and game_date <= %s) and pitchtype <> 'IN' \
                         and ghuid in (select ghuid from game_detail \
                         where postseason = false) \
                         and game_date <= %s) \
@@ -190,6 +190,7 @@ class Status(Resource):
 
 api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')
 api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>')
+api.add_resource(AdvancedHitter, '/v1/Advanced/Hitter/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(AdvancedPitchType, '/v1/Advanced/Pitch/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(Status, '/')
 
