@@ -93,11 +93,25 @@ class AdvancedHitter(Resource):
         pl_password = os.getenv('PL_DB_PW')
         db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
         cursor = db_connection.cursor()
-        cursor.execute("select * from leaderboard_advanced_hitter \
-                       where game_date >= %s and game_date <= %s",
+        cursor.execute("select hittermlbamid, hittername, sum(\"N\"), \
+                       sum(\"RHP\"), sum(\"LHP\"), SUM(num_whiff), \
+                       SUM(num_swing), SUM(num_cs), SUM(num_foul), \
+                       case when SUM(at_bats) > 0 then SUM(at_bats) else 1 end, \
+                       SUM(first_pitch_swing), SUM(num_plus), SUM(ozone), \
+                       SUM(swingozone), SUM(contactozone), SUM(earlyocon), \
+                       SUM(lateocon), SUM(num_pitches), AVG(avg_ev), \
+                       AVG(avg_la), SUM(num_barrels) \
+                       from leaderboard_advanced_hitter \
+                       where game_date >= %s and \
+                       game_date <= %s \
+                       group by hittermlbamid, hittername",
                         [start_date, end_date])
         rows = cursor.fetchall()
-        colnames = [desc[0] for desc in cursor.description]
+        colnames = ['hittermlbamid', 'hittername', 'N', 'RHP', 'LHP', 'MPH',
+        'num_whiff', 'num_swing', 'num_cs', 'num_foul', 'at_bats',
+        'first_pitch_swing', 'num_plus', 'ozone', 'swingozone', 'contactozone',
+        'earlyocon', 'lateocon', 'num_pitches', 'avg_ev', 'avg_la',
+        'num_barrels']
         adv_hit = pd.DataFrame(rows, columns = colnames)
         db_connection.close()
 
