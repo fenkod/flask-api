@@ -6,7 +6,7 @@ import os
 import psycopg2
 import json
 from functools import reduce
-import leaderboard
+from leaderboard import *
 
 application = Flask(__name__)
 api = Api(application)
