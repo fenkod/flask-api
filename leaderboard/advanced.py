@@ -26,8 +26,8 @@ def Pitcher(start_date, end_date):
                    (comments not like '%PPD%' OR comments is null))) \
                    and pitchtype <> 'IN' and ghuid in (select ghuid from \
                    game_detail where postseason = false) group by \
-                   pitchermlbamid, pitchername",
-                   [start_date, end_date, start_date, end_date, start_date, end_date])
+                   pitchermlbamid, pitchername", [start_date, end_date,
+                   start_date, end_date, start_date, end_date])
     rows = cursor.fetchall()
     colnames = ['pitchermlbamid', 'pitchername', 'num_pitches',
     'avg_velocity', 'num_foul', 'num_plus']
