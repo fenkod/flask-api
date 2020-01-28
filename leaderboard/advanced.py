@@ -21,13 +21,12 @@ def Pitcher(start_date, end_date):
                    (select ghuid from schedule where (game_date >= %s \
                    and game_date <= %s and continuationdate is null) OR \
                    (continuationdate >= %s and continuationdate <= %s and \
-                   comments like '%PPD%') OR (game_date >= %s and \
+                   comments like '%%PPD%%') OR (game_date >= %s and \
                    game_date <= %s and continuationdate is not null and \
-                   (comments not like '%PPD%' OR comments is null))) \
+                   (comments not like '%%PPD%%' OR comments is null))) \
                    and pitchtype <> 'IN' and ghuid in (select ghuid from \
                    game_detail where postseason = false) group by \
-                   pitchermlbamid, pitchername", [start_date, end_date,
-                   start_date, end_date, start_date, end_date])
+                   pitchermlbamid, pitchername", [start_date, end_date, start_date, end_date, start_date, end_date])
     rows = cursor.fetchall()
     colnames = ['pitchermlbamid', 'pitchername', 'num_pitches',
     'avg_velocity', 'num_foul', 'num_plus']
