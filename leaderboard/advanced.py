@@ -12,19 +12,22 @@ def Pitcher(start_date, end_date):
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
     cursor.execute("select pitchermlbamid, pitchername, count(*), avg(velo), \
-                    sum(case pitchresult when 'Foul' then 1 \
-                    when 'Hard Foul' then 1 else 0 end), \
-                    sum(case when pitchresult = 'Swing Miss' then 1 \
-                    when pitchresult = 'Called Strike' then 1 \
-                    when pitchresult = 'Foul' AND (strikes = 0 OR strikes = 1) then 1 \
-                    when pitchresult = 'Hard Foul' AND (strikes = 0 OR strikes = 1) then 1 \
-                    when pitchresult = '-' then 1 else 0 end) \
-                    from pitches where ghuid in ( select ghuid \
-                    from schedule where game_date >= %s \
-                    and game_date <= %s) and pitchtype <> 'IN' \
-                    and ghuid in (select ghuid from game_detail \
-                    where postseason = false) \
-                    group by pitchermlbamid, pitchername", [start_date, end_date])
+                   sum(case when pitchresult in ('Foul', 'Hard Foul') \
+                   then 1 else 0 end), sum(case when pitchresult in \
+                   ('Swing Miss', 'Called Strike', '-') then 1 when \
+                   pitchresult in ('Foul', 'Hard Foul') AND countbeforepitch \
+                   in ('0-0', '0-1', '1-0', '1-1', '2-0', '2-1', '3-0', '3-1') \
+                   then 1 else 0 end) from pitches where ghuid in \
+                   (select ghuid from schedule where (game_date >= %s \
+                   and game_date <= %s and continuationdate is null) OR \
+                   (continuationdate >= %s and continuationdate <= %s and \
+                   comments like '%PPD%') OR (game_date >= %s and \
+                   game_date <= %s and continuationdate is not null and \
+                   (comments not like '%PPD%' OR comments is null))) \
+                   and pitchtype <> 'IN' and ghuid in (select ghuid from \
+                   game_detail where postseason = false) group by \
+                   pitchermlbamid, pitchername",
+                   [start_date, end_date, start_date, end_date, start_date, end_date])
     rows = cursor.fetchall()
     colnames = ['pitchermlbamid', 'pitchername', 'num_pitches',
     'avg_velocity', 'num_foul', 'num_plus']
