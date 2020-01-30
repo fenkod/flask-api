@@ -51,6 +51,12 @@ class StandardHitter(Resource):
         json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
+class ApproachHitter(Resource):
+    def get(self, start_date, end_date):
+        result = approach.Hitter(start_date, end_date)
+        json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
 class Status(Resource):
     def get(self):
         return {'status': 'available'}
@@ -60,6 +66,7 @@ api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date=<string:start
 api.add_resource(AdvancedHitter, '/v1/Advanced/Hitter/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(AdvancedPitchType, '/v1/Advanced/Pitch/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(StandardHitter, '/v1/Standard/Hitter/start_date=<string:start_date>&end_date=<string:end_date>')
+api.add_resource(ApproachHitter, '/v1/Approach/Hitter/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(Status, '/')
 
 if __name__ == '__main__':
