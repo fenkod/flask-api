@@ -30,14 +30,14 @@ class Schedule(Resource):
 class AdvancedPitcher(Resource):
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
-        if(start_date != "None" && end_date != "None"):
+        if(start_date != "None" and end_date != "None"):
             result = advanced.ArbitraryPitcher(start_date, end_date)
         elif(year != "None"):
-            if(month != "None" && half == "None"):
+            if(month != "None" and half == "None"):
                 result = advanced.MonthlyPitcher(year, month)
-            elif(month == "None" && half in ["First", "Second"]):
+            elif(month == "None" and half in ["First", "Second"]):
                 result = advanced.HalfPitcher(year, half)
-            elif(month == "None" && half == "None"):
+            elif(month == "None" and half == "None"):
                 result = advanced.AnnualPitcher(year)
             else:
                 return {'status': 'Incorrect Yearly Submission'}
