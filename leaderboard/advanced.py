@@ -3,6 +3,7 @@ import os
 import psycopg2
 import json
 from functools import reduce
+import math
 
 def ArbitraryPitcher(start_date, end_date):
     pl_host = os.getenv('PL_DB_HOST')
@@ -61,7 +62,7 @@ def ArbitraryPitcher(start_date, end_date):
     if(adv_pt.empty == False):
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
-        adv_pt['barrel_pct'] = adv_pt.apply(lambda row: float('NaN') if row['num_barrel'].nan() == True else 100 * (int(row['num_barrel']) / int(row['num_pa'])), axis = 1)
+        adv_pt['barrel_pct'] = adv_pt.apply(lambda row: float('NaN') if math.isnan(row['num_barrel']) else 100 * (int(row['num_barrel']) / int(row['num_pa'])), axis = 1)
 
     return(adv_pt)
 
@@ -72,7 +73,7 @@ def MonthlyPitcher(year, month):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_monthly_advanced_pitchter where \
+    cursor.execute("select * from leaderboard_monthly_advanced_pitcher where \
                     year = %s and month = %s", [year, month])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
