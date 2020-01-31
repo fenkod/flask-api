@@ -4,7 +4,7 @@ import psycopg2
 import json
 from functools import reduce
 
-def Pitcher(start_date, end_date):
+def ArbitraryPitcher(start_date, end_date):
     pl_host = os.getenv('PL_DB_HOST')
     pl_db = 'pitcher-list'
     pl_user = os.getenv('PL_DB_USER')
@@ -62,7 +62,52 @@ def Pitcher(start_date, end_date):
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
         adv_pt['barrel_pct'] = adv_pt.apply(lambda row: float('NaN') if row['num_pa'] == 0 else 100 * (int(row['num_barrel']) / int(row['num_pa'])), axis = 1)
-    
+
+    return(adv_pt)
+
+def MonthlyPitcher(year, month):
+    pl_host = os.getenv('PL_DB_HOST')
+    pl_db = 'pitcher-list'
+    pl_user = os.getenv('PL_DB_USER')
+    pl_password = os.getenv('PL_DB_PW')
+    db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+    cursor = db_connection.cursor()
+    cursor.execute("select * from leaderboard_monthly_advanced_pitchter where \
+                    year = %s and month = %s", [year, month])
+    rows = cursor.fetchall()
+    colnames = [desc[0] for desc in cursor.description]
+    adv_pt = pd.DataFrame(rows, columns = colnames)
+    db_connection.close()
+    return(adv_pt)
+
+def HalfPitcher(year, half):
+    pl_host = os.getenv('PL_DB_HOST')
+    pl_db = 'pitcher-list'
+    pl_user = os.getenv('PL_DB_USER')
+    pl_password = os.getenv('PL_DB_PW')
+    db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+    cursor = db_connection.cursor()
+    cursor.execute("select * from leaderboard_half_advanced_pitcher where \
+                    year = %s and half = %s", [year, half])
+    rows = cursor.fetchall()
+    colnames = [desc[0] for desc in cursor.description]
+    adv_pt = pd.DataFrame(rows, columns = colnames)
+    db_connection.close()
+    return(adv_pt)
+
+def AnnualPitcher(year):
+    pl_host = os.getenv('PL_DB_HOST')
+    pl_db = 'pitcher-list'
+    pl_user = os.getenv('PL_DB_USER')
+    pl_password = os.getenv('PL_DB_PW')
+    db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+    cursor = db_connection.cursor()
+    cursor.execute("select * from leaderboard_annual_advanced_pitcher where \
+                    year = %s", [year])
+    rows = cursor.fetchall()
+    colnames = [desc[0] for desc in cursor.description]
+    adv_pt = pd.DataFrame(rows, columns = colnames)
+    db_connection.close()
     return(adv_pt)
 
 def Hitter(start_date, end_date):
@@ -101,7 +146,7 @@ def Hitter(start_date, end_date):
         adv_hit['first_pitch_swing_pct'] = adv_hit.apply(lambda row: float('NaN') if row['at_bats'] == 0 else 100 * (int(row['first_pitch_swing']) / int(row['at_bats'])), axis = 1)
         adv_hit['eoc_pct'] = adv_hit.apply(lambda row: float('Nan') if row['contactozone'] == 0 else 100 * (int(row['earlyocon']) / int(row['contactozone'])), axis = 1)
         adv_hit['loc_pct'] = adv_hit.apply(lambda row: float('NaN') if row['contactozone'] == 0 else 100 * (int(row['lateocon']) / int(row['contactozone'])), axis = 1)
-    
+
     return(adv_hit)
 
 def PitchType(start_date, end_date):
@@ -172,5 +217,5 @@ def PitchType(start_date, end_date):
     if(adv_pt.empty == False):
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
-    
+
     return(adv_pt)

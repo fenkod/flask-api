@@ -28,8 +28,22 @@ class Schedule(Resource):
         return(json_response)
 
 class AdvancedPitcher(Resource):
-    def get(self, start_date, end_date):
-        result = advanced.Pitcher(start_date, end_date)
+    def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
+
+        if(start_date != "None" && end_date != "None"):
+            result = advanced.ArbitraryPitcher(start_date, end_date)
+        elif(year != "None"):
+            if(month != "None" && half == "None"):
+                result = advanced.MonthlyPitcher(year, month)
+            elif(month == "None" && half in ["First", "Second"]):
+                result = advanced.HalfPitcher(year, half)
+            elif(month == "None" && half == "None"):
+                result = advanced.AnnualPitcher(year)
+            else:
+                return {'status': 'Incorrect Yearly Submission'}
+        else:
+            return {'status': 'Incorrect Submission'}
+
         json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
@@ -62,7 +76,7 @@ class Status(Resource):
         return {'status': 'available'}
 
 api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')
-api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>')
+api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
 api.add_resource(AdvancedHitter, '/v1/Advanced/Hitter/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(AdvancedPitchType, '/v1/Advanced/Pitch/start_date=<string:start_date>&end_date=<string:end_date>')
 api.add_resource(StandardHitter, '/v1/Standard/Hitter/start_date=<string:start_date>&end_date=<string:end_date>')
