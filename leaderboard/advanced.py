@@ -110,7 +110,7 @@ def AnnualPitcher(year):
     db_connection.close()
     return(adv_pt)
 
-def Hitter(start_date, end_date):
+def ArbitraryHitter(start_date, end_date):
     pl_host = os.getenv('PL_DB_HOST')
     pl_db = 'pitcher-list'
     pl_user = os.getenv('PL_DB_USER')
@@ -149,7 +149,52 @@ def Hitter(start_date, end_date):
 
     return(adv_hit)
 
-def PitchType(start_date, end_date):
+def MonthlyHitter(year, month):
+    pl_host = os.getenv('PL_DB_HOST')
+    pl_db = 'pitcher-list'
+    pl_user = os.getenv('PL_DB_USER')
+    pl_password = os.getenv('PL_DB_PW')
+    db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+    cursor = db_connection.cursor()
+    cursor.execute("select * from leaderboard_monthly_advanced_hitter where \
+                    year = %s and month = %s", [year, month])
+    rows = cursor.fetchall()
+    colnames = [desc[0] for desc in cursor.description]
+    adv_pt = pd.DataFrame(rows, columns = colnames)
+    db_connection.close()
+    return(adv_pt)
+
+def HalfHitter(year, half):
+    pl_host = os.getenv('PL_DB_HOST')
+    pl_db = 'pitcher-list'
+    pl_user = os.getenv('PL_DB_USER')
+    pl_password = os.getenv('PL_DB_PW')
+    db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+    cursor = db_connection.cursor()
+    cursor.execute("select * from leaderboard_half_advanced_hitter where \
+                    year = %s and half = %s", [year, half])
+    rows = cursor.fetchall()
+    colnames = [desc[0] for desc in cursor.description]
+    adv_pt = pd.DataFrame(rows, columns = colnames)
+    db_connection.close()
+    return(adv_pt)
+
+def AnnualHitter(year):
+    pl_host = os.getenv('PL_DB_HOST')
+    pl_db = 'pitcher-list'
+    pl_user = os.getenv('PL_DB_USER')
+    pl_password = os.getenv('PL_DB_PW')
+    db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+    cursor = db_connection.cursor()
+    cursor.execute("select * from leaderboard_annual_advanced_hitter where \
+                    year = %s", [year])
+    rows = cursor.fetchall()
+    colnames = [desc[0] for desc in cursor.description]
+    adv_pt = pd.DataFrame(rows, columns = colnames)
+    db_connection.close()
+    return(adv_pt)
+
+def ArbitraryPitchType(start_date, end_date):
     pl_host = os.getenv('PL_DB_HOST')
     pl_db = 'pitcher-list'
     pl_user = os.getenv('PL_DB_USER')
@@ -218,4 +263,49 @@ def PitchType(start_date, end_date):
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
 
+    return(adv_pt)
+
+def MonthlyPitchType(year, month):
+    pl_host = os.getenv('PL_DB_HOST')
+    pl_db = 'pitcher-list'
+    pl_user = os.getenv('PL_DB_USER')
+    pl_password = os.getenv('PL_DB_PW')
+    db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+    cursor = db_connection.cursor()
+    cursor.execute("select * from leaderboard_monthly_advanced_pitchtype where \
+                    year = %s and month = %s", [year, month])
+    rows = cursor.fetchall()
+    colnames = [desc[0] for desc in cursor.description]
+    adv_pt = pd.DataFrame(rows, columns = colnames)
+    db_connection.close()
+    return(adv_pt)
+
+def HalfPitchType(year, half):
+    pl_host = os.getenv('PL_DB_HOST')
+    pl_db = 'pitcher-list'
+    pl_user = os.getenv('PL_DB_USER')
+    pl_password = os.getenv('PL_DB_PW')
+    db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+    cursor = db_connection.cursor()
+    cursor.execute("select * from leaderboard_half_advanced_pitchtype where \
+                    year = %s and half = %s", [year, half])
+    rows = cursor.fetchall()
+    colnames = [desc[0] for desc in cursor.description]
+    adv_pt = pd.DataFrame(rows, columns = colnames)
+    db_connection.close()
+    return(adv_pt)
+
+def AnnualPitchType(year):
+    pl_host = os.getenv('PL_DB_HOST')
+    pl_db = 'pitcher-list'
+    pl_user = os.getenv('PL_DB_USER')
+    pl_password = os.getenv('PL_DB_PW')
+    db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+    cursor = db_connection.cursor()
+    cursor.execute("select * from leaderboard_annual_advanced_pitchtype where \
+                    year = %s", [year])
+    rows = cursor.fetchall()
+    colnames = [desc[0] for desc in cursor.description]
+    adv_pt = pd.DataFrame(rows, columns = colnames)
+    db_connection.close()
     return(adv_pt)
