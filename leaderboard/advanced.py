@@ -58,9 +58,11 @@ def Pitcher(start_date, end_date):
     leaderboard = [ie_adv_pt, bs_adv_pt]
     adv_pt = reduce(lambda left,right: pd.merge(left,right,on=['pitchermlbamid'],how='outer'), leaderboard)
 
-    adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
-    adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
-    adv_pt['barrel_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_barrel']) / int(row['num_pa'])), axis = 1)
+    if(adv_pt.empty == False):
+        adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
+        adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
+        adv_pt['barrel_pct'] = adv_pt.apply(lambda row: float('NaN') if row['num_pa'] == 0 else 100 * (int(row['num_barrel']) / int(row['num_pa'])), axis = 1)
+    
     return(adv_pt)
 
 def Hitter(start_date, end_date):
@@ -92,13 +94,14 @@ def Hitter(start_date, end_date):
     adv_hit = pd.DataFrame(rows, columns = colnames)
     db_connection.close()
 
-    adv_hit['foul_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_foul']) / int(row['N'])), axis = 1)
-    adv_hit['barrel_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_barrels']) / int(row['at_bats'])), axis = 1)
-    adv_hit['plus_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_plus']) / int(row['N'])), axis = 1)
-    adv_hit['plus_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_plus']) / int(row['N'])), axis = 1)
-    adv_hit['first_pitch_swing_pct'] = adv_hit.apply(lambda row: 100 * (int(row['first_pitch_swing']) / int(row['at_bats'])), axis = 1)
-    adv_hit['eoc_pct'] = adv_hit.apply(lambda row: 0 if row['contactozone'] == 0 else 100 * (int(row['earlyocon']) / int(row['contactozone'])), axis = 1)
-    adv_hit['loc_pct'] = adv_hit.apply(lambda row: 0 if row['contactozone'] == 0 else 100 * (int(row['lateocon']) / int(row['contactozone'])), axis = 1)
+    if(adv_hit.empty == False):
+        adv_hit['foul_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_foul']) / int(row['N'])), axis = 1)
+        adv_hit['barrel_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_barrels']) / int(row['at_bats'])), axis = 1)
+        adv_hit['plus_pct'] = adv_hit.apply(lambda row: 100 * (int(row['num_plus']) / int(row['N'])), axis = 1)
+        adv_hit['first_pitch_swing_pct'] = adv_hit.apply(lambda row: float('NaN') if row['at_bats'] == 0 else 100 * (int(row['first_pitch_swing']) / int(row['at_bats'])), axis = 1)
+        adv_hit['eoc_pct'] = adv_hit.apply(lambda row: float('Nan') if row['contactozone'] == 0 else 100 * (int(row['earlyocon']) / int(row['contactozone'])), axis = 1)
+        adv_hit['loc_pct'] = adv_hit.apply(lambda row: float('NaN') if row['contactozone'] == 0 else 100 * (int(row['lateocon']) / int(row['contactozone'])), axis = 1)
+    
     return(adv_hit)
 
 def PitchType(start_date, end_date):
@@ -166,6 +169,8 @@ def PitchType(start_date, end_date):
     #     "FO": "FS",
     # }
 
-    adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
-    adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
+    if(adv_pt.empty == False):
+        adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
+        adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
+    
     return(adv_pt)
