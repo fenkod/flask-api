@@ -61,7 +61,7 @@ def ArbitraryPitcher(start_date, end_date):
     if(adv_pt.empty == False):
         adv_pt['foul_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_foul']) / int(row['num_pitches'])), axis = 1)
         adv_pt['plus_pct'] = adv_pt.apply(lambda row: 100 * (int(row['num_plus']) / int(row['num_pitches'])), axis = 1)
-        adv_pt['barrel_pct'] = adv_pt.apply(lambda row: float('NaN') if row['num_pa'] == 0 else 100 * (int(row['num_barrel']) / int(row['num_pa'])), axis = 1)
+        adv_pt['barrel_pct'] = adv_pt.apply(lambda row: float('NaN') if row['num_barrel'].nan() == True else 100 * (int(row['num_barrel']) / int(row['num_pa'])), axis = 1)
 
     return(adv_pt)
 
