@@ -11,7 +11,7 @@ def MonthlyPitcher(year, month):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_monthly_standard_pitcher where \
+    cursor.execute("select * from leaderboard_monthly_overview_pitcher where \
                     year = %s and month = %s", [year, month])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
@@ -26,7 +26,7 @@ def HalfPitcher(year, half):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_half_standard_pitcher where \
+    cursor.execute("select * from leaderboard_half_overview_pitcher where \
                     year = %s and half = %s", [year, half])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
@@ -41,7 +41,7 @@ def AnnualPitcher(year):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_annual_standard_pitcher where \
+    cursor.execute("select * from leaderboard_annual_overview_pitcher where \
                     year = %s", [year])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
@@ -56,7 +56,7 @@ def MonthlyHitter(year, month):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_monthly_standard_hitter where \
+    cursor.execute("select * from leaderboard_monthly_overview_hitter where \
                     year = %s and month = %s", [year, month])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
@@ -71,7 +71,7 @@ def HalfHitter(year, half):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_half_standard_hitter where \
+    cursor.execute("select * from leaderboard_half_overview_hitter where \
                     year = %s and half = %s", [year, half])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
@@ -86,7 +86,7 @@ def AnnualHitter(year):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_annual_standard_hitter where \
+    cursor.execute("select * from leaderboard_annual_overview_hitter where \
                     year = %s", [year])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
@@ -101,7 +101,7 @@ def MonthlyPitchType(year, month):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_monthly_standard_pitchtype where \
+    cursor.execute("select * from leaderboard_monthly_overview_pitchtype where \
                     year = %s and month = %s", [year, month])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
@@ -116,7 +116,7 @@ def HalfPitchType(year, half):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_half_standard_pitchtype where \
+    cursor.execute("select * from leaderboard_half_overview_pitchtype where \
                     year = %s and half = %s", [year, half])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
@@ -131,7 +131,7 @@ def AnnualPitchType(year):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_annual_standard_pitchtype where \
+    cursor.execute("select * from leaderboard_annual_overview_pitchtype where \
                     year = %s", [year])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]

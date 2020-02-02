@@ -273,6 +273,126 @@ class BattedPitchType(Resource):
         json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
+class StandardPitcher(Resource):
+    def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
+
+        if(start_date != "None" and end_date != "None"):
+            return {'status': 'Not Implemented'}
+        elif(year != "None"):
+            if(month != "None" and half == "None"):
+                result = standard.MonthlyPitcher(year, month)
+            elif(month == "None" and half in ["First", "Second"]):
+                result = standard.HalfPitcher(year, half)
+            elif(month == "None" and half == "None"):
+                result = standard.AnnualPitcher(year)
+            else:
+                return {'status': 'Incorrect Yearly Submission'}
+        else:
+            return {'status': 'Incorrect Submission'}
+
+        json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
+class StandardHitter(Resource):
+    def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
+
+        if(start_date != "None" and end_date != "None"):
+            return {'status': 'Not Implemented'}
+        elif(year != "None"):
+            if(month != "None" and half == "None"):
+                result = standard.MonthlyHitter(year, month)
+            elif(month == "None" and half in ["First", "Second"]):
+                result = standard.HalfHitter(year, half)
+            elif(month == "None" and half == "None"):
+                result = standard.AnnualHitter(year)
+            else:
+                return {'status': 'Incorrect Yearly Submission'}
+        else:
+            return {'status': 'Incorrect Submission'}
+
+        json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
+class StandardPitchType(Resource):
+    def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
+
+        if(start_date != "None" and end_date != "None"):
+            return {'status': 'Not Implemented'}
+        elif(year != "None"):
+            if(month != "None" and half == "None"):
+                result = standard.MonthlyPitchType(year, month)
+            elif(month == "None" and half in ["First", "Second"]):
+                result = standard.HalfPitchType(year, half)
+            elif(month == "None" and half == "None"):
+                result = standard.AnnualPitchType(year)
+            else:
+                return {'status': 'Incorrect Yearly Submission'}
+        else:
+            return {'status': 'Incorrect Submission'}
+
+        json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
+class OverviewPitcher(Resource):
+    def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
+
+        if(start_date != "None" and end_date != "None"):
+            return {'status': 'Not Implemented'}
+        elif(year != "None"):
+            if(month != "None" and half == "None"):
+                result = overview.MonthlyPitcher(year, month)
+            elif(month == "None" and half in ["First", "Second"]):
+                result = overview.HalfPitcher(year, half)
+            elif(month == "None" and half == "None"):
+                result = overview.AnnualPitcher(year)
+            else:
+                return {'status': 'Incorrect Yearly Submission'}
+        else:
+            return {'status': 'Incorrect Submission'}
+
+        json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
+class OverviewHitter(Resource):
+    def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
+
+        if(start_date != "None" and end_date != "None"):
+            return {'status': 'Not Implemented'}
+        elif(year != "None"):
+            if(month != "None" and half == "None"):
+                result = overview.MonthlyHitter(year, month)
+            elif(month == "None" and half in ["First", "Second"]):
+                result = overview.HalfHitter(year, half)
+            elif(month == "None" and half == "None"):
+                result = overview.AnnualHitter(year)
+            else:
+                return {'status': 'Incorrect Yearly Submission'}
+        else:
+            return {'status': 'Incorrect Submission'}
+
+        json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
+class OverviewPitchType(Resource):
+    def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
+
+        if(start_date != "None" and end_date != "None"):
+            return {'status': 'Not Implemented'}
+        elif(year != "None"):
+            if(month != "None" and half == "None"):
+                result = overview.MonthlyPitchType(year, month)
+            elif(month == "None" and half in ["First", "Second"]):
+                result = overview.HalfPitchType(year, half)
+            elif(month == "None" and half == "None"):
+                result = overview.AnnualPitchType(year)
+            else:
+                return {'status': 'Incorrect Yearly Submission'}
+        else:
+            return {'status': 'Incorrect Submission'}
+
+        json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
+        return(json_response)
+
 class Status(Resource):
     def get(self):
         return {'status': 'available'}
@@ -290,6 +410,12 @@ api.add_resource(DisciplinePitchType, '/v1/Discipline/Pitch/start_date=<string:s
 api.add_resource(BattedPitcher, '/v1/Batted/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
 api.add_resource(BattedHitter, '/v1/Batted/Hitter/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
 api.add_resource(BattedPitchType, '/v1/Batted/Pitch/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
+#api.add_resource(StandardPitcher, '/v1/Standard/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
+#api.add_resource(StandardHitter, '/v1/Standard/Hitter/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
+#api.add_resource(StandardPitchType, '/v1/Standard/Pitch/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
+#api.add_resource(OverviewPitcher, '/v1/Overview/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
+#api.add_resource(OverviewHitter, '/v1/Overview/Hitter/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
+#api.add_resource(OverviewPitchType, '/v1/Overview/Pitch/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
 api.add_resource(Status, '/')
 
 if __name__ == '__main__':
