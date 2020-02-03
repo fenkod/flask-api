@@ -4,3 +4,4 @@ from .approach import *
 from .discipline import *
 from .batted import *
 from .overview import *
+from .player import *
