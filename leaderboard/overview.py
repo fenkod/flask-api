@@ -131,7 +131,7 @@ def AnnualPitchType(year):
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     cursor = db_connection.cursor()
-    cursor.execute("select * from leaderboard_annual_overview_pitchtype where \
+    cursor.execute("select * from leaderboard_annual_overview_pitcher_pitchtype where \
                     year = %s", [year])
     rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
