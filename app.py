@@ -449,9 +449,9 @@ api.add_resource(StandardPitchType, '/v1/Standard/Pitch/start_date=<string:start
 api.add_resource(OverviewPitcher, '/v1/Overview/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
 api.add_resource(OverviewHitter, '/v1/Overview/Hitter/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
 api.add_resource(OverviewPitchType, '/v1/Overview/Pitch/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
-api.add_resource(Pitcher, '/v1/Pitcher/player_id=<string:playerid>&leaderboard=<string:leaderboard>')
-api.add_resource(Hitter, '/v1/Hitter/player_id=<string:playerid>&leaderboard=<string:leaderboard>')
-api.add_resource(PitchType, '/v1/Pitch/player_id=<string:playerid>&leaderboard=<string:leaderboard>')
+api.add_resource(Pitcher, '/v1/Pitcher/player_id=<string:player_id>&leaderboard=<string:leaderboard>')
+api.add_resource(Hitter, '/v1/Hitter/player_id=<string:player_id>&leaderboard=<string:leaderboard>')
+api.add_resource(PitchType, '/v1/Pitch/player_id=<string:player_id>&leaderboard=<string:leaderboard>')
 api.add_resource(Status, '/')
 
 if __name__ == '__main__':
