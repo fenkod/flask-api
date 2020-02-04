@@ -11,7 +11,7 @@ from leaderboard import *
 
 application = Flask(__name__)
 api = Api(application)
-cache = Cache(app, config = {'CACHE_TYPE': 'simple'})
+cache = Cache(application, config = {'CACHE_TYPE': 'simple'})
 
 class Schedule(Resource):
     def get(self, game_date):
