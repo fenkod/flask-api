@@ -1,6 +1,7 @@
 #!flask/bin/python
 from flask import Flask, jsonify, make_response
 from flask_restful import Resource, Api
+from flask_cache import Cache
 import pandas as pd
 import os
 import psycopg2
@@ -10,6 +11,7 @@ from leaderboard import *
 
 application = Flask(__name__)
 api = Api(application)
+cache = Cache(app, config = {'CACHE_TYPE': 'simple'})
 
 class Schedule(Resource):
     def get(self, game_date):
@@ -430,6 +432,12 @@ class Status(Resource):
     def get(self):
         return {'status': 'available'}
 
+class Debug(Resource):
+    @cache.cache(timeout = 30)
+    def get(self):
+        print('Cache not in use')
+        return {'status': "cachced"}
+
 api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')
 api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
 api.add_resource(AdvancedHitter, '/v1/Advanced/Hitter/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
@@ -453,6 +461,7 @@ api.add_resource(Pitcher, '/v1/Pitcher/player_id=<string:player_id>&leaderboard=
 api.add_resource(Hitter, '/v1/Hitter/player_id=<string:player_id>&leaderboard=<string:leaderboard>')
 api.add_resource(PitchType, '/v1/Pitch/player_id=<string:player_id>&leaderboard=<string:leaderboard>')
 api.add_resource(Status, '/')
+api.add_resource(Debug, '/Debug')
 
 if __name__ == '__main__':
     application.run(host='0.0.0.0', port='8080')
