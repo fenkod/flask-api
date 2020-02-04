@@ -14,6 +14,7 @@ api = Api(application)
 cache = Cache(application, config = {'CACHE_TYPE': 'simple'})
 
 class Schedule(Resource):
+    @cache.cached(timeout=30)
     def get(self, game_date):
         pl_host = os.getenv('PL_DB_HOST')
         pl_db = 'pitcher-list'
@@ -30,6 +31,7 @@ class Schedule(Resource):
         return(json_response)
 
 class AdvancedPitcher(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -50,6 +52,7 @@ class AdvancedPitcher(Resource):
         return(json_response)
 
 class AdvancedHitter(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -70,6 +73,7 @@ class AdvancedHitter(Resource):
         return(json_response)
 
 class AdvancedPitchType(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -89,13 +93,8 @@ class AdvancedPitchType(Resource):
         json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
         return(json_response)
 
-class StandardHitter(Resource):
-    def get(self, start_date, end_date):
-        result = standard.Hitter(start_date = start_date, end_date = end_date)
-        json_response = json.loads(result.to_json(orient='records', date_format = 'iso'))
-        return(json_response)
-
 class ApproachPitcher(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -116,6 +115,7 @@ class ApproachPitcher(Resource):
         return(json_response)
 
 class ApproachHitter(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -136,6 +136,7 @@ class ApproachHitter(Resource):
         return(json_response)
 
 class ApproachPitchType(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -156,6 +157,7 @@ class ApproachPitchType(Resource):
         return(json_response)
 
 class DisciplinePitcher(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -176,6 +178,7 @@ class DisciplinePitcher(Resource):
         return(json_response)
 
 class DisciplineHitter(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -196,6 +199,7 @@ class DisciplineHitter(Resource):
         return(json_response)
 
 class DisciplinePitchType(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -216,6 +220,7 @@ class DisciplinePitchType(Resource):
         return(json_response)
 
 class BattedPitcher(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -236,6 +241,7 @@ class BattedPitcher(Resource):
         return(json_response)
 
 class BattedHitter(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -256,6 +262,7 @@ class BattedHitter(Resource):
         return(json_response)
 
 class BattedPitchType(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -276,6 +283,7 @@ class BattedPitchType(Resource):
         return(json_response)
 
 class StandardPitcher(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -296,6 +304,7 @@ class StandardPitcher(Resource):
         return(json_response)
 
 class StandardHitter(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -316,6 +325,7 @@ class StandardHitter(Resource):
         return(json_response)
 
 class StandardPitchType(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -336,6 +346,7 @@ class StandardPitchType(Resource):
         return(json_response)
 
 class OverviewPitcher(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -356,6 +367,7 @@ class OverviewPitcher(Resource):
         return(json_response)
 
 class OverviewHitter(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -376,6 +388,7 @@ class OverviewHitter(Resource):
         return(json_response)
 
 class OverviewPitchType(Resource):
+    @cache.cached(timeout=30)
     def get(self, start_date = "None", end_date="None", year="None", month="None", half="None"):
 
         if(start_date != "None" and end_date != "None"):
@@ -396,6 +409,7 @@ class OverviewPitchType(Resource):
         return(json_response)
 
 class Pitcher(Resource):
+    @cache.cached(timeout=30)
     def get(self, player_id, leaderboard):
 
         if(leaderboard in ["Advanced", "Approach", "Discipline", "Batted", "Standard", "Overview"]):
@@ -407,6 +421,7 @@ class Pitcher(Resource):
         return(json_response)
 
 class Hitter(Resource):
+    @cache.cached(timeout=30)
     def get(self, player_id, leaderboard):
 
         if(leaderboard in ["Advanced", "Approach", "Discipline", "Batted", "Standard", "Overview"]):
@@ -418,6 +433,7 @@ class Hitter(Resource):
         return(json_response)
 
 class PitchType(Resource):
+    @cache.cached(timeout=30)
     def get(self, player_id, leaderboard):
 
         if(leaderboard in ["Advanced", "Approach", "Discipline", "Batted", "Standard", "Overview"]):
