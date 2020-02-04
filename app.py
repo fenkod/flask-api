@@ -433,7 +433,7 @@ class Status(Resource):
         return {'status': 'available'}
 
 class Debug(Resource):
-    @cache.cache(timeout = 30)
+    @cache.cached(timeout = 30)
     def get(self):
         print('Cache not in use')
         return {'status': "cachced"}
