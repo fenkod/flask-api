@@ -12,6 +12,7 @@ virtualenv -p python3 flask
 Then activate the virtual environment:
 ```bash
 source flask.bin/activate
+pip install -r requirements.txt
 ```
 
 ### Systemd Gunicorn Configuration (Ubuntu)
