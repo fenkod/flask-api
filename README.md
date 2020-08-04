@@ -3,6 +3,15 @@
 -   [Virtualenv](https://virtualenv.pypa.io)
 
 ## Setup
+
+### System Libraries
+Prior to running this code on a Ubuntu install, you need to ensure that the appropriate system libraries are in place
+
+```bash
+sudo apt-get update
+sudo apt install python-dev python3.6-dev python3.7-dev gcc libpq-dev
+```
+
 ### Virtual Environment
 Setup a virtual environment before starting. To do so, run:
 ```bash
@@ -12,7 +21,6 @@ virtualenv -p python3 flask
 Then activate the virtual environment:
 ```bash
 source flask.bin/activate
-pip install -r requirements.txt
 ```
 
 ### Systemd Gunicorn Configuration (Ubuntu)
