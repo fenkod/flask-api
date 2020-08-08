@@ -461,6 +461,32 @@ def select_generator(leaderboard, tab):
     return select_query
 
 
+def start_query_generator(home_away, year, month, half, arbitrary_start, arbitrary_end, **kwargs):
+    sql_directory = Path.cwd() / 'leaderboard' / 'sql'
+    start_query = ''
+    date_segment = ''
+    home_away_segment = ''
+    start_sub_query_select = open(sql_directory / 'start_sub_query_select.sql', 'r').read()
+    start_sub_query_join = open(sql_directory / 'start_sub_query_join.sql', 'r').read()
+
+    if arbitrary_start != 'NA' and arbitrary_end != 'NA' and arbitrary_start < arbitrary_end:
+        date_segment = "where game_played >= %s and game_played <= %s\n"
+    elif year != 'NA':
+        date_segment = "where year_played = %s\n"
+        if month != 'NA':
+            date_segment = date_segment + "and month_played = %s\n"
+        elif half != 'NA':
+            date_segment = date_segment + "and half_played = %s\n"
+
+    if home_away != 'NA':
+        home_away_segment = "and pitcher_home_away = %s\n"
+
+    start_query = start_sub_query_select + date_segment + home_away_segment + start_sub_query_join
+    return start_query
+
+
+
+
 def create_search_query(leaderboard, handedness, opponent_handedness, league, division, team, home_away,
                         year, month, half, arbitrary_start, arbitrary_end, **kwargs):
     # Build a sql string
@@ -581,12 +607,16 @@ def create_search_query_2_1(leaderboard, tab, handedness, opponent_handedness, l
 
     filter_group_by = filter_group_by_generator(leaderboard, handedness, opponent_handedness, league, home_away)
 
-    if leaderboard in ['pitcher', 'hitter']:
+    if leaderboard == 'hitter':
         sql_query = leaderboard_select + filter_select + base_select + table_select + date_where + filter_where + leaderboard_group_by + filter_group_by
+    elif leaderboard == 'pitcher':
+        start_query = start_query_generator(home_away, year, month, half, arbitrary_start, arbitrary_end)
+        sql_query = leaderboard_select + filter_select + base_select + table_select + start_query + date_where + filter_where + leaderboard_group_by + filter_group_by
     elif leaderboard == 'pitch':
         join_query = pitch_aggregation_subquery_generator(handedness, opponent_handedness, league, division, team,
                                                           home_away, year, month, half, arbitrary_start, arbitrary_end)
-        sql_query = leaderboard_select + filter_select + base_select + table_select + join_query + date_where + filter_where + leaderboard_group_by + filter_group_by
+        start_query = start_query_generator(home_away, year, month, half, arbitrary_start, arbitrary_end)
+        sql_query = leaderboard_select + filter_select + base_select + table_select + join_query + start_query + date_where + filter_where + leaderboard_group_by + filter_group_by
     else:
         logging.error("No leaderboard by {lb_name} available".format(lb_name=leaderboard))
 
