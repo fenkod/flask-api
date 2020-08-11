@@ -368,14 +368,14 @@ def leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, le
 
     if tab in ['overview']:
         if year != 'NA':
-            if year == '2020':
-                woba_year = '2019'
+            if year == '2021':
+                woba_year = '2020'
             else:
                 woba_year = year
         else:
             temp_year = datetime.strptime(arbitrary_end, '%Y-%m-%d').strftime('%Y')
-            if temp_year == '2020':
-                woba_year = '2019'
+            if temp_year == '2021':
+                woba_year = '2020'
             else:
                 woba_year = datetime.strptime(arbitrary_end, '%Y-%m-%d').strftime('%Y')
 
