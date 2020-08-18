@@ -354,9 +354,13 @@ def leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, le
     print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-    cursor.execute(query, cursor_list)
+    try:
+        cursor.execute(query, cursor_list)
+    except Exception:
+        raise
+    else:
+        rows = cursor.fetchall()
 
-    rows = cursor.fetchall()
     colnames = [desc[0] for desc in cursor.description]
     raw = pd.DataFrame(rows, columns=colnames)
 
