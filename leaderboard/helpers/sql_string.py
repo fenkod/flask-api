@@ -469,7 +469,7 @@ def start_query_generator(home_away, year, month, half, arbitrary_start, arbitra
     start_sub_query_select = open(sql_directory / 'start_sub_query_select.sql', 'r').read()
     start_sub_query_join = open(sql_directory / 'start_sub_query_join.sql', 'r').read()
 
-    if arbitrary_start != 'NA' and arbitrary_end != 'NA' and arbitrary_start < arbitrary_end:
+    if arbitrary_start != 'NA' and arbitrary_end != 'NA' and arbitrary_start <= arbitrary_end:
         date_segment = "where game_played >= %s and game_played <= %s\n"
     elif year != 'NA':
         date_segment = "where year_played = %s\n"
