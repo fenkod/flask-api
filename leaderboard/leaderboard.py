@@ -14,10 +14,6 @@ def build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, a
             team, home_away]
     join_args = [year, month, half, arbitrary_start, arbitrary_end, home_away]
 
-    for arg in args:
-        if arg != 'NA':
-            cursor_list.append(arg)
-
     if leaderboard == 'pitch':
         for arg in args:
             if arg != 'NA':
@@ -27,6 +23,10 @@ def build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, a
         for arg in join_args:
             if arg != 'NA':
                 cursor_list.append(arg)
+    
+    for arg in args:
+        if arg != 'NA':
+            cursor_list.append(arg)
 
     print("Cursor list built at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Cursor list built at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
