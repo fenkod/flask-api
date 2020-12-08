@@ -637,6 +637,8 @@ class Leaderboard_2_1(Resource):
                                                    team, home_away, year, month, half, arbitrary_start, arbitrary_end)
 
         json_response = json.loads(result.to_json(orient='records', date_format='iso'))
+        print("JSON Response {json_response}")
+        logging.debug("JSON Response {json_response}")
         return (json_response)
 
 

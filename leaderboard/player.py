@@ -6,7 +6,7 @@ from functools import reduce
 
 def Pitcher(player_id, leaderboard):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -39,7 +39,7 @@ def Pitcher(player_id, leaderboard):
 
 def Hitter(player_id, leaderboard):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -72,7 +72,7 @@ def Hitter(player_id, leaderboard):
 
 def PitchType(player_id, leaderboard):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)

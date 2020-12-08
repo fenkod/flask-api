@@ -6,7 +6,7 @@ from functools import reduce
 
 def MonthlyPitcher(year, month):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -21,7 +21,7 @@ def MonthlyPitcher(year, month):
 
 def HalfPitcher(year, half):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -36,7 +36,7 @@ def HalfPitcher(year, half):
 
 def AnnualPitcher(year):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -51,7 +51,7 @@ def AnnualPitcher(year):
 
 def ArbitraryHitter(start_date, end_date):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -90,7 +90,7 @@ def ArbitraryHitter(start_date, end_date):
 
 def MonthlyHitter(year, month):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -105,7 +105,7 @@ def MonthlyHitter(year, month):
 
 def HalfHitter(year, half):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -120,7 +120,7 @@ def HalfHitter(year, half):
 
 def AnnualHitter(year):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -135,7 +135,7 @@ def AnnualHitter(year):
 
 def MonthlyPitchType(year, month):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -150,7 +150,7 @@ def MonthlyPitchType(year, month):
 
 def HalfPitchType(year, half):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -165,7 +165,7 @@ def HalfPitchType(year, half):
 
 def AnnualPitchType(year):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)

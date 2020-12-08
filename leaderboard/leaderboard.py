@@ -36,7 +36,7 @@ def build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, a
 def generate_leaderboard_statistics(leaderboard, handedness, opponent_handedness, league, division, team, home_away, year,
                          month, half, arbitrary_start, arbitrary_end, **kwargs):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
@@ -161,7 +161,7 @@ def generate_leaderboard_statistics(leaderboard, handedness, opponent_handedness
 def generate_leaderboard_statistics_persist(leaderboard, handedness, opponent_handedness, league, division, team, home_away, year,
                          month, half, arbitrary_start, arbitrary_end, **kwargs):
     pl_host = os.getenv('PL_DB_HOST')
-    pl_db = 'pitcher-list'
+    pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
     pl_user = os.getenv('PL_DB_USER')
     pl_password = os.getenv('PL_DB_PW')
     db_connection = get_connection()
