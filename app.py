@@ -641,6 +641,17 @@ class Leaderboard_2_1(Resource):
         logging.debug("JSON Response {json_response}")
         return (json_response)
 
+class Player(Resource):
+    @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
+    def get(self):
+
+        result = player_collection()
+
+        json_response = json.loads(result.to_json(orient='records', date_format='iso'))
+        print("JSON Response {json_response}")
+        logging.debug("JSON Response {json_response}")
+        return (json_response)
+
 
 class Status(Resource):
     def get(self):
@@ -664,6 +675,7 @@ class ClearCache(Resource):
 # v2 Endpoints
 api.add_resource(Leaderboard_2, '/v2/leaderboard/leaderboard=<string:leaderboard>&handedness=<string:handedness>&opponent_handedness=<string:opponent_handedness>&league=<string:league>&division=<string:division>&team=<string:team>&home_away=<string:home_away>&year=<string:year>&month=<string:month>&half=<string:half>&arbitrary_start=<string:arbitrary_start>&arbitrary_end=<string:arbitrary_end>')
 api.add_resource(Leaderboard_2_1, '/v2_1/leaderboard/leaderboard=<string:leaderboard>&tab=<string:tab>&handedness=<string:handedness>&opponent_handedness=<string:opponent_handedness>&league=<string:league>&division=<string:division>&team=<string:team>&home_away=<string:home_away>&year=<string:year>&month=<string:month>&half=<string:half>&arbitrary_start=<string:arbitrary_start>&arbitrary_end=<string:arbitrary_end>')
+api.add_resource(Player, '/v2_1/players')
 
 # v1 Leaderboard Endpoints
 api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
