@@ -636,18 +636,17 @@ def create_player_query(player, positions):
 
     sql_query = ''
 
+    player_select = 'select * from pl_players\n'
     table_select = ''
-    player_select = ''
+    positions_join = ''
 
-    if positions == 'NA':
-        table_select = 'select * from pl_players\n'
-    else:
-        table_select = 'select * from pl_playerpositions\n'
+    if positions == 'true':
+        positions_join = 'inner join pl_playerpositions on mlbamid = mlbamid\n'
 
     if player != 'NA':
         player_select = 'where mlbamid = %s'
 
-    sql_query = table_select + player_select
+    sql_query = table_select + positions_join + player_select
 
     if sql_query == '':
         logging.error('No sql string generated')
