@@ -422,7 +422,7 @@ def player_collection(player_id, positions):
     logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     try:
-        if player != 'NA':
+        if player_id != 'NA':
             cursor.execute(query, [player_id])
         else:
             cursor.execute(query)
