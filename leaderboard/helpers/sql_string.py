@@ -629,3 +629,32 @@ def create_search_query_2_1(leaderboard, tab, handedness, opponent_handedness, l
     logging.debug("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     return sql_query
+
+def create_player_query(player, positions):
+    print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    sql_query = ''
+
+    table_select = ''
+    player_select = ''
+
+    if positions == 'NA':
+        table_select = 'select * from pl_players\n'
+    else:
+        table_select = 'select * from pl_playerpositions\n'
+
+    if player != 'NA':
+        player_select = 'where mlbamid = %s'
+
+    sql_query = table_select + player_select
+
+    if sql_query == '':
+        logging.error('No sql string generated')
+
+    print(sql_query)
+
+    print("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    return sql_query
