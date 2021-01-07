@@ -709,9 +709,9 @@ class ClearCache(Resource):
 api.add_resource(Leaderboard_2, '/v2/leaderboard/leaderboard=<string:leaderboard>&handedness=<string:handedness>&opponent_handedness=<string:opponent_handedness>&league=<string:league>&division=<string:division>&team=<string:team>&home_away=<string:home_away>&year=<string:year>&month=<string:month>&half=<string:half>&arbitrary_start=<string:arbitrary_start>&arbitrary_end=<string:arbitrary_end>')
 api.add_resource(Leaderboard_2_1, '/v2_1/leaderboard/leaderboard=<string:leaderboard>&tab=<string:tab>&handedness=<string:handedness>&opponent_handedness=<string:opponent_handedness>&league=<string:league>&division=<string:division>&team=<string:team>&home_away=<string:home_away>&year=<string:year>&month=<string:month>&half=<string:half>&arbitrary_start=<string:arbitrary_start>&arbitrary_end=<string:arbitrary_end>')
 api.add_resource(Players, '/v2_1/players')
-api.add_resource(Player, '/v2_1/players/player=<string:player_id>')
+api.add_resource(Player, '/v2_1/players/player_id=<string:player_id>')
 api.add_resource(PlayersPositions, '/v2_1/players/positions=<string:positions>')
-api.add_resource(PlayerPositions, '/v2_1/players/player=<string:player_id>&positions=<string:positions>')
+api.add_resource(PlayerPositions, '/v2_1/players/player_id=<string:player_id>&positions=<string:positions>')
 
 # v1 Leaderboard Endpoints
 api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
