@@ -413,17 +413,17 @@ def leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, le
 
     return raw
 
-def player_collection(player, positions):
+def player_collection(player_id, positions):
     db_connection = get_connection()
     cursor = db_connection.cursor()
-    query = create_player_query(player, positions)
+    query = create_player_query(player_id, positions)
 
     print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     try:
         if player != 'NA':
-            cursor.execute(query, [player])
+            cursor.execute(query, [player_id])
         else:
             cursor.execute(query)
     except Exception:

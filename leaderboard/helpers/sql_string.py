@@ -630,21 +630,21 @@ def create_search_query_2_1(leaderboard, tab, handedness, opponent_handedness, l
 
     return sql_query
 
-def create_player_query(player, positions):
+def create_player_query(player_id, positions):
     print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     sql_query = ''
 
-    player_select = 'SELECT * FROM pl_players\n'
+    player_select = 'SELECT * FROM pl_players'
     table_select = ''
     positions_join = ''
 
     if positions == 'true':
-        positions_join = 'INNER JOIN pl_playerpositions USING(mlbamid)\n'
+        positions_join = ' INNER JOIN pl_playerpositions USING(mlbamid)'
 
-    if player != 'NA':
-        player_select = 'WHERE mlbamid = %s'
+    if player_id != 'NA':
+        player_select = ' WHERE mlbamid = %s'
 
     sql_query = table_select + positions_join + player_select
 
