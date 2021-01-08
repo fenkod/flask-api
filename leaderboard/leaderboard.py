@@ -413,10 +413,10 @@ def leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, le
 
     return raw
 
-def player_collection(player_id, positions):
+def player_collection(player_id):
     db_connection = get_connection()
     cursor = db_connection.cursor()
-    query = create_player_query(player_id, positions)
+    query = create_player_query(player_id)
 
     print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
@@ -439,10 +439,10 @@ def player_collection(player_id, positions):
 
     return raw
 
-def player_positions_collection(player_id, positions):
+def player_positions_collection(player_id):
     db_connection = get_connection()
     cursor = db_connection.cursor()
-    query = create_player_positions_query(player_id, positions)
+    query = create_player_positions_query(player_id)
 
     print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
