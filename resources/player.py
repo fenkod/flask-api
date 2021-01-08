@@ -15,7 +15,6 @@ class Player(Resource):
         cursor = db_connection.cursor()
         
         query = self.get_query(query_type, player_id)
-        print(query)
         cursor_list = list()
 
         try:
@@ -27,7 +26,6 @@ class Player(Resource):
 
         colnames = [desc[0] for desc in cursor.description]
         raw = pd.DataFrame(rows, columns=colnames)
-
         return raw
 
     def get_query(self, query_type, player_id):
@@ -47,7 +45,7 @@ class Player(Resource):
                     f'swinging_strike_pct AS "swinging-strike",'
                     f'called_strike_pct AS "called-strike",'
                     f'csw_pct AS "csw" from player_page_repertoire '
-                f'WHERE pitchermlbamid = {player_id} AND home_away = "All" '
+                f"WHERE pitchermlbamid = {player_id} AND home_away = 'All' "
                 f'ORDER BY pitchtype, year_played, opponent_handedness;'
             )
         
