@@ -8,6 +8,8 @@ from urllib.parse import urlparse
 import logging
 import redis
 
+from resources import Leaderboard, Player
+
 application = Flask(__name__)
 api = Api(application)
 # cache = Cache(application, config = {'CACHE_TYPE': 'simple'})
@@ -660,6 +662,9 @@ class ClearCache(Resource):
         cache.clear()
         return {'status': "cache cleared"}
 
+# v3 Endpoints
+api.add_resource(Leaderboard, '/v3/leaderboard/<string:query_type>/', endpoint='leaderboard')
+api.add_resource(Player, '/v3/player/<string:query_type>/<int:player_id>/', endpoint='player')
 
 # v2 Endpoints
 api.add_resource(Leaderboard_2, '/v2/leaderboard/leaderboard=<string:leaderboard>&handedness=<string:handedness>&opponent_handedness=<string:opponent_handedness>&league=<string:league>&division=<string:division>&team=<string:team>&home_away=<string:home_away>&year=<string:year>&month=<string:month>&half=<string:half>&arbitrary_start=<string:arbitrary_start>&arbitrary_end=<string:arbitrary_end>')

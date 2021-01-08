@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import psycopg2
 from datetime import datetime
-from .helpers import *
+from helpers import *
 import json as json
 
 def build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, arbitrary_end, handedness,
