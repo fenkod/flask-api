@@ -667,7 +667,7 @@ class PlayerPositions(Resource):
     @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
     def get(self, player_id='NA', positions='true'):
 
-        result = player_collection(player_id, positions)
+        result = player_positions_collection(player_id, positions)
 
         json_response = json.loads(result.to_json(orient='records', date_format='iso'))
         print("JSON Response {json_response}")
@@ -678,7 +678,7 @@ class PlayersPositions(Resource):
     @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
     def get(self, player_id='NA', positions='true'):
 
-        result = player_collection(player_id, positions)
+        result = player_positions_collection(player_id, positions)
 
         json_response = json.loads(result.to_json(orient='records', date_format='iso'))
         print("JSON Response {json_response}")
