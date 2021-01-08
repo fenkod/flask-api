@@ -13,7 +13,9 @@ class Player(Resource):
     def fetch_data(self, query_type, player_id):
         db_connection = get_connection()
         cursor = db_connection.cursor()
-        query = f"select '{query_type}' as description, {player_id} as player_id;"
+        
+        query = self.get_query(query_type, player_id)
+        print(query)
         cursor_list = list()
 
         try:
@@ -27,4 +29,30 @@ class Player(Resource):
         raw = pd.DataFrame(rows, columns=colnames)
 
         return raw
+
+    def get_query(self, query_type, player_id):
+        def default():
+            return f"SELECT 'query not defined' AS error, '{query_type}' AS query, {player_id} AS id;"
+
+        def repertoire():
+            return (
+                f'SELECT pitchermlbamid AS "id",'
+                    f'pitchtype AS "pitch",' 
+                    f'year_played AS "year",' 
+                    f'opponent_handedness AS "split",'
+                    f'usage_pct AS "usage",'
+                    f'batting_average AS "avg",' 
+                    f'o_swing_pct AS "o-swing",'
+                    f'zone_pct AS "zone",'
+                    f'swinging_strike_pct AS "swinging-strike",'
+                    f'called_strike_pct AS "called-strike",'
+                    f'csw_pct AS "csw" from player_page_repertoire '
+                f'WHERE pitchermlbamid = {player_id} AND home_away = "All" '
+                f'ORDER BY pitchtype, year_played, opponent_handedness;'
+            )
         
+        queries = {
+            "repertoire": repertoire
+        }
+
+        return queries.get(query_type, default)()
