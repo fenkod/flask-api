@@ -636,15 +636,15 @@ def create_player_query(player_id, positions):
 
     sql_query = ''
 
-    player_select = 'SELECT * FROM pl_players'
-    table_select = ''
+    table_select = 'SELECT * FROM pl_players\n'
     positions_join = ''
+    player_select = ''
 
     if positions == 'true':
-        positions_join = ' INNER JOIN pl_playerpositions USING(mlbamid)'
+        positions_join = 'INNER JOIN pl_playerpositions USING(mlbamid)\n'
 
     if player_id != 'NA':
-        player_select = ' WHERE mlbamid = %s'
+        player_select = 'WHERE mlbamid = %s'
 
     sql_query = table_select + positions_join + player_select
 
