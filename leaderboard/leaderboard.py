@@ -23,7 +23,7 @@ def build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, a
         for arg in join_args:
             if arg != 'NA':
                 cursor_list.append(arg)
-    
+
     for arg in args:
         if arg != 'NA':
             cursor_list.append(arg)
@@ -170,7 +170,7 @@ def generate_leaderboard_statistics_persist(leaderboard, handedness, opponent_ha
                          month, half, arbitrary_start, arbitrary_end)
     cursor_list = build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, arbitrary_end,
                                             handedness, opponent_handedness, league, division, team, home_away)
-    
+
     print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -410,5 +410,57 @@ def leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, le
 
     print("Statistics generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Statistics generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    return raw
+
+def player_collection(player_id):
+    db_connection = get_connection()
+    cursor = db_connection.cursor()
+    query = create_player_query(player_id)
+
+    print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    try:
+        if player_id != 'NA':
+            cursor.execute(query, [player_id])
+        else:
+            cursor.execute(query)
+    except Exception:
+        raise
+    else:
+        rows = cursor.fetchall()
+
+    colnames = [desc[0] for desc in cursor.description]
+    raw = pd.DataFrame(rows, columns=colnames)
+
+    print("DB results gathered at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("DB results gathered results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    return raw
+
+def player_positions_collection(player_id):
+    db_connection = get_connection()
+    cursor = db_connection.cursor()
+    query = create_player_positions_query(player_id)
+
+    print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    try:
+        if player_id != 'NA':
+            cursor.execute(query, [player_id])
+        else:
+            cursor.execute(query)
+    except Exception:
+        raise
+    else:
+        rows = cursor.fetchall()
+
+    colnames = [desc[0] for desc in cursor.description]
+    raw = pd.DataFrame(rows, columns=colnames)
+
+    print("DB results gathered at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("DB results gathered results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     return raw

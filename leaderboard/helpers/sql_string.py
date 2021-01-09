@@ -629,3 +629,52 @@ def create_search_query_2_1(leaderboard, tab, handedness, opponent_handedness, l
     logging.debug("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     return sql_query
+
+def create_player_query(player_id):
+    print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    sql_query = ''
+
+    table_select = 'SELECT mlbamid, playername, teamname, lastgame, ispitcher, name_first, name_last, birth_date FROM pl_players\n'
+    player_select = ''
+
+    if player_id != 'NA':
+        player_select = 'WHERE mlbamid = %s'
+
+    sql_query = table_select + player_select
+
+    if sql_query == '':
+        logging.error('No sql string generated')
+
+    print(sql_query)
+
+    print("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    return sql_query
+
+def create_player_positions_query(player_id):
+    print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    sql_query = ''
+
+    table_select = "SELECT p.mlbamid as id, p.playername as name, json_agg(DISTINCT jsonb_build_object(pp.game_year, (SELECT json_object_agg(pp2.position, pp2.games_played) FROM pl_playerpositions pp2 WHERE pp2.mlbamid = pp.mlbamid AND pp2.game_year = pp.game_year))) as positions FROM pl_players p INNER JOIN pl_playerpositions pp USING(mlbamid)\n"
+    player_select = ''
+    group_by = 'GROUP BY p.mlbamid, p.playername'
+
+    if player_id != 'NA':
+        player_select = 'WHERE p.mlbamid = %s'
+
+    sql_query = table_select + player_select + group_by
+
+    if sql_query == '':
+        logging.error('No sql string generated')
+
+    print(sql_query)
+
+    print("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    logging.debug("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+    return sql_query
