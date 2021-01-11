@@ -1,11 +1,18 @@
 from flask_restful import Resource
-from helpers import get_connection, cache_timeout, var_dump
+from helpers import get_connection, create_player_query, create_player_positions_query, cache_timeout, var_dump
 import json as json
 import pandas as pd
 
 
 class Player(Resource):
-    def get(self, query_type, player_id):
+    def get(self, query_type='NA', player_id='NA'):
+        # We can have an empty query_type or player_id which return the collections of stats.
+        if (query_type == 'NA' and (player_id == 'NA' or type(player_id) is int)):
+            query_type = 'stats'
+        elif (player_id == 'NA' and query_type.isnumeric()):
+            player_id = int(query_type)
+            query_type = 'stats'
+
         result = self.fetch_data(query_type, player_id)
         return (result)
 
@@ -15,6 +22,8 @@ class Player(Resource):
         
         query = self.get_query(query_type, player_id)
         cursor_list = list()
+        if (type(player_id) is int):
+            cursor_list.append(player_id)
 
         try:
             cursor.execute(query, cursor_list)
@@ -33,6 +42,12 @@ class Player(Resource):
     def get_query(self, query_type, player_id):
         def default():
             return f"SELECT 'query not defined' AS error, '{query_type}' AS query, {player_id} AS id;"
+        
+        def stats():
+            return create_player_query(player_id)
+
+        def positions():
+            return create_player_positions_query(player_id)
 
         def repertoire():
             return (
@@ -51,7 +66,9 @@ class Player(Resource):
             )
         
         queries = {
-            "repertoire": repertoire
+            "repertoire": repertoire,
+            "stats": stats,
+            "positions": positions
         }
 
         return queries.get(query_type, default)()
@@ -65,7 +82,7 @@ class Player(Resource):
             data['year'] = pd.to_numeric(data['year'], downcast='integer')
             data[['usage','avg','o-swing','zone','swinging-strike','called-strike','csw']] = data[['usage','avg','o-swing','zone','swinging-strike','called-strike','csw']].apply(pd.to_numeric)
             formatted_data = data.set_index(['pitch','year','split'])
-            var_dump(formatted_data)
+            
             return formatted_data
 
         formatting = {
@@ -81,11 +98,13 @@ class Player(Resource):
             return json.loads(results.to_json(orient='records', date_format='iso'))
 
         def repertoire():
+            # Sort our DataFrame so we have a prettier JSON format for the API
             result_dict = results.to_dict(orient='index')
             output_dict = { 'player_id': player_id, query_type: {'pitches':{}} }
 
+            # Make sure our index keys exist in our dict structure then push on our data values
             for key, value in result_dict.items():
-                var_dump(output_dict)
+                
                 pitch_key = key[0]
                 if pitch_key not in output_dict[query_type]['pitches']:
                     output_dict[query_type]['pitches'][pitch_key] = {'years':{}}

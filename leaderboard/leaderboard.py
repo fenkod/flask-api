@@ -23,7 +23,7 @@ def build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, a
         for arg in join_args:
             if arg != 'NA':
                 cursor_list.append(arg)
-    
+
     for arg in args:
         if arg != 'NA':
             cursor_list.append(arg)
@@ -170,7 +170,7 @@ def generate_leaderboard_statistics_persist(leaderboard, handedness, opponent_ha
                          month, half, arbitrary_start, arbitrary_end)
     cursor_list = build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, arbitrary_end,
                                             handedness, opponent_handedness, league, division, team, home_away)
-    
+
     print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
