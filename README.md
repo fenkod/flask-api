@@ -78,3 +78,26 @@ server {
     }
 }
 ```
+
+
+## Endpoints
+
+The URL structure for the v2 of the leaderboard API is http://api.dfccnp.com/v2_1/leaderboard/leaderboard=pitch&tab=overview&handedness=NA&opponent_handedness=NA&league=NA&division=NA&team=NA&home_away=NA&year=2019&month=5&half=NA&arbitrary_start=NA&arbitrary_end=NA
+
+
+- leaderboard: one of pitch, pitcher, or hitter
+- tab: one of overview, standard, advanced, approach, plate_discipline, batted_ball
+- handedness: one of R, L, or NA
+- opponent_handedness: one of R, L, or NA
+- league: one of AL, NL, or NA
+- division: one of East, Central, West, or NA
+- team: the three letter abbreviation for a team or NA
+- home_away: one of home, away, or NA
+- year: four digit year or NA if using arbitrary start and end
+- month: 1-12, NA if using arbitrary start and end or not filtering on month
+- half: one of First, Second, or  NA if using arbitrary start and end or not filtering on half
+- arbitrary_start: ISO date format if submitting a custom date range or NA if using the year+
+- arbitrary_end: ISO date format if submitting a custom date range or NA if using the year+
+
+
+NA is always used when not submitting an explicit value for a field.
