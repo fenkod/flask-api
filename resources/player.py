@@ -1,5 +1,7 @@
+from flask import current_app
 from flask_restful import Resource
-from helpers import get_connection, create_player_query, create_player_positions_query, cache_timeout, var_dump
+from helpers import get_connection, create_player_query, create_player_positions_query, var_dump
+from cache import cache_timeout, cache_invalidate_hour
 import json as json
 import pandas as pd
 
@@ -13,7 +15,18 @@ class Player(Resource):
             player_id = int(query_type)
             query_type = 'stats'
 
-        result = self.fetch_data(query_type, player_id)
+        cache_key_player_id = player_id
+        cache_key_resource_type = self.__class__.__name__
+        if (player_id == 'NA'):
+            cache_key_player_id = 'all'
+
+        cache_key = f'{cache_key_resource_type}-{query_type}-{cache_key_player_id}'
+        result = current_app.cache.get(cache_key)
+        var_dump(result)
+        if (result is None):
+            result = self.fetch_data(query_type, player_id)
+            current_app.cache.set(cache_key, result,cache_timeout(cache_invalidate_hour))
+
         return (result)
 
     def fetch_data(self, query_type, player_id):
