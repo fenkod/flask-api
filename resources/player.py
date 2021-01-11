@@ -66,7 +66,8 @@ class Player(Resource):
             return (
                 f'SELECT pitchtype AS "pitch",' 
                     f'year_played AS "year",' 
-                    f'opponent_handedness AS "split",'
+                    f'opponent_handedness AS "split-RL",'
+                    f'home_away AS "split-HA",'
                     f'usage_pct AS "usage",'
                     f'batting_average AS "avg",' 
                     f'o_swing_pct AS "o-swing",'
@@ -74,8 +75,8 @@ class Player(Resource):
                     f'swinging_strike_pct AS "swinging-strike",'
                     f'called_strike_pct AS "called-strike",'
                     f'csw_pct AS "csw" from player_page_repertoire '
-                f"WHERE pitchermlbamid = {player_id} AND home_away = 'All' "
-                f'ORDER BY pitchtype, year_played, opponent_handedness;'
+                f"WHERE pitchermlbamid = {player_id} "
+                f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
             )
         
         queries = {
@@ -94,7 +95,7 @@ class Player(Resource):
         def repertoire():
             data['year'] = pd.to_numeric(data['year'], downcast='integer')
             data[['usage','avg','o-swing','zone','swinging-strike','called-strike','csw']] = data[['usage','avg','o-swing','zone','swinging-strike','called-strike','csw']].apply(pd.to_numeric)
-            formatted_data = data.set_index(['pitch','year','split'])
+            formatted_data = data.set_index(['pitch','year','split-RL','split-HA'])
             
             return formatted_data
 
@@ -124,11 +125,14 @@ class Player(Resource):
 
                 year_key = key[1]
                 if year_key not in output_dict[query_type]['pitches'][pitch_key]['years']:
-                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = {}
+                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = {'splits':{}}
                 
-                split_key = key[2]
-                output_dict[query_type]['pitches'][pitch_key]['years'][year_key][split_key] = value
+                rl_split_key = key[2]
+                if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
+                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
             
+                ha_split_key = key[3]
+                output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
             return output_dict
 
         json_data = {
