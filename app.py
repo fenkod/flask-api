@@ -614,50 +614,6 @@ class Leaderboard_2_1(Resource):
         logging.debug("JSON Response {json_response}")
         return (json_response)
 
-class Players(Resource):
-    @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
-    def get(self, player_id='NA'):
-
-        result = player_collection(player_id)
-
-        json_response = json.loads(result.to_json(orient='records', date_format='iso'))
-        print("JSON Response {json_response}")
-        logging.debug("JSON Response {json_response}")
-        return (json_response)
-
-class Player(Resource):
-    @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
-    def get(self, player_id='NA'):
-
-        result = player_collection(player_id)
-
-        json_response = json.loads(result.to_json(orient='records', date_format='iso'))
-        print("JSON Response {json_response}")
-        logging.debug("JSON Response {json_response}")
-        return (json_response)
-
-class PlayerPositions(Resource):
-    @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
-    def get(self, player_id='NA'):
-
-        result = player_positions_collection(player_id)
-
-        json_response = json.loads(result.to_json(orient='records', date_format='iso'))
-        print("JSON Response {json_response}")
-        logging.debug("JSON Response {json_response}")
-        return (json_response)
-
-class PlayersPositions(Resource):
-    @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
-    def get(self, player_id='NA'):
-
-        result = player_positions_collection(player_id)
-
-        json_response = json.loads(result.to_json(orient='records', date_format='iso'))
-        print("JSON Response {json_response}")
-        logging.debug("JSON Response {json_response}")
-        return (json_response)
-
 
 # Test Endpoint Handlers
 class Status(Resource):
