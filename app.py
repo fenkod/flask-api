@@ -1,48 +1,19 @@
 #!flask/bin/python
-from flask import Flask, jsonify, make_response
-from flask_restful import Resource, Api, request
-from flask_caching import Cache
+from flask import Flask
+from flask_restful import Resource, Api
 from leaderboard import *
+from cache import init_cache, cache_invalidate_hour, cache_timeout
 from datetime import datetime
-from urllib.parse import urlparse
-import logging
-import redis
-
 from resources import Leaderboard, Player
+import os
+import psycopg2
+import logging
 
 application = Flask(__name__)
 api = Api(application)
-cache = Cache()
 
-# Cache Init
-redis_url = os.environ.get('REDIS_URL') or ''
-cache_invalidate_hour = 10
-if redis_url == '':
-    cache.init_app(application, config={'CACHE_TYPE': 'simple'})
-else:
-    redis = urlparse(redis_url)
-    cache.init_app(application,
-                   config={
-                       'CACHE_TYPE': 'redis',
-                       'CACHE_REDIS_HOST': redis.hostname,
-                       'CACHE_REDIS_PORT': redis.port,
-                       'CACHE_REDIS_PASSWORD': redis.password,
-                       'CACHE_REDIS_URL': redis_url,
-                       'CACHE_OPTIONS': {'behaviors': {
-                           # Faster IO
-                           'tcp_nodelay': False,
-                           # Keep connection alive
-                           'tcp_keepalive': True,
-                           # Timeout for set/get requests
-                           'connect_timeout': 2000,  # ms
-                           'send_timeout': 750 * 1000,  # us
-                           'receive_timeout': 750 * 1000,  # us
-                           '_poll_timeout': 2000,  # ms
-                           # Better failover
-                           'ketama': True,
-                           'remove_failed': 1,
-                           'retry_timeout': 2,
-                           'dead_timeout': 30}}})
+with application.app_context():
+    cache = init_cache()
 
 # Endpoint Handlers
 class Schedule(Resource):
@@ -634,7 +605,7 @@ class ClearCache(Resource):
         cache.clear()
         return {'status': "cache cleared"}
 
-# v3 Endpoints
+# v3 Endpoints for corresponding Resources found in `./resources/`
 # Current endpoints: (repertoire,positions,stats,gamelogs)
 v3_player_routes = [
     '/v3/player/<string:query_type>/<int:player_id>/',
@@ -678,7 +649,6 @@ api.add_resource(OverviewPitchType, '/v1/Overview/Pitch/start_date=<string:start
 api.add_resource(Pitcher, '/v1/Pitcher/player_id=<string:player_id>&leaderboard=<string:leaderboard>')
 api.add_resource(Hitter, '/v1/Hitter/player_id=<string:player_id>&leaderboard=<string:leaderboard>')
 api.add_resource(PitchType, '/v1/Pitch/player_id=<string:player_id>&leaderboard=<string:leaderboard>')
-
 
 # Test Endpoints
 api.add_resource(Schedule, '/v1/Schedule/<string:game_date>')

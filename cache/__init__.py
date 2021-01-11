@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
+from .cache import *
 
+cache_invalidate_hour = 10
 
 def cache_timeout(hour):
     current_time = datetime.now()
