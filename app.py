@@ -614,6 +614,7 @@ class Leaderboard_2_1(Resource):
         logging.debug("JSON Response {json_response}")
         return (json_response)
 
+
 # Test Endpoint Handlers
 class Status(Resource):
     def get(self):
@@ -634,8 +635,19 @@ class ClearCache(Resource):
         return {'status': "cache cleared"}
 
 # v3 Endpoints
-api.add_resource(Leaderboard, '/v3/leaderboard/<string:query_type>/', endpoint='leaderboard')
-api.add_resource(Player, '/v3/player/<string:query_type>/<int:player_id>/', endpoint='player')
+# Current endpoints: (repertoire,positions,stats,gamelogs)
+v3_player_routes = [
+    '/v3/player/<string:query_type>/<int:player_id>/',
+    '/v3/player/<int:player_id>/',
+    '/v3/player/<string:query_type>/',
+    '/v3/player/'
+]
+v3_leaderboard_routes = [
+    '/v3/leaderboard/<string:query_type>/',
+    '/v3/leaderboard/'
+]
+api.add_resource(Leaderboard, *v3_leaderboard_routes, endpoint='leaderboard')
+api.add_resource(Player, *v3_player_routes, endpoint='player')
 
 # v2 Endpoints
 api.add_resource(Leaderboard_2, '/v2/leaderboard/leaderboard=<string:leaderboard>&handedness=<string:handedness>&opponent_handedness=<string:opponent_handedness>&league=<string:league>&division=<string:division>&team=<string:team>&home_away=<string:home_away>&year=<string:year>&month=<string:month>&half=<string:half>&arbitrary_start=<string:arbitrary_start>&arbitrary_end=<string:arbitrary_end>')
