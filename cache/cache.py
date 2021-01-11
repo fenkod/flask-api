@@ -37,10 +37,8 @@ def get_cache():
                             'ketama': True,
                             'remove_failed': 1,
                             'retry_timeout': 2,
-                            'dead_timeout': 30,
-                            'decode_responses': True
-                        }},
-                        'decode_responses': True
+                            'dead_timeout': 30
+                        }}
                     })
     return cache
     
