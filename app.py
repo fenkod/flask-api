@@ -1,6 +1,6 @@
 #!flask/bin/python
 from flask import Flask, jsonify, make_response
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, request
 from flask_caching import Cache
 from leaderboard import *
 from datetime import datetime
@@ -614,6 +614,50 @@ class Leaderboard_2_1(Resource):
         logging.debug("JSON Response {json_response}")
         return (json_response)
 
+class Players(Resource):
+    @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
+    def get(self, player_id='NA'):
+
+        result = player_collection(player_id)
+
+        json_response = json.loads(result.to_json(orient='records', date_format='iso'))
+        print("JSON Response {json_response}")
+        logging.debug("JSON Response {json_response}")
+        return (json_response)
+
+class Player(Resource):
+    @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
+    def get(self, player_id='NA'):
+
+        result = player_collection(player_id)
+
+        json_response = json.loads(result.to_json(orient='records', date_format='iso'))
+        print("JSON Response {json_response}")
+        logging.debug("JSON Response {json_response}")
+        return (json_response)
+
+class PlayerPositions(Resource):
+    @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
+    def get(self, player_id='NA'):
+
+        result = player_positions_collection(player_id)
+
+        json_response = json.loads(result.to_json(orient='records', date_format='iso'))
+        print("JSON Response {json_response}")
+        logging.debug("JSON Response {json_response}")
+        return (json_response)
+
+class PlayersPositions(Resource):
+    @cache.cached(timeout = cache_timeout(cache_invalidate_hour))
+    def get(self, player_id='NA'):
+
+        result = player_positions_collection(player_id)
+
+        json_response = json.loads(result.to_json(orient='records', date_format='iso'))
+        print("JSON Response {json_response}")
+        logging.debug("JSON Response {json_response}")
+        return (json_response)
+
 
 # Test Endpoint Handlers
 class Status(Resource):
@@ -652,6 +696,10 @@ api.add_resource(Player, *v3_player_routes, endpoint='player')
 # v2 Endpoints
 api.add_resource(Leaderboard_2, '/v2/leaderboard/leaderboard=<string:leaderboard>&handedness=<string:handedness>&opponent_handedness=<string:opponent_handedness>&league=<string:league>&division=<string:division>&team=<string:team>&home_away=<string:home_away>&year=<string:year>&month=<string:month>&half=<string:half>&arbitrary_start=<string:arbitrary_start>&arbitrary_end=<string:arbitrary_end>')
 api.add_resource(Leaderboard_2_1, '/v2_1/leaderboard/leaderboard=<string:leaderboard>&tab=<string:tab>&handedness=<string:handedness>&opponent_handedness=<string:opponent_handedness>&league=<string:league>&division=<string:division>&team=<string:team>&home_away=<string:home_away>&year=<string:year>&month=<string:month>&half=<string:half>&arbitrary_start=<string:arbitrary_start>&arbitrary_end=<string:arbitrary_end>')
+api.add_resource(Players, '/v2_1/players')
+api.add_resource(Player, '/v2_1/players/player_id=<string:player_id>')
+api.add_resource(PlayersPositions, '/v2_1/players/positions')
+api.add_resource(PlayerPositions, '/v2_1/players/positions/player_id=<string:player_id>')
 
 # v1 Leaderboard Endpoints
 api.add_resource(AdvancedPitcher, '/v1/Advanced/Pitcher/start_date=<string:start_date>&end_date=<string:end_date>&year=<string:year>&month=<string:month>&half=<string:half>')
