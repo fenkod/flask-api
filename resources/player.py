@@ -1,6 +1,6 @@
 from flask import current_app
 from flask_restful import Resource
-from helpers import get_connection, create_player_query, create_player_positions_query, var_dump
+from helpers import fetch_dataframe, get_connection, create_player_query, create_player_positions_query, var_dump
 from cache import cache_timeout, cache_invalidate_hour
 import json as json
 import pandas as pd
@@ -22,7 +22,6 @@ class Player(Resource):
 
         cache_key = f'{cache_key_resource_type}-{query_type}-{cache_key_player_id}'
         result = current_app.cache.get(cache_key)
-        var_dump(result)
         if (result is None):
             result = self.fetch_data(query_type, player_id)
             current_app.cache.set(cache_key, result,cache_timeout(cache_invalidate_hour))
@@ -30,23 +29,12 @@ class Player(Resource):
         return (result)
 
     def fetch_data(self, query_type, player_id):
-        db_connection = get_connection()
-        cursor = db_connection.cursor()
-        
         query = self.get_query(query_type, player_id)
-        cursor_list = list()
+        query_var=None
         if (type(player_id) is int):
-            cursor_list.append(player_id)
+            query_var = player_id
 
-        try:
-            cursor.execute(query, cursor_list)
-        except Exception:
-            raise
-        else:
-            rows = cursor.fetchall()
-
-        colnames = [desc[0] for desc in cursor.description]
-        raw = pd.DataFrame(rows, columns=colnames)
+        raw = fetch_dataframe(query,query_var)
         results = self.format_results(query_type, raw)
         output = self.get_json(query_type,player_id,results)
 
@@ -55,9 +43,9 @@ class Player(Resource):
     def get_query(self, query_type, player_id):
         def default():
             return f"SELECT 'query not defined' AS error, '{query_type}' AS query, {player_id} AS id;"
-        
-        def stats():
-            return create_player_query(player_id)
+
+        def gamelogs():
+            return f"SELECT 'gamelogs_placeholder' as error;"
 
         def positions():
             return create_player_positions_query(player_id)
@@ -79,10 +67,14 @@ class Player(Resource):
                 f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
             )
         
+        def stats():
+            return create_player_query(player_id)
+        
         queries = {
+            "gamelogs": gamelogs,
+            "positions": positions,
             "repertoire": repertoire,
-            "stats": stats,
-            "positions": positions
+            "stats": stats
         }
 
         return queries.get(query_type, default)()
