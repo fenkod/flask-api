@@ -1,7 +1,6 @@
 from flask import current_app
 from flask_caching import Cache
 from urllib.parse import urlparse
-import os
 
 def init_cache():
     current_app.cache = get_cache()
@@ -10,7 +9,7 @@ def init_cache():
 # Cache Init
 def get_cache():
     cache = Cache()
-    redis_url = os.environ.get('REDIS_URL') or ''
+    redis_url = current_app.config.get('REDIS_URL')
     if redis_url == '':
         cache.init_app(current_app, config={'CACHE_TYPE': 'simple'})
     else:

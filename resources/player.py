@@ -1,10 +1,9 @@
 from flask import current_app
 from flask_restful import Resource
-from helpers import get_connection, create_player_query, create_player_positions_query, var_dump
+from helpers import fetch_dataframe, get_connection, create_player_query, create_player_positions_query, var_dump
 from cache import cache_timeout, cache_invalidate_hour
 import json as json
 import pandas as pd
-
 
 class Player(Resource):
     def get(self, query_type='NA', player_id='NA'):
@@ -20,33 +19,27 @@ class Player(Resource):
         if (player_id == 'NA'):
             cache_key_player_id = 'all'
 
-        cache_key = f'{cache_key_resource_type}-{query_type}-{cache_key_player_id}'
-        result = current_app.cache.get(cache_key)
-        var_dump(result)
-        if (result is None):
+        var_dump(current_app.config.get('BYPASS_CACHE'))
+        if (current_app.config.get('BYPASS_CACHE')):
+            print('Bypassing Caching of JSON Results')
             result = self.fetch_data(query_type, player_id)
-            current_app.cache.set(cache_key, result,cache_timeout(cache_invalidate_hour))
+        else:
+            print('Using Cache for JSON Results')
+            cache_key = f'{cache_key_resource_type}-{query_type}-{cache_key_player_id}'
+            result = current_app.cache.get(cache_key)
+            if (result is None):
+                result = self.fetch_data(query_type, player_id)
+                current_app.cache.set(cache_key, result,cache_timeout(cache_invalidate_hour()))
 
         return (result)
 
     def fetch_data(self, query_type, player_id):
-        db_connection = get_connection()
-        cursor = db_connection.cursor()
-        
         query = self.get_query(query_type, player_id)
-        cursor_list = list()
+        query_var=None
         if (type(player_id) is int):
-            cursor_list.append(player_id)
+            query_var = player_id
 
-        try:
-            cursor.execute(query, cursor_list)
-        except Exception:
-            raise
-        else:
-            rows = cursor.fetchall()
-
-        colnames = [desc[0] for desc in cursor.description]
-        raw = pd.DataFrame(rows, columns=colnames)
+        raw = fetch_dataframe(query,query_var)
         results = self.format_results(query_type, raw)
         output = self.get_json(query_type,player_id,results)
 
@@ -55,9 +48,16 @@ class Player(Resource):
     def get_query(self, query_type, player_id):
         def default():
             return f"SELECT 'query not defined' AS error, '{query_type}' AS query, {player_id} AS id;"
-        
-        def stats():
-            return create_player_query(player_id)
+
+        def gamelogs():
+            return (
+                f'SELECT game_played AS "date",'
+                    f'start, win, loss, save, hold,num_ip, num_hit, num_runs, num_earned_runs, num_bb, num_k, num_pitches,'
+                    f'strikeout_pct, bb_pct, babip_pct, hr_fb_pct, left_on_base_pct, swinging_strike_pct, csw_pct '
+                f'FROM mv_pitcher_game_logs ' 
+                f"WHERE pitchermlbamid = {player_id} "
+                f'ORDER BY year_played DESC, month_played DESC;'
+            )
 
         def positions():
             return create_player_positions_query(player_id)
@@ -79,10 +79,14 @@ class Player(Resource):
                 f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
             )
         
+        def stats():
+            return create_player_query(player_id)
+        
         queries = {
+            "gamelogs": gamelogs,
+            "positions": positions,
             "repertoire": repertoire,
-            "stats": stats,
-            "positions": positions
+            "stats": stats
         }
 
         return queries.get(query_type, default)()
@@ -94,9 +98,9 @@ class Player(Resource):
 
         def repertoire():
             data['year'] = pd.to_numeric(data['year'], downcast='integer')
+            
             data[['usage','avg','o-swing','zone','swinging-strike','called-strike','csw']] = data[['usage','avg','o-swing','zone','swinging-strike','called-strike','csw']].apply(pd.to_numeric)
             formatted_data = data.set_index(['pitch','year','split-RL','split-HA'])
-            
             return formatted_data
 
         formatting = {
@@ -106,9 +110,15 @@ class Player(Resource):
         return formatting.get(query_type, default)()
     
     def get_json(self, query_type, player_id, results):
+        # Ensure we have valid data for NaN entries using json.dumps of Python None object
+        results.fillna(value=json.dumps(None), inplace=True)
         
         def default():
             # Allow date formatting to_json instead of to_dict. Convert back to dict with json.loads
+            return json.loads(results.to_json(orient='records', date_format='iso'))
+
+        def gamelogs():
+            # TODO: Format this data for front end use
             return json.loads(results.to_json(orient='records', date_format='iso'))
 
         def repertoire():
@@ -136,7 +146,8 @@ class Player(Resource):
             return output_dict
 
         json_data = {
-            "repertoire": repertoire 
+            "repertoire": repertoire,
+            "gamelogs": gamelogs 
         }
 
         return json_data.get(query_type, default)()
