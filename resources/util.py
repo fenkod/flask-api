@@ -1,7 +1,5 @@
-from flask import current_app, request
+from flask import current_app
 from flask_restful import Resource
-from helpers import var_dump
-import os
 
 # Top level / Endpoint
 class Status(Resource):

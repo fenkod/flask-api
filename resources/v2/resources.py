@@ -7,7 +7,7 @@ import logging
 import json as json
 
 class Leaderboard_2(Resource):
-    @current_app.cache.cached(timeout = cache_timeout(cache_invalidate_hour))
+    @current_app.cache.cached(timeout = cache_timeout(cache_invalidate_hour()))
     def get(self, leaderboard='pitcher', handedness='NA', opponent_handedness='NA', league='NA', division='NA',
             team='NA', home_away='NA', year=datetime.now().strftime('%Y'), month='NA', half='NA', arbitrary_start='NA',
             arbitrary_end='NA'):
@@ -109,7 +109,7 @@ class Leaderboard_2(Resource):
 
 
 class Leaderboard_2_1(Resource):
-    @current_app.cache.cached(timeout = cache_timeout(cache_invalidate_hour))
+    @current_app.cache.cached(timeout = cache_timeout(cache_invalidate_hour()))
     def get(self, leaderboard='pitcher',tab='standard', handedness='NA', opponent_handedness='NA', league='NA', division='NA',
             team='NA', home_away='NA', year=datetime.now().strftime('%Y'), month='NA', half='NA', arbitrary_start='NA',
             arbitrary_end='NA'):

@@ -1,14 +1,13 @@
-from flask import g
+from flask import g, current_app
 import psycopg2
-import os
 import pandas as pd
 
 def get_connection():
     if ('db' not in g):
-        pl_host = os.getenv('PL_DB_HOST')
-        pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
-        pl_user = os.getenv('PL_DB_USER')
-        pl_password = os.getenv('PL_DB_PW')
+        pl_host = current_app.config.get('PL_DB_HOST')
+        pl_db = current_app.config.get('PL_DB_DATABASE')
+        pl_user = current_app.config.get('PL_DB_USER')
+        pl_password = current_app.config.get('PL_DB_PW')
         g.db = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
     
     return g.db
