@@ -383,28 +383,14 @@ def leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, le
             else:
                 woba_year = datetime.strptime(arbitrary_end, '%Y-%m-%d').strftime('%Y')
 
-        if leaderboard == 'pitcher':
-            raw['woba'] = raw.apply(
-                lambda row: round(weightedonbasepercentage(woba_year, row['num_ab'], row['num_bb'], row['num_ibb'],
-                                                     row['num_hbp'], row['num_sacrifice'], row['num_1b'],
-                                                     row['num_2b'], row['num_3b'], row['num_hr']), 3), axis=1)
-            raw.drop(['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b',
-                      'num_hr'], axis=1, inplace=True)
-        elif leaderboard == 'hitter':
+        if leaderboard == 'hitter':
             raw['woba'] = raw.apply(
                 lambda row: round(weightedonbasepercentage(woba_year, row['num_ab'], row['num_bb'], row['num_ibb'],
                                                      row['num_hbp'], row['num_sacrifice'], row['num_1b'],
                                                      row['num_2b'], row['num_3b'], row['num_hr']), 3), axis=1)
             raw.drop(['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b'],
                      axis=1, inplace=True)
-        elif leaderboard == 'pitch':
-            raw['woba'] = raw.apply(
-                lambda row: round(weightedonbasepercentage(woba_year, (row['num_out'] + row['num_hit']), row['num_bb'],
-                                                           row['num_ibb'], row['num_hbp'], row['num_sacrifice'],
-                                                           row['num_1b'], row['num_2b'], row['num_3b'],
-                                                           row['num_hr']), 3), axis=1)
-            raw.drop(['num_out', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b',
-                      'num_hr'] , axis=1, inplace=True)
+            
     # Need to implement feed for boxscore information into the DB
     # Need to add strike and ball to pl_leaderboard_v2 for pitchtype standard
 
