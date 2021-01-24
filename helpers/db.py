@@ -22,7 +22,7 @@ def fetch_dataframe(query, query_var=None):
         cursor_list = list()
         if (query_var):
             cursor_list.append(query_var)
-
+        
         try:
             cursor.execute(query, cursor_list)
         except Exception:
