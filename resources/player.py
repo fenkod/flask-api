@@ -2,6 +2,7 @@ from flask import current_app
 from flask_restful import Resource
 from helpers import fetch_dataframe, get_connection, create_player_query, create_player_positions_query, var_dump
 from cache import cache_timeout, cache_invalidate_hour
+from decimal import Decimal
 import json as json
 import pandas as pd
 
@@ -19,6 +20,7 @@ class Player(Resource):
         self.last_name = ''
         self.dob = ''
         self.is_pitcher = False
+        self.is_active = False
 
     def get(self, query_type='NA', player_id='NA'):
         # We can have an empty query_type or player_id which return the collections of stats.
@@ -37,6 +39,7 @@ class Player(Resource):
             self.last_name = player_info['name_last']
             self.dob = player_info['birth_date']
             self.is_pitcher = bool(player_info['ispitcher'])
+            self.is_active = bool(player_info['isactive'])
         
         return self.fetch_result(query_type, player_id)
 
@@ -112,7 +115,8 @@ class Player(Resource):
                 f'SELECT name_first,'
                     f'name_last,'
                     f'birth_date,'
-                    f'ispitcher '
+                    f'ispitcher,'
+                    f'isactive '
                 f'FROM pl_players '
                 f'WHERE mlbamid=%s;'
             )
@@ -128,13 +132,50 @@ class Player(Resource):
                     f'year_played AS "year",' 
                     f'opponent_handedness AS "split-RL",'
                     f'home_away AS "split-HA",'
+                    f'avg_velocity AS "mph",'
                     f'usage_pct AS "usage",'
                     f'batting_average AS "avg",' 
                     f'o_swing_pct AS "o-swing",'
                     f'zone_pct AS "zone",'
                     f'swinging_strike_pct AS "swinging-strike",'
                     f'called_strike_pct AS "called-strike",'
-                    f'csw_pct AS "csw" from player_page_repertoire '
+                    f'csw_pct AS "csw",'
+                    f'plus_pct AS "plus",'
+                    f'foul_pct AS "foul",'
+                    f'contact_pct AS "contact",'
+                    f'o_contact_pct AS "o-contact",'
+                    f'z_contact_pct AS "z-contact",'
+                    f'swing_pct AS "swing",'
+                    f'strike_pct AS "strike",'
+                    f'early_called_strike_pct AS "early-called-strike",'
+                    f'late_o_swing_pct AS "late-o-swing",'
+                    f'f_strike_pct AS "f-strike",'
+                    f'true_f_strike_pct AS "true-f-strike",'
+                    f'groundball_pct AS "groundball",'
+                    f'linedrive_pct AS "linedrive",'
+                    f'flyball_pct AS "flyball",'
+                    f'infield_flyball_pct AS "infield-fly",'
+                    f'weak_pct AS "weak",'
+                    f'medium_pct AS "medium",'
+                    f'hard_pct AS "hard",'
+                    f'pull_pct AS "pull",'
+                    f'opposite_field_pct AS "opposite-field",'
+                    f'babip_pct AS "babip",'
+                    f'bacon_pct AS "bacon",'
+                    f'armside_pct AS "armside",'
+                    f'gloveside_pct AS "gloveside",'
+                    f'vertical_middle_location_pct AS "v-mid",'
+                    f'horizonal_middle_location_pct AS "h-mid",'
+                    f'high_pct AS "high",'
+                    f'low_pct AS "low",'
+                    f'heart_pct AS "heart",'
+                    f'early_pct AS "early",'
+                    f'behind_pct AS "behind",'
+                    f'late_pct AS "late",'
+                    f'non_bip_strike_pct AS "non-bip-strike",'
+                    f'early_bip_pct AS "early-bip",'
+                    f'num_pitches AS "pitch-count", num_hits AS "hits", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strike AS "strikes", num_ball AS "balls" '
+                f'FROM player_page_repertoire '
                 f"WHERE pitchermlbamid = %s "
                 f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
             )
@@ -168,10 +209,9 @@ class Player(Resource):
 
         def repertoire():
             data['year'] = pd.to_numeric(data['year'], downcast='integer')
-            
-            data[['usage','avg','o-swing','zone','swinging-strike','called-strike','csw']] = data[['usage','avg','o-swing','zone','swinging-strike','called-strike','csw']].apply(pd.to_numeric)
-            formatted_data = data.set_index(['pitch','year','split-RL','split-HA'])
-            return formatted_data
+            formatted_results = data.set_index(['pitch','year','split-RL','split-HA'])
+
+            return formatted_results
 
         formatting = {
            "repertoire": repertoire,
@@ -245,14 +285,16 @@ class Player(Resource):
         def repertoire():
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
             results.fillna(value=json.dumps(None), inplace=True)
-
+            
             # Sort our DataFrame so we have a prettier JSON format for the API
-            output_dict = { 'player_id': player_id, query_type: {'pitches':{}} }
+            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
 
-            result_dict = results.to_dict(orient='index')
+            result_dict = json.loads(results.to_json(orient='index'))
+
             # Make sure our index keys exist in our dict structure then push on our data values
-            for key, value in result_dict.items():
-                
+            for keys, value in result_dict.items():
+                # json coversion returns tuple string
+                key = eval(keys)
                 pitch_key = key[0]
                 if pitch_key not in output_dict[query_type]['pitches']:
                     output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
@@ -267,6 +309,7 @@ class Player(Resource):
             
                 ha_split_key = key[3]
                 output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
+            
             return output_dict
 
         json_data = {
