@@ -2,7 +2,6 @@ from flask import current_app
 from flask_restful import Resource
 from helpers import fetch_dataframe, get_connection, create_player_query, create_player_positions_query, var_dump
 from cache import cache_timeout, cache_invalidate_hour
-from decimal import Decimal
 import json as json
 import pandas as pd
 
