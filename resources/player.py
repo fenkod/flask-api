@@ -207,7 +207,7 @@ class Player(Resource):
                 return data
 
         def repertoire():
-            data['year'] = pd.to_numeric(data['year'], downcast='integer')
+            #data['year'] = pd.to_numeric(data['year'], downcast='integer')
             formatted_results = data.set_index(['pitch','year','split-RL','split-HA'])
 
             return formatted_results
