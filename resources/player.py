@@ -140,7 +140,6 @@ class Player(Resource):
                         f'num_inside AS "inside",'
                         f'num_outside AS "outside",'
                         f'num_horizontal_middle AS "h-mid",'
-                        f'num_vertical_middle AS "v-mid",'
                         f'num_high AS "high",'
                         f'num_middle AS "mid",'
                         f'num_low AS "low",'
@@ -413,15 +412,17 @@ class Player(Resource):
                 output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'data': { 'game_id_index':{}, 'start': start, 'win': win, 'loss': loss, 'save': save, 'hold': hold, 'ip': ip, 'hits': hits, 'r': r, 'er': er, 'bb': bb, 'k': k, 'pitch_count': pitch_count, 'pa': pa, 'ab': ab, 'hbp': hbp, 'hr': hr, 'fb': fb, 'sac': sac, 'whiff': whiff, 'csw': csw }, 'logs': {} }
 
                 # Drop cols that are not displayed on the front end
-                results.drop(columns=['start','pa','ab','hbp','hr','fb','sac','whiff','csw'], inplace=True)
+                results.drop(columns=['start','pa','ab','hbp','hr','flyball','sac','whiff','csw'], inplace=True)
                 
                 # Ensure we have valid data for NaN entries using json.dumps of Python None object
                 results.fillna(value=json.dumps(None), inplace=True)
-                result_dict = results.to_dict(orient='index')
+                result_dict = json.loads(results.to_json(orient='index'))
                 index = 0
+
+                var_dump(result_dict)
                 
                 for key, value in result_dict.items():
-                    output_dict['data']['gameid_index'][key] = index
+                    output_dict['data']['game_id_index'][key] = index
                     output_dict['logs'][key] = value
                     output_dict['logs'][key]['index'] = index
                     index += 1
