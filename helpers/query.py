@@ -634,7 +634,7 @@ def create_player_query(player_id):
 
     sql_query = ''
 
-    table_select = 'SELECT mlbamid, playername, teamname, lastgame, ispitcher, name_first, name_last, birth_date FROM pl_players\n'
+    table_select = 'SELECT mlbamid, playername, teamid, lastgame, ispitcher, name_first, name_last, birth_date FROM pl_players\n'
     player_select = ''
 
     if player_id != 'NA':
