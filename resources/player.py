@@ -33,14 +33,13 @@ class Player(Resource):
         # Grab basic player data which tells us if we have a pitcher or hitter.
         # Also grabs career & current season stats
         if (type(player_id) is int):
-            info = self.fetch_result('info', player_id)
-            player_info = info[0]
+            player_info = self.fetch_result('info', player_id)
             self.player_id = int(player_id)
-            self.first_name = player_info['name_first']
-            self.last_name = player_info['name_last']
-            self.dob = player_info['birth_date']
-            self.is_pitcher = bool(player_info['ispitcher'])
-            self.is_active = bool(player_info['isactive'])
+            self.first_name = player_info[0]['name_first']
+            self.last_name = player_info[0]['name_last']
+            self.dob = player_info[0]['birth_date']
+            self.is_pitcher = bool(player_info[0]['is_pitcher'])
+            self.is_active = bool(player_info[0]['is_active'])
             self.career_stats = self.fetch_result('career', player_id)
         
         return self.fetch_result(query_type, player_id)
@@ -262,8 +261,8 @@ class Player(Resource):
                 f'SELECT name_first,'
                     f'name_last,'
                     f'birth_date,'
-                    f'ispitcher,'
-                    f'isactive '
+                    f'ispitcher AS "is_pitcher",'
+                    f'isactive AS "is_active" '
                 f'FROM pl_players '
                 f'WHERE mlbamid=%s;'
             )
@@ -378,6 +377,17 @@ class Player(Resource):
             
             # Allow date formatting to_json instead of to_dict. Convert back to dict with json.loads
             return json.loads(results.to_json(orient='records', date_format='iso'))
+
+        def bio():
+            # Ensure we have valid data for NaN entries using json.dumps of Python None object
+            results.fillna(value=json.dumps(None), inplace=True)
+            results['lastgame'] = pd.to_datetime(results['lastgame']).dt.strftime("%a %m/%d/%Y")
+            results['birth_date'] = pd.to_datetime(results['birth_date']).dt.strftime("%a %m/%d/%Y")
+
+            # Allow date formatting to_json instead of to_dict. Convert back to dict with json.loads
+            json_data = json.loads(results.to_json(orient='records', date_format='iso'))
+
+            return json_data[0]
         
         def career():
             results.fillna(value=json.dumps(None), inplace=True)
@@ -411,7 +421,6 @@ class Player(Resource):
 
                 # Convert datetime to usable json format
                 results['game-date'] = pd.to_datetime(results['game-date']).dt.strftime("%a %m/%d/%Y")
-
 
                 output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'data': { 'game_id_index':{}, 'start': start, 'win': win, 'loss': loss, 'save': save, 'hold': hold, 'ip': ip, 'hits': hits, 'r': r, 'er': er, 'bb': bb, 'k': k, 'pitch_count': pitch_count, 'pa': pa, 'ab': ab, 'hbp': hbp, 'hr': hr, 'fb': fb, 'sac': sac, 'whiff': whiff, 'csw': csw }, 'logs': {} }
 
@@ -470,6 +479,7 @@ class Player(Resource):
             return output_dict
 
         json_data = {
+            "bio": bio,
             "career": career,
             "gamelogs": gamelogs, 
             "repertoire": stats,
