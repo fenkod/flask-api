@@ -385,9 +385,7 @@ class Player(Resource):
             results['birth_date'] = pd.to_datetime(results['birth_date']).dt.strftime("%a %m/%d/%Y")
 
             # Allow date formatting to_json instead of to_dict. Convert back to dict with json.loads
-            json_data = json.loads(results.to_json(orient='records', date_format='iso'))
-
-            return json_data[0]
+            return json.loads(results.to_json(orient='records', date_format='iso'))
         
         def career():
             results.fillna(value=json.dumps(None), inplace=True)
