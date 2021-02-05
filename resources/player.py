@@ -109,11 +109,15 @@ class Player(Resource):
             if (self.is_pitcher):
                 return (
                     f'SELECT ghuid AS "gameid",'
+                        f'park,'
                         f'thrown_for_team AS "team-id",'
                         f'team,'
                         f'thrown_against_team AS "opponent-team-id",'
                         f'opponent,'
                         f'game_played AS "game-date",'
+                        f'team_result AS "team-result",'
+                        f'runs_scored AS "runs-scored",'
+                        f'opponent_runs_scored AS "opponent-runs-scored",'
                         f'start, win, loss, save, hold,' 
                         f'num_ip AS "ip",'
                         f'num_hit AS "hits",'
@@ -347,7 +351,7 @@ class Player(Resource):
             return formatted_data
 
         def gamelogs():
-            # data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch_count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch_count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric)
+            data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric,downcast='integer')
             formatted_data = data.set_index(['gameid'])
             return formatted_data
 
@@ -415,11 +419,9 @@ class Player(Resource):
                 results.drop(columns=['start','pa','ab','hbp','hr','flyball','sac','whiff','csw'], inplace=True)
                 
                 # Ensure we have valid data for NaN entries using json.dumps of Python None object
-                results.fillna(value=json.dumps(None), inplace=True)
+                results.fillna(value=0, inplace=True)
                 result_dict = json.loads(results.to_json(orient='index'))
                 index = 0
-
-                var_dump(result_dict)
                 
                 for key, value in result_dict.items():
                     output_dict['data']['game_id_index'][key] = index
