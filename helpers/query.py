@@ -634,11 +634,11 @@ def create_player_query(player_id):
 
     sql_query = ''
 
-    table_select = 'SELECT mlbamid, playername, teamid, lastgame, ispitcher AS "is_pitcher", isactive AS "is_active", name_first, name_last, birth_date FROM pl_players\n'
+    table_select = 'SELECT A.mlbamid, A.playername, A.teamid, B.abbreviation AS "team", A.lastgame, A.ispitcher AS "is_pitcher", A.isactive AS "is_active", A.name_first, A.name_last, A.birth_date FROM pl_players A, teams B WHERE A.teamid=B.team_id \n'
     player_select = ''
 
     if player_id != 'NA':
-        player_select = 'WHERE mlbamid = %s'
+        player_select = 'AND mlbamid = %s'
 
     sql_query = table_select + player_select
 
