@@ -9,7 +9,7 @@ import pandas as pd
 # This is the flask_restful Resource Class for the player API.
 # Current Enpoint Structure:
 # `/player/${query_type}/${player_id}`
-# @param ${query_type}: ('bio'|'stats'|'gamelogs'|'positions'|'repertoire'|'')
+# @param ${query_type}: ('bio'|'stats'|'gamelogs'|'positions'|'repertoire'|'abilities'|'locations'|'')
 # @param ${player_id}: ([0-9]*|'All')
 ##
 class Player(Resource):
@@ -82,6 +82,38 @@ class Player(Resource):
     def get_query(self, query_type, player_id):
         def default():
             return f"SELECT 'query not defined' AS error, '{query_type}' AS query, {player_id} AS id;"
+
+        def abilities():
+            return (
+                f'SELECT pitchermlbamid,'
+                    f'year,'
+                    f'g,'
+                    f'ip,'
+                    f'batting_average_percentile,'
+                    f'hr_9_percentile,'
+                    f'era_percentile,'
+                    f'k_pct_percentile,'
+                    f'bb_pct_percentile,'
+                    f'whip_pct_percentile,'
+                    f'csw_pct_percentile,'
+                    f'o_swing_pct_percentile,'
+                    f'babip_pct_percentile,'
+                    f'hr_fb_rate_percentile,'
+                    f'lob_pct_percentile,'
+                    f'flyball_pct_percentile,'
+                    f'groundball_pct_percentile,'
+                    f'woba_rhb_percentile,'
+                    f'woba_lhb_percentile,'
+                    f'swinging_strike_pct_percentile,'
+                    f'called_strike_pct_percentile,'
+                    f'hbp_percentile,'
+                    f'batting_average_risp_percentile,'
+                    f'batting_average_no_runners,'
+                    f'ips_percentile,'
+                    f'true_f_strike_pct_percentile '
+                f'FROM mv_pitcher_percentiles '
+                f'WHERE pitchermlbamid = %s;'
+            )
         
         def bio():
             return create_player_query(player_id)
@@ -98,7 +130,14 @@ class Player(Resource):
                         f'hld, '
                         f'ip, '
                         f'cg, '
-                        f'sho '
+                        f'sho, '
+                        f'runs, '
+                        f'unearned_runs, '
+                        f'earned_runs, '
+                        f'era, '
+                        f'whip, '
+                        f'lob_pct, '
+                        f'teams '
                     f'FROM mv_pitcher_career_stats '
                     f'WHERE pitchermlbamid = %s '
                     f'ORDER BY year ASC;'
@@ -266,7 +305,31 @@ class Player(Resource):
                 f'FROM pl_players '
                 f'WHERE mlbamid=%s;'
             )
-            
+
+        def locationlogs():
+            return (
+                f'SELECT ghuid AS "gameid",'
+                    f'pitchtype,'
+                    f'hitterside AS "split-RL",'
+                    f'array_agg(pitch_location) AS "pitch_locations" '
+                f'FROM pl_leaderboard_v2 '
+                f"WHERE pitchermlbamid = %s "
+                f'GROUP BY ghuid, pitchtype, hitterside '
+                f'ORDER BY ghuid;'
+            )
+
+        def locations():
+            return(
+                f'SELECT pitchtype,' 
+                    f'year_played AS "year",' 
+                    f'opponent_handedness AS "split-RL",'
+                    f'home_away AS "split-HA",'
+                    f'pitch_locations '
+                f'FROM player_page_repertoire '
+                f"WHERE pitchermlbamid = %s "
+                f"AND pitchtype <> 'All' AND year_played <> 'All' "
+                f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
+            )    
 
         def positions():
             # TODOD: Add in filtering by hitter/pitcher as playerid (complementing 'all' player_id)
@@ -279,6 +342,8 @@ class Player(Resource):
                     f'opponent_handedness AS "split-RL",'
                     f'home_away AS "split-HA",'
                     f'avg_velocity AS "velo_avg",'
+                    f'k_pct,'
+                    f'bb_pct,'
                     f'usage_pct,'
                     f'batting_average AS "batting_avg",' 
                     f'o_swing_pct,'
@@ -286,6 +351,7 @@ class Player(Resource):
                     f'swinging_strike_pct,'
                     f'called_strike_pct,'
                     f'csw_pct,'
+                    f'cswf_pct,'
                     f'plus_pct,'
                     f'foul_pct,'
                     f'contact_pct,'
@@ -300,10 +366,13 @@ class Player(Resource):
                     f'groundball_pct,'
                     f'linedrive_pct,'
                     f'flyball_pct,'
+                    f'hr_flyball_pct,'
+                    f'groundball_flyball_pct,'
                     f'infield_flyball_pct,'
                     f'weak_pct,'
                     f'medium_pct,'
                     f'hard_pct,'
+                    f'center_pct,'
                     f'pull_pct,'
                     f'opposite_field_pct,'
                     f'babip_pct,'
@@ -320,17 +389,20 @@ class Player(Resource):
                     f'late_pct,'
                     f'non_bip_strike_pct,'
                     f'early_bip_pct,'
-                    f'num_pitches AS "pitch-count", num_hits AS "hits", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strike AS "strikes", num_ball AS "balls" '
+                    f'num_pitches AS "pitch-count", num_hits AS "hits", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strike AS "strikes", num_ball AS "balls", num_foul AS "foul", num_ibb AS "ibb", num_hbp AS "hbp", num_wp AS "wp" '
                 f'FROM player_page_repertoire '
                 f"WHERE pitchermlbamid = %s "
                 f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
             )
         
         queries = {
+            "abilities": abilities,
             "bio": bio,
             "career": career,
             "gamelogs": gamelogs,
             "info": info,
+            "locationlogs": locationlogs,
+            "locations": locations,
             "positions": positions,
             "repertoire": stats,
             "stats": stats
@@ -349,6 +421,11 @@ class Player(Resource):
             formatted_data = data.set_index(['year'])
             return formatted_data
 
+        def locationlogs():
+            formatted_results = data.set_index(['gameid','pitchtype', 'split-RL'])
+
+            return formatted_results
+        
         def gamelogs():
             data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric,downcast='integer')
             formatted_data = data.set_index(['gameid'])
@@ -363,6 +440,8 @@ class Player(Resource):
         formatting = {
             "career": career,
             "gamelogs": gamelogs,
+            "locationlogs": locationlogs,
+            "locations": stats,
             "repertoire": stats,
             "stats": stats
         }
@@ -388,12 +467,12 @@ class Player(Resource):
             return json.loads(results.to_json(orient='records', date_format='iso'))
         
         def career():
-            results.fillna(value=json.dumps(None), inplace=True)
-            
+            results.fillna(value=json.dumps(None), inplace=True)            
+
             return json.loads(results.to_json(orient='index'))
 
         def gamelogs():
-            if ( self.is_pitcher):            
+            if (self.is_pitcher):            
                 # Set up columnar data for local browser storage and filters
                 # Front end can quickly slice on lookup of index in game_id_index data hash
                 start = results['start'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
@@ -423,7 +502,7 @@ class Player(Resource):
                 output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'data': { 'game_id_index':{}, 'start': start, 'win': win, 'loss': loss, 'save': save, 'hold': hold, 'ip': ip, 'hits': hits, 'r': r, 'er': er, 'bb': bb, 'k': k, 'pitch_count': pitch_count, 'pa': pa, 'ab': ab, 'hbp': hbp, 'hr': hr, 'fb': fb, 'sac': sac, 'whiff': whiff, 'csw': csw }, 'logs': {} }
 
                 # Drop cols that are not displayed on the front end
-                results.drop(columns=['start','pa','ab','hbp','hr','flyball','sac','whiff','csw'], inplace=True)
+                results.drop(columns=['start','pa','ab','sac','csw'], inplace=True)
                 
                 # Ensure we have valid data for NaN entries using json.dumps of Python None object
                 results.fillna(value=0, inplace=True)
@@ -441,9 +520,34 @@ class Player(Resource):
                 # TODO: Change from default to hitter Game log
                 # Ensure we have valid data for NaN entries using json.dumps of Python None object
                 results.fillna(value=json.dumps(None), inplace=True)
-            
+
                 # Allow date formatting to_json instead of to_dict. Convert back to dict with json.loads
                 return json.loads(results.to_json(orient='records', date_format='iso'))
+                
+        def locationlogs():
+            
+            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'logs': {} }
+            results.fillna(value=json.dumps(None), inplace=True)
+            result_dict = json.loads(results.to_json(orient='index'))
+            
+            for keys, value in result_dict.items():
+                # json coversion returns tuple string
+                key = eval(keys)
+                gameid_key = key[0]
+                if gameid_key not in output_dict['logs']:
+                    output_dict['logs'][gameid_key] = {'pitches':{}}
+
+                pitch_key = key[1]
+
+                if pitch_key not in output_dict['logs'][gameid_key]['pitches']:
+                    output_dict['logs'][gameid_key]['pitches'][pitch_key] = {'pitch_locations': [], 'splits':{}}
+                
+                rl_split_key = key[2]
+                if rl_split_key not in output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits']:
+                    output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits'][rl_split_key] = value
+                    output_dict['logs'][gameid_key]['pitches'][pitch_key]['pitch_locations'].extend(value['pitch_locations'])
+            
+            return output_dict
 
         def stats():
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
@@ -459,6 +563,7 @@ class Player(Resource):
                 # json coversion returns tuple string
                 key = eval(keys)
                 pitch_key = key[0]
+
                 if pitch_key not in output_dict[query_type]['pitches']:
                     output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
 
@@ -479,7 +584,9 @@ class Player(Resource):
         json_data = {
             "bio": bio,
             "career": career,
-            "gamelogs": gamelogs, 
+            "gamelogs": gamelogs,
+            "locationlogs": locationlogs,
+            "locations": stats, 
             "repertoire": stats,
             "stats": stats
         }
