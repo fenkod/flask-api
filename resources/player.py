@@ -84,36 +84,69 @@ class Player(Resource):
             return f"SELECT 'query not defined' AS error, '{query_type}' AS query, {player_id} AS id;"
 
         def abilities():
-            return (
-                f'SELECT pitchermlbamid,'
-                    f'year,'
-                    f'g,'
-                    f'ip,'
-                    f'batting_average_percentile,'
-                    f'hr_9_percentile,'
-                    f'era_percentile,'
-                    f'k_pct_percentile,'
-                    f'bb_pct_percentile,'
-                    f'whip_pct_percentile,'
-                    f'csw_pct_percentile,'
-                    f'o_swing_pct_percentile,'
-                    f'babip_pct_percentile,'
-                    f'hr_fb_rate_percentile,'
-                    f'lob_pct_percentile,'
-                    f'flyball_pct_percentile,'
-                    f'groundball_pct_percentile,'
-                    f'woba_rhb_percentile,'
-                    f'woba_lhb_percentile,'
-                    f'swinging_strike_pct_percentile,'
-                    f'called_strike_pct_percentile,'
-                    f'hbp_percentile,'
-                    f'batting_average_risp_percentile,'
-                    f'batting_average_no_runners,'
-                    f'ips_percentile,'
-                    f'true_f_strike_pct_percentile '
-                f'FROM mv_pitcher_percentiles '
-                f'WHERE pitchermlbamid = %s;'
-            )
+            if (self.is_pitcher):
+                return (
+                    f'SELECT pitchermlbamid,'
+                        f'year,'
+                        f'g,'
+                        f'ip,'
+                        f'batting_average_percentile,'
+                        f'hr_9_percentile,'
+                        f'era_percentile,'
+                        f'k_pct_percentile,'
+                        f'bb_pct_percentile,'
+                        f'whip_pct_percentile,'
+                        f'csw_pct_percentile,'
+                        f'o_swing_pct_percentile,'
+                        f'babip_pct_percentile,'
+                        f'hr_fb_rate_percentile,'
+                        f'lob_pct_percentile,'
+                        f'flyball_pct_percentile,'
+                        f'groundball_pct_percentile,'
+                        f'woba_rhb_percentile,'
+                        f'woba_lhb_percentile,'
+                        f'swinging_strike_pct_percentile,'
+                        f'called_strike_pct_percentile,'
+                        f'hbp_percentile,'
+                        f'batting_average_risp_percentile,'
+                        f'batting_average_no_runners,'
+                        f'ips_percentile,'
+                        f'true_f_strike_pct_percentile '
+                    f'FROM mv_pitcher_percentiles '
+                    f'WHERE pitchermlbamid = %s;'
+                )
+            else:
+                return (
+                    f'SELECT hittermlbamid,'
+                        f'year, '
+                        f'pa, '
+                        f'batting_average_percentile, '
+                        f'hr_pa_rate_percentile, '
+                        f'r_percentile, '
+                        f'rbi_percentile, '
+                        f'k_pct_percentile, '
+                        f'bb_pct_percentile, '
+                        f'sb_percentile, '
+                        f'cs_percentile, '
+                        f'o_swing_pct_percentile, '
+                        f'babip_pct_percentile, '
+                        f'flyball_pct_percentile, '
+                        f'linedrive_pct_percentile, '
+                        f'groundball_pct_percentile, '
+                        f'woba_rhb_percentile, '
+                        f'woba_lhb_percentile, '
+                        f'swinging_strike_pct_percentile, '
+                        f'hbp_percentile, '
+                        f'triples_percentile, '
+                        f'doubles_percentile, '
+                        f'ops_percentile, '
+                        f'pull_pct_percentile, '
+                        f'oppo_pct_percentile, '
+                        f'swing_pct_percentile, '
+                        f'obp_pct_percentile '
+                    f'FROM mv_hitter_percentiles '
+                    f'WHERE hittermlbamid = %s;'
+                )
         
         def bio():
             return create_player_query(player_id)
@@ -140,6 +173,19 @@ class Player(Resource):
                         f'teams '
                     f'FROM mv_pitcher_career_stats '
                     f'WHERE pitchermlbamid = %s '
+                    f'ORDER BY year ASC;'
+                )
+            else:
+                return (
+                    f'SELECT year::text AS "year", '
+                        f'g,'
+                        f'runs, '
+                        f'rbi, '
+                        f'sb, '
+                        f'cs, '
+                        f'teams '
+                    f'FROM mv_hitter_career_stats '
+                    f'WHERE hittermlbamid = %s '
                     f'ORDER BY year ASC;'
                 )
 
@@ -285,14 +331,52 @@ class Player(Resource):
                     f'ORDER BY year_played DESC, month_played DESC, ghuid DESC;'
                 )
             else:
-                #f'SELECT ghuid AS "mlb_game_id",'
-                #        f'game_played AS "game_date",'
-                #        f'num_plate_appearance AS "pa", num_hit AS "hits", num_runs AS "r", num_rbi AS "rbi", num_hr AS "hr", num_sb as "sb", num_cs AS "cs", num_bb AS "bb" ' 
-                #    f'FROM mv_hitter_game_logs '
-                #    f'WHERE hittermlbamid=%s ' 
-                #    f'ORDER BY year_played DESC, month_played DESC, ghuid DESC;'
                 return (
-                    f'SELECT * FROM mv_hitter_game_logs WHERE hittermlbamid=%s ORDER BY year_played DESC, month_played DESC, ghuid DESC;'
+                    f'SELECT ghuid AS "gameid",'
+                        f'park,'
+                        f'team_id AS "team-id",'
+                        f'team AS "team",'
+                        f'opponent_team_id AS "opponent-team-id",'
+                        f'opponent,'
+                        f'game_played AS "game-date",'
+                        f'team_result AS "team-result",'
+                        f'runs_scored AS "runs-scored",'
+                        f'opponent_runs_scored AS "opponent-runs-scored",'
+                        f'num_plate_appearance AS "pa",' 
+                        f'num_hit AS "hits",' 
+                        f'num_runs AS "r", '
+                        f'num_rbi AS "rbi", '
+                        f'num_sb as "sb", '
+                        f'num_cs AS "cs", '
+                        f'num_bb AS "bb", '
+                        f'num_at_bat AS "ab", '
+                        f'num_intentional_walk AS "ibb", '
+                        f'num_hbp AS "hbp", '
+                        f'num_sacrifice AS "sac", ' 
+                        f'num_single AS "1b", '
+                        f'num_double AS "2b", '
+                        f'num_triple AS "3b", '
+                        f'num_hr AS "hr", '
+                        f'num_total_bases AS "total-bases", '
+                        f'num_k AS "k", '
+                        f'num_flyball AS "flyball", '
+                        f'num_whiff AS "whiff", '
+                        f'num_pitches AS "pitch-count", '
+                        f'num_barrel AS "barrel", '
+                        f'num_called_strike_plus_whiff AS "csw", '
+                        f'batting_average AS "batting_avg", '
+                        f'onbase_pct, '
+                        f'slugging_pct, '
+                        f'strikeout_pct, '
+                        f'bb_pct, '
+                        f'babip_pct, '
+                        f'hr_fb_pct, '
+                        f'swinging_strike_pct, '
+                        f'csw_pct, '
+                        f'barrel_pct '
+                    f'FROM mv_hitter_game_logs '
+                    f'WHERE hittermlbamid=%s ' 
+                    f'ORDER BY year_played DESC, month_played DESC, ghuid DESC;'
                 )
 
         def info():
@@ -307,94 +391,179 @@ class Player(Resource):
             )
 
         def locationlogs():
-            return (
-                f'SELECT ghuid AS "gameid",'
-                    f'pitchtype,'
-                    f'hitterside AS "split-RL",'
-                    f'array_agg(pitch_location) AS "pitch_locations" '
-                f'FROM pl_leaderboard_v2 '
-                f"WHERE pitchermlbamid = %s "
-                f'GROUP BY ghuid, pitchtype, hitterside '
-                f'ORDER BY ghuid;'
-            )
+            if (self.is_pitcher):
+                return (
+                    f'SELECT ghuid AS "gameid",'
+                        f'pitchtype,'
+                        f'hitterside AS "split-RL",'
+                        f'array_agg(pitch_location) AS "pitch_locations" '
+                    f'FROM pl_leaderboard_v2 '
+                    f"WHERE pitchermlbamid = %s "
+                    f'GROUP BY ghuid, pitchtype, hitterside '
+                    f'ORDER BY ghuid;'
+                )
+            else:
+                return (
+                    f'SELECT ghuid AS "gameid",'
+                        f'pitchtype,'
+                        f'hitterside AS "split-RL",'
+                        f'array_agg(pitch_location) AS "pitch_locations" '
+                    f'FROM pl_leaderboard_v2 '
+                    f"WHERE pitchermlbamid = %s "
+                    f'GROUP BY ghuid, pitchtype, hitterside '
+                    f'ORDER BY ghuid;'
+                )
 
         def locations():
-            return(
-                f'SELECT pitchtype,' 
-                    f'year_played AS "year",' 
-                    f'opponent_handedness AS "split-RL",'
-                    f'home_away AS "split-HA",'
-                    f'pitch_locations '
-                f'FROM player_page_repertoire '
-                f"WHERE pitchermlbamid = %s "
-                f"AND pitchtype <> 'All' AND year_played <> 'All' "
-                f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
-            )    
+            if (self.is_pitcher):
+                return(
+                    f'SELECT pitchtype,' 
+                        f'year_played AS "year",' 
+                        f'opponent_handedness AS "split-RL",'
+                        f'home_away AS "split-HA",'
+                        f'pitch_locations '
+                    f'FROM player_page_repertoire '
+                    f"WHERE pitchermlbamid = %s "
+                    f"AND pitchtype <> 'All' AND year_played <> 'All' "
+                    f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
+                )
+            else:
+                return(
+                    f'SELECT pitchtype,' 
+                        f'year_played AS "year",' 
+                        f'opponent_handedness AS "split-RL",'
+                        f'home_away AS "split-HA",'
+                        f'pitch_locations '
+                    f'FROM player_page_repertoire '
+                    f"WHERE pitchermlbamid = %s "
+                    f"AND pitchtype <> 'All' AND year_played <> 'All' "
+                    f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
+                )    
 
         def positions():
             # TODOD: Add in filtering by hitter/pitcher as playerid (complementing 'all' player_id)
             return create_player_positions_query(player_id)
 
         def stats():
-            return (
-                f'SELECT pitchtype,' 
-                    f'year_played AS "year",' 
-                    f'opponent_handedness AS "split-RL",'
-                    f'home_away AS "split-HA",'
-                    f'avg_velocity AS "velo_avg",'
-                    f'k_pct,'
-                    f'bb_pct,'
-                    f'usage_pct,'
-                    f'batting_average AS "batting_avg",' 
-                    f'o_swing_pct,'
-                    f'zone_pct,'
-                    f'swinging_strike_pct,'
-                    f'called_strike_pct,'
-                    f'csw_pct,'
-                    f'cswf_pct,'
-                    f'plus_pct,'
-                    f'foul_pct,'
-                    f'contact_pct,'
-                    f'o_contact_pct,'
-                    f'z_contact_pct,'
-                    f'swing_pct,'
-                    f'strike_pct,'
-                    f'early_called_strike_pct,'
-                    f'late_o_swing_pct,'
-                    f'f_strike_pct,'
-                    f'true_f_strike_pct,'
-                    f'groundball_pct,'
-                    f'linedrive_pct,'
-                    f'flyball_pct,'
-                    f'hr_flyball_pct,'
-                    f'groundball_flyball_pct,'
-                    f'infield_flyball_pct,'
-                    f'weak_pct,'
-                    f'medium_pct,'
-                    f'hard_pct,'
-                    f'center_pct,'
-                    f'pull_pct,'
-                    f'opposite_field_pct,'
-                    f'babip_pct,'
-                    f'bacon_pct,'
-                    f'armside_pct,'
-                    f'gloveside_pct,'
-                    f'vertical_middle_location_pct AS "v_mid_pct",'
-                    f'horizonal_middle_location_pct AS "h_mid_pct",'
-                    f'high_pct,'
-                    f'low_pct,'
-                    f'heart_pct,'
-                    f'early_pct,'
-                    f'behind_pct,'
-                    f'late_pct,'
-                    f'non_bip_strike_pct,'
-                    f'early_bip_pct,'
-                    f'num_pitches AS "pitch-count", num_hits AS "hits", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strike AS "strikes", num_ball AS "balls", num_foul AS "foul", num_ibb AS "ibb", num_hbp AS "hbp", num_wp AS "wp" '
-                f'FROM player_page_repertoire '
-                f"WHERE pitchermlbamid = %s "
-                f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
-            )
-        
+            if (self.is_pitcher):
+                return (
+                    f'SELECT pitchtype,' 
+                        f'year_played AS "year",' 
+                        f'opponent_handedness AS "split-RL",'
+                        f'home_away AS "split-HA",'
+                        f'avg_velocity AS "velo_avg",'
+                        f'k_pct,'
+                        f'bb_pct,'
+                        f'usage_pct,'
+                        f'batting_average AS "batting_avg",' 
+                        f'o_swing_pct,'
+                        f'zone_pct,'
+                        f'swinging_strike_pct,'
+                        f'called_strike_pct,'
+                        f'csw_pct,'
+                        f'cswf_pct,'
+                        f'plus_pct,'
+                        f'foul_pct,'
+                        f'contact_pct,'
+                        f'o_contact_pct,'
+                        f'z_contact_pct,'
+                        f'swing_pct,'
+                        f'strike_pct,'
+                        f'early_called_strike_pct,'
+                        f'late_o_swing_pct,'
+                        f'f_strike_pct,'
+                        f'true_f_strike_pct,'
+                        f'groundball_pct,'
+                        f'linedrive_pct,'
+                        f'flyball_pct,'
+                        f'hr_flyball_pct,'
+                        f'groundball_flyball_pct,'
+                        f'infield_flyball_pct,'
+                        f'weak_pct,'
+                        f'medium_pct,'
+                        f'hard_pct,'
+                        f'center_pct,'
+                        f'pull_pct,'
+                        f'opposite_field_pct,'
+                        f'babip_pct,'
+                        f'bacon_pct,'
+                        f'armside_pct,'
+                        f'gloveside_pct,'
+                        f'vertical_middle_location_pct AS "v_mid_pct",'
+                        f'horizonal_middle_location_pct AS "h_mid_pct",'
+                        f'high_pct,'
+                        f'low_pct,'
+                        f'heart_pct,'
+                        f'early_pct,'
+                        f'behind_pct,'
+                        f'late_pct,'
+                        f'non_bip_strike_pct,'
+                        f'early_bip_pct,'
+                        f'num_pitches AS "pitch-count", num_hits AS "hits", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strike AS "strikes", num_ball AS "balls", num_foul AS "foul", num_ibb AS "ibb", num_hbp AS "hbp", num_wp AS "wp" '
+                    f'FROM player_page_repertoire '
+                    f"WHERE pitchermlbamid = %s "
+                    f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
+                )
+            else:
+                return (
+                    f'SELECT pitchtype,' 
+                        f'year_played AS "year",' 
+                        f'opponent_handedness AS "split-RL",'
+                        f'home_away AS "split-HA",'
+                        f'avg_velocity AS "velo_avg",'
+                        f'k_pct,'
+                        f'bb_pct,'
+                        f'usage_pct,'
+                        f'batting_average AS "batting_avg",' 
+                        f'o_swing_pct,'
+                        f'zone_pct,'
+                        f'swinging_strike_pct,'
+                        f'called_strike_pct,'
+                        f'csw_pct,'
+                        f'cswf_pct,'
+                        f'plus_pct,'
+                        f'foul_pct,'
+                        f'contact_pct,'
+                        f'o_contact_pct,'
+                        f'z_contact_pct,'
+                        f'swing_pct,'
+                        f'strike_pct,'
+                        f'early_called_strike_pct,'
+                        f'late_o_swing_pct,'
+                        f'f_strike_pct,'
+                        f'true_f_strike_pct,'
+                        f'groundball_pct,'
+                        f'linedrive_pct,'
+                        f'flyball_pct,'
+                        f'hr_flyball_pct,'
+                        f'groundball_flyball_pct,'
+                        f'infield_flyball_pct,'
+                        f'weak_pct,'
+                        f'medium_pct,'
+                        f'hard_pct,'
+                        f'center_pct,'
+                        f'pull_pct,'
+                        f'opposite_field_pct,'
+                        f'babip_pct,'
+                        f'bacon_pct,'
+                        f'armside_pct,'
+                        f'gloveside_pct,'
+                        f'vertical_middle_location_pct AS "v_mid_pct",'
+                        f'horizonal_middle_location_pct AS "h_mid_pct",'
+                        f'high_pct,'
+                        f'low_pct,'
+                        f'heart_pct,'
+                        f'early_pct,'
+                        f'behind_pct,'
+                        f'late_pct,'
+                        f'non_bip_strike_pct,'
+                        f'early_bip_pct,'
+                        f'num_pitches AS "pitch-count", num_hits AS "hits", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strike AS "strikes", num_ball AS "balls", num_foul AS "foul", num_ibb AS "ibb", num_hbp AS "hbp", num_wp AS "wp" '
+                    f'FROM player_page_repertoire '
+                    f"WHERE pitchermlbamid = %s "
+                    f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
+                )
+
         queries = {
             "abilities": abilities,
             "bio": bio,
@@ -416,8 +585,10 @@ class Player(Resource):
             return data
 
         def career():
-            data['ip'] = pd.to_numeric(data['ip'], downcast='integer')
-            data[['g','gs','w','l','sv','hld','cg','sho']] = data[['g','gs','w','l','sv','hld','cg','sho']].apply(pd.to_numeric,downcast='integer')
+            if (self.is_pitcher):
+                data['ip'] = pd.to_numeric(data['ip'], downcast='integer')
+                data[['g','gs','w','l','sv','hld','cg','sho']] = data[['g','gs','w','l','sv','hld','cg','sho']].apply(pd.to_numeric,downcast='integer')
+
             formatted_data = data.set_index(['year'])
             return formatted_data
 
@@ -427,7 +598,11 @@ class Player(Resource):
             return formatted_results
         
         def gamelogs():
-            data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric,downcast='integer')
+            if (self.is_pitcher):
+                data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric,downcast='integer')
+            #else: 
+            #    data[['runs-scored','opponent-runs-scored','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric,downcast='integer')
+
             formatted_data = data.set_index(['gameid'])
             return formatted_data
 
@@ -472,7 +647,24 @@ class Player(Resource):
             return json.loads(results.to_json(orient='index'))
 
         def gamelogs():
-            if (self.is_pitcher):            
+            results.fillna(value=json.dumps(None), inplace=True)
+
+            # Common Stats
+            hits = results['hits'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            r = results['r'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            bb = results['bb'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            k = results['k'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            pitch_count = results['pitch-count'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            pa = results['pa'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            ab = results['ab'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            hbp = results['hbp'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            hr = results['hr'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            fb = results['flyball'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            sac = results['sac'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            whiff = results['whiff'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+            csw = results['csw'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+
+            if (self.is_pitcher):
                 # Set up columnar data for local browser storage and filters
                 # Front end can quickly slice on lookup of index in game_id_index data hash
                 start = results['start'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
@@ -481,31 +673,17 @@ class Player(Resource):
                 save = results['save'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
                 hold = results['hold'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
                 ip = results['ip'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                hits = results['hits'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                r = results['r'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
                 er = results['er'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                bb = results['bb'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                k = results['k'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                pitch_count = results['pitch-count'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                pa = results['pa'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                ab = results['ab'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                hbp = results['hbp'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                hr = results['hr'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                fb = results['flyball'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                sac = results['sac'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                whiff = results['whiff'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
-                csw = results['csw'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
 
                 # Convert datetime to usable json format
                 results['game-date'] = pd.to_datetime(results['game-date']).dt.strftime("%a %m/%d/%Y")
 
-                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'data': { 'game_id_index':{}, 'start': start, 'win': win, 'loss': loss, 'save': save, 'hold': hold, 'ip': ip, 'hits': hits, 'r': r, 'er': er, 'bb': bb, 'k': k, 'pitch_count': pitch_count, 'pa': pa, 'ab': ab, 'hbp': hbp, 'hr': hr, 'fb': fb, 'sac': sac, 'whiff': whiff, 'csw': csw }, 'logs': {} }
+                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'data': { 'game_id_index':{}, 'start': start, 'win': win, 'loss': loss, 'save': save, 'hold': hold, 'ip': ip, 'hits': hits, 'r': r, 'er': er, 'bb': bb, 'k': k, 'pitch_count': pitch_count, 'pa': pa, 'ab': ab, 'hbp': hbp, 'hr': hr, 'flyball': fb, 'sac': sac, 'whiff': whiff, 'csw': csw }, 'logs': {} }
 
                 # Drop cols that are not displayed on the front end
                 results.drop(columns=['start','pa','ab','sac','csw'], inplace=True)
                 
                 # Ensure we have valid data for NaN entries using json.dumps of Python None object
-                results.fillna(value=0, inplace=True)
                 result_dict = json.loads(results.to_json(orient='index'))
                 index = 0
                 
@@ -517,12 +695,27 @@ class Player(Resource):
 
                 return output_dict
             else:
-                # TODO: Change from default to hitter Game log
-                # Ensure we have valid data for NaN entries using json.dumps of Python None object
-                results.fillna(value=json.dumps(None), inplace=True)
+                rbi = results['rbi'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+                bases = results['total-bases'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+                barrel = results['barrel'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+                sb = results['sb'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
+                cs = results['cs'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
 
-                # Allow date formatting to_json instead of to_dict. Convert back to dict with json.loads
-                return json.loads(results.to_json(orient='records', date_format='iso'))
+                # Convert datetime to usable json format
+                results['game-date'] = pd.to_datetime(results['game-date']).dt.strftime("%a %m/%d/%Y")
+
+                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'data': { 'game_id_index':{}, 'hits': hits, 'r': r, 'bb': bb, 'k': k, 'sb': sb, 'cs': cs, 'rbi': rbi, 'total-bases': bases, 'barrel': barrel, 'pitch_count': pitch_count, 'pa': pa, 'ab': ab, 'hbp': hbp, 'hr': hr, 'flyball': fb, 'sac': sac, 'whiff': whiff, 'csw': csw }, 'logs': {} }
+                
+                result_dict = json.loads(results.to_json(orient='index'))
+                index = 0
+                
+                for key, value in result_dict.items():
+                    output_dict['data']['game_id_index'][key] = index
+                    output_dict['logs'][key] = value
+                    output_dict['logs'][key]['index'] = index
+                    index += 1
+
+                return output_dict
                 
         def locationlogs():
             
