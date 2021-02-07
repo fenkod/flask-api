@@ -9,7 +9,7 @@ import pandas as pd
 # This is the flask_restful Resource Class for the player API.
 # Current Enpoint Structure:
 # `/player/${query_type}/${player_id}`
-# @param ${query_type}: ('bio'|'stats'|'gamelogs'|'positions'|'repertoire'|'abilities'|'locations'|'')
+# @param ${query_type}: ('bio'|'stats'|'gamelogs'|'positions'|'repertoire'|'abilities'|'locations'|'locationlogs'|'career'|'')
 # @param ${player_id}: ([0-9]*|'All')
 ##
 class Player(Resource):
@@ -422,7 +422,7 @@ class Player(Resource):
             return formatted_data
 
         def locationlogs():
-            formatted_results = data.set_index(['gameid','pitchtype', 'split-RL'])
+            formatted_results = data.set_index(['gameid','pitchtype','split-RL'])
 
             return formatted_results
         
