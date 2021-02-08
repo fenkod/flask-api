@@ -19,6 +19,7 @@ class Player(Resource):
         self.last_name = ''
         self.dob = ''
         self.is_pitcher = False
+        self.is_hitter = False
         self.is_active = False
         self.career_stats = {}
 
@@ -155,7 +156,7 @@ class Player(Resource):
             if (self.is_pitcher):
                 return (
                     f'SELECT year::text AS "year", '
-                        f'g,'
+                        f'g, '
                         f'gs, '
                         f'w, '
                         f'l, '
@@ -170,6 +171,11 @@ class Player(Resource):
                         f'era, '
                         f'whip, '
                         f'lob_pct, '
+                        f'k_pct, '
+                        f'bb_pct, '
+                        f'hr_flyball_pct, '
+                        f'hbp, '
+                        f'wp, '
                         f'teams '
                     f'FROM mv_pitcher_career_stats '
                     f'WHERE pitchermlbamid = %s '
@@ -393,13 +399,22 @@ class Player(Resource):
         def locationlogs():
             if (self.is_pitcher):
                 return (
-                    f'SELECT ghuid AS "gameid",'
+                    f'SELECT DISTINCT ghuid AS "gameid",'
                         f'pitchtype,'
                         f'hitterside AS "split-RL",'
-                        f'array_agg(pitch_location) AS "pitch_locations" '
-                    f'FROM pl_leaderboard_v2 '
+                        f'pitch_locations, '
+                        f'num_pitches AS "pitch-count", '
+                        f'usage_pct, '
+                        f'whiff, '
+                        f'called_strike, '
+                        f'csw_pct, '
+                        f'zone_pct, '
+                        f'zone_swing_pct, '
+                        f'swinging_strike_pct, '
+                        f'o_swing_pct, '
+                        f'avg_velocity '
+                    f'FROM mv_pitcher_game_log_pitches '
                     f"WHERE pitchermlbamid = %s "
-                    f'GROUP BY ghuid, pitchtype, hitterside '
                     f'ORDER BY ghuid;'
                 )
             else:
@@ -506,23 +521,18 @@ class Player(Resource):
                 )
             else:
                 return (
-                    f'SELECT pitchtype,' 
+                    f'SELECT ' 
                         f'year_played AS "year",' 
                         f'opponent_handedness AS "split-RL",'
                         f'home_away AS "split-HA",'
-                        f'avg_velocity AS "velo_avg",'
-                        f'k_pct,'
-                        f'bb_pct,'
-                        f'usage_pct,'
                         f'batting_average AS "batting_avg",' 
                         f'o_swing_pct,'
                         f'zone_pct,'
                         f'swinging_strike_pct,'
                         f'called_strike_pct,'
-                        f'csw_pct,'
-                        f'cswf_pct,'
-                        f'plus_pct,'
+                        f'avg_velocity AS "velo_avg",'
                         f'foul_pct,'
+                        f'plus_pct,'
                         f'contact_pct,'
                         f'o_contact_pct,'
                         f'z_contact_pct,'
@@ -535,13 +545,10 @@ class Player(Resource):
                         f'groundball_pct,'
                         f'linedrive_pct,'
                         f'flyball_pct,'
-                        f'hr_flyball_pct,'
-                        f'groundball_flyball_pct,'
                         f'infield_flyball_pct,'
                         f'weak_pct,'
                         f'medium_pct,'
                         f'hard_pct,'
-                        f'center_pct,'
                         f'pull_pct,'
                         f'opposite_field_pct,'
                         f'babip_pct,'
@@ -558,10 +565,16 @@ class Player(Resource):
                         f'late_pct,'
                         f'non_bip_strike_pct,'
                         f'early_bip_pct,'
-                        f'num_pitches AS "pitch-count", num_hits AS "hits", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strike AS "strikes", num_ball AS "balls", num_foul AS "foul", num_ibb AS "ibb", num_hbp AS "hbp", num_wp AS "wp" '
-                    f'FROM player_page_repertoire '
-                    f"WHERE pitchermlbamid = %s "
-                    f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
+                        f'onbase_pct,'
+                        f'k_pct,'
+                        f'bb_pct,'
+                        f'early_o_contact_pct,'
+                        f'late_o_contact_pct,'
+                        f'first_pitch_swing_pct,'
+                        f'num_pitches AS "pitch-count", num_hits AS "hits", num_rbi AS "rbi", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strike AS "strikes", num_ball AS "balls" '
+                    f'FROM mv_hitter_page_stats '
+                    f"WHERE hittermlbamid = %s "
+                    f'ORDER BY year_played, opponent_handedness, home_away;'
                 )
 
         queries = {
@@ -594,7 +607,7 @@ class Player(Resource):
 
         def locationlogs():
             formatted_results = data.set_index(['gameid','pitchtype','split-RL'])
-
+            
             return formatted_results
         
         def gamelogs():
@@ -607,8 +620,10 @@ class Player(Resource):
             return formatted_data
 
         def stats():
-            #data['year'] = pd.to_numeric(data['year'], downcast='integer')
-            formatted_results = data.set_index(['pitchtype','year','split-RL','split-HA'])
+            if (self.is_pitcher):
+                formatted_results = data.set_index(['pitchtype','year','split-RL','split-HA'])
+            else:
+                formatted_results = data.set_index(['year','split-RL','split-HA'])
 
             return formatted_results
 
@@ -642,12 +657,13 @@ class Player(Resource):
             return json.loads(results.to_json(orient='records', date_format='iso'))
         
         def career():
-            results.fillna(value=json.dumps(None), inplace=True)            
-
-            return json.loads(results.to_json(orient='index'))
+            results.fillna(value=0, inplace=True)            
+            output = json.loads(results.to_json(orient='index'))
+            
+            return output
 
         def gamelogs():
-            results.fillna(value=json.dumps(None), inplace=True)
+            results.fillna(value=0, inplace=True)
 
             # Common Stats
             hits = results['hits'].to_numpy(dtype=int,copy=True,na_value=0).tolist()
@@ -718,9 +734,8 @@ class Player(Resource):
                 return output_dict
                 
         def locationlogs():
-            
             output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'logs': {} }
-            results.fillna(value=json.dumps(None), inplace=True)
+            results.fillna(value=0, inplace=True)
             result_dict = json.loads(results.to_json(orient='index'))
             
             for keys, value in result_dict.items():
@@ -733,44 +748,63 @@ class Player(Resource):
                 pitch_key = key[1]
 
                 if pitch_key not in output_dict['logs'][gameid_key]['pitches']:
-                    output_dict['logs'][gameid_key]['pitches'][pitch_key] = {'pitch_locations': [], 'splits':{}}
+                    output_dict['logs'][gameid_key]['pitches'][pitch_key] = {'splits':{}}
                 
                 rl_split_key = key[2]
                 if rl_split_key not in output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits']:
                     output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits'][rl_split_key] = value
-                    output_dict['logs'][gameid_key]['pitches'][pitch_key]['pitch_locations'].extend(value['pitch_locations'])
             
             return output_dict
 
         def stats():
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
             results.fillna(value=json.dumps(None), inplace=True)
-            
-            # Sort our DataFrame so we have a prettier JSON format for the API
-            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
 
             result_dict = json.loads(results.to_json(orient='index'))
 
-            # Make sure our index keys exist in our dict structure then push on our data values
-            for keys, value in result_dict.items():
-                # json coversion returns tuple string
-                key = eval(keys)
-                pitch_key = key[0]
+            if (self.is_pitcher):
+                # Sort our DataFrame so we have a prettier JSON format for the API
+                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
 
-                if pitch_key not in output_dict[query_type]['pitches']:
-                    output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
+                # Make sure our index keys exist in our dict structure then push on our data values
+                for keys, value in result_dict.items():
+                    # json coversion returns tuple string
+                    key = eval(keys)
+                    pitch_key = key[0]
 
-                year_key = key[1]
-                stats = { 'total': self.career_stats[year_key], 'splits':{} } if (pitch_key == 'All') else { 'splits':{} }
-                if year_key not in output_dict[query_type]['pitches'][pitch_key]['years']:
-                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = stats
+                    if pitch_key not in output_dict[query_type]['pitches']:
+                        output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
+
+                    year_key = key[1]
+                    stats = { 'total': self.career_stats[year_key], 'splits':{} } if (pitch_key == 'All') else { 'splits':{} }
+                    if year_key not in output_dict[query_type]['pitches'][pitch_key]['years']:
+                        output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = stats
+                    
+                    rl_split_key = key[2]
+                    if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
+                        output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
                 
-                rl_split_key = key[2]
-                if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
-                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
-            
-                ha_split_key = key[3]
-                output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
+                    ha_split_key = key[3]
+                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
+            else:
+                # Sort our DataFrame so we have a prettier JSON format for the API
+                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'years':{}} }
+
+                # Make sure our index keys exist in our dict structure then push on our data values
+                for keys, value in result_dict.items():
+                    # json coversion returns tuple string
+                    key = eval(keys)
+
+                    year_key = key[0]
+                    if year_key not in output_dict[query_type]['years']:
+                        output_dict[query_type]['years'][year_key] = { 'splits':{} }
+                    
+                    rl_split_key = key[1]
+                    if rl_split_key not in output_dict[query_type]['years'][year_key]['splits']:
+                        output_dict[query_type]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
+                
+                    ha_split_key = key[2]
+                    output_dict[query_type]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
             
             return output_dict
 
