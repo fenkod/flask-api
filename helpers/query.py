@@ -246,8 +246,7 @@ def select_generator(leaderboard, tab):
 
     leaderboard_tabs = {
         "pitch": {
-            "advanced": ['avg_velocity', 'avg_launch_speed', 'avg_launch_angle', 'avg_release_extension',
-                         'avg_spin_rate', 'barrel_pct', 'avg_x_movement', 'avg_z_movement', 'plus_pct', 'num_pitches'],
+            "advanced": ['avg_velocity', 'barrel_pct', 'plus_pct', 'num_pitches'],
             "approach": ['armside_pct','horizonal_middle_location_pct', 'gloveside_pct', 'high_pct',
                          'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'early_pct','behind_pct', 'late_pct',
                          'zone_pct', 'non_bip_strike_pct', 'early_bip_pct', 'num_pitches'],
@@ -258,13 +257,12 @@ def select_generator(leaderboard, tab):
                             'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'avg_launch_speed',
                             'avg_launch_angle', 'babip_pct', 'bacon_pct', 'num_pitches'],
             "overview": ['avg_velocity', 'usage_pct', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct',
-                         'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'woba', 'num_pitches'],
+                         'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'num_pitches'],
             "standard": ['num_pitches', 'num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb',
                          'batting_average']
         },
         "pitcher": {
-            "advanced": ['avg_velocity', 'avg_launch_speed','avg_launch_angle', 'avg_release_extension',
-                         'avg_spin_rate', 'barrel_pct', 'foul_pct', 'plus_pct', 'num_ip'],
+            "advanced": ['avg_velocity', 'barrel_pct', 'foul_pct', 'plus_pct', 'num_ip'],
             "approach": ['armside_pct', 'horizonal_middle_location_pct', 'gloveside_pct', 'high_pct',
                          'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'fastball_pct', 'num_ip',
                          'early_secondary_pct', 'late_secondary_pct', 'zone_pct', 'non_bip_strike_pct', 'early_bip_pct'],
@@ -272,15 +270,15 @@ def select_generator(leaderboard, tab):
                                  'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'early_called_strike_pct',
                                  'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct', 'num_ip'],
             "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
-                            'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'avg_launch_speed',
-                            'avg_launch_angle', 'babip_pct', 'bacon_pct', 'num_ip'],
+                            'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'babip_pct',
+                            'bacon_pct', 'num_ip'],
             "overview": ['num_ip', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
-                         'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'barrel_pct', 'woba'],
-            "standard": ['num_pitches', 'num_hit', 'num_ip', 'num_hr', 'num_k', 'num_bb']
+                         'put_away_pct', 'babip_pct', 'hr_flyball_pct'],
+            "standard": ['num_pitches', 'num_hit', 'num_ip', 'num_hr', 'num_k', 'num_bb'],
         },
         "hitter": {
-            "advanced": ['avg_launch_speed', 'avg_launch_angle', 'barrel_pct', 'foul_pct', 'plus_pct',
-                         'first_pitch_swing_pct', 'early_o_contact_pct', 'late_o_contact_pct', 'num_pa'],
+            "advanced": ['foul_pct', 'plus_pct', 'first_pitch_swing_pct', 'early_o_contact_pct',
+                         'late_o_contact_pct', 'num_pa'],
             "approach": ['inside_pct', 'horizonal_middle_location_pct', 'outside_pct', 'high_pct',
                          'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'fastball_pct',
                          'early_secondary_pct', 'late_secondary_pct', 'zone_pct', 'non_bip_strike_pct',
@@ -289,10 +287,10 @@ def select_generator(leaderboard, tab):
                                  'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'early_called_strike_pct',
                                  'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct', 'num_pa'],
             "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
-                            'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'avg_launch_speed',
-                            'avg_launch_angle', 'babip_pct', 'bacon_pct', 'num_pa'],
+                            'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct',
+                            'babip_pct', 'bacon_pct', 'num_pa'],
             "overview": ['num_pa', 'num_hr', 'batting_average', 'on_base_pct', 'babip_pct', 'hr_flyball_pct',
-                         'barrel_pct', 'swinging_strike_pct', 'woba'],
+                         'swinging_strike_pct', 'woba', 'strikeout_pct', 'walk_pct'],
             "standard": ['num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb']
         }
     }
@@ -636,11 +634,11 @@ def create_player_query(player_id):
 
     sql_query = ''
 
-    table_select = 'SELECT mlbamid, playername, teamname, lastgame, ispitcher, name_first, name_last, birth_date FROM pl_players\n'
+    table_select = 'SELECT A.mlbamid, A.playername, A.teamid, B.abbreviation AS "team", A.lastgame, A.ispitcher AS "is_pitcher", A.isactive AS "is_active", A.name_first, A.name_last, A.birth_date FROM pl_players A, teams B WHERE A.teamid=B.team_id \n'
     player_select = ''
 
     if player_id != 'NA':
-        player_select = 'WHERE mlbamid = %s'
+        player_select = 'AND mlbamid = %s'
 
     sql_query = table_select + player_select
 

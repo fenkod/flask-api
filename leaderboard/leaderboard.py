@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import psycopg2
 from datetime import datetime
-from .helpers import *
+from helpers import *
 import json as json
 
 def build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, arbitrary_end, handedness,
@@ -383,84 +383,18 @@ def leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, le
             else:
                 woba_year = datetime.strptime(arbitrary_end, '%Y-%m-%d').strftime('%Y')
 
-        if leaderboard == 'pitcher':
-            raw['woba'] = raw.apply(
-                lambda row: round(weightedonbasepercentage(woba_year, row['num_ab'], row['num_bb'], row['num_ibb'],
-                                                     row['num_hbp'], row['num_sacrifice'], row['num_1b'],
-                                                     row['num_2b'], row['num_3b'], row['num_hr']), 3), axis=1)
-            raw.drop(['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b',
-                      'num_hr'], axis=1, inplace=True)
-        elif leaderboard == 'hitter':
+        if leaderboard == 'hitter':
             raw['woba'] = raw.apply(
                 lambda row: round(weightedonbasepercentage(woba_year, row['num_ab'], row['num_bb'], row['num_ibb'],
                                                      row['num_hbp'], row['num_sacrifice'], row['num_1b'],
                                                      row['num_2b'], row['num_3b'], row['num_hr']), 3), axis=1)
             raw.drop(['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b'],
                      axis=1, inplace=True)
-        elif leaderboard == 'pitch':
-            raw['woba'] = raw.apply(
-                lambda row: round(weightedonbasepercentage(woba_year, (row['num_out'] + row['num_hit']), row['num_bb'],
-                                                           row['num_ibb'], row['num_hbp'], row['num_sacrifice'],
-                                                           row['num_1b'], row['num_2b'], row['num_3b'],
-                                                           row['num_hr']), 3), axis=1)
-            raw.drop(['num_out', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b',
-                      'num_hr'] , axis=1, inplace=True)
+            
     # Need to implement feed for boxscore information into the DB
     # Need to add strike and ball to pl_leaderboard_v2 for pitchtype standard
 
     print("Statistics generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Statistics generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-    return raw
-
-def player_collection(player_id):
-    db_connection = get_connection()
-    cursor = db_connection.cursor()
-    query = create_player_query(player_id)
-
-    print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-    logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-    try:
-        if player_id != 'NA':
-            cursor.execute(query, [player_id])
-        else:
-            cursor.execute(query)
-    except Exception:
-        raise
-    else:
-        rows = cursor.fetchall()
-
-    colnames = [desc[0] for desc in cursor.description]
-    raw = pd.DataFrame(rows, columns=colnames)
-
-    print("DB results gathered at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-    logging.debug("DB results gathered results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-    return raw
-
-def player_positions_collection(player_id):
-    db_connection = get_connection()
-    cursor = db_connection.cursor()
-    query = create_player_positions_query(player_id)
-
-    print("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-    logging.debug("Gathering DB results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-    try:
-        if player_id != 'NA':
-            cursor.execute(query, [player_id])
-        else:
-            cursor.execute(query)
-    except Exception:
-        raise
-    else:
-        rows = cursor.fetchall()
-
-    colnames = [desc[0] for desc in cursor.description]
-    raw = pd.DataFrame(rows, columns=colnames)
-
-    print("DB results gathered at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-    logging.debug("DB results gathered results at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     return raw
