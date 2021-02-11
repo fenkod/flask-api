@@ -624,14 +624,6 @@ class Player(Resource):
                 
                 return output_dict
 
-                
-                for key, value in result_dict.items():
-                    output_dict['data']['game_id_index'][key] = index
-                    output_dict['logs'][key] = value
-                    output_dict['logs'][key]['index'] = index
-                    index += 1
-
-                return output_dict
             else:
                 # Convert datetime to usable json format
                 results['game-date'] = pd.to_datetime(results['game-date']).dt.strftime("%a %m/%d/%Y")
