@@ -675,7 +675,7 @@ class Player(Resource):
                     if pitch_key not in output_dict['logs'][gameid_key]['pitches']:
                         output_dict['logs'][gameid_key]['pitches'][pitch_key] = {'splits':{}}
                     
-                    rl_split_key = key[2]
+                    rl_split_key = key[2].upper()
                     if rl_split_key not in output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits']:
                         output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits'][rl_split_key] = value
                 
@@ -715,7 +715,7 @@ class Player(Resource):
                 if pitch_key not in output_dict['logs'][gameid_key]['pitches']:
                     output_dict['logs'][gameid_key]['pitches'][pitch_key] = {'splits':{}}
                 
-                rl_split_key = key[2]
+                rl_split_key = key[2].upper()
                 if rl_split_key not in output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits']:
                     output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits'][rl_split_key] = value
             
@@ -741,15 +741,15 @@ class Player(Resource):
                         output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
 
                     year_key = key[1]
-                    stats = { 'total': self.career_stats[year_key], 'splits':{} } if (pitch_key == 'All') else { 'splits':{} }
+                    stats = { 'total': self.career_stats[year_key], 'splits':{} } if (pitch_key == 'ALL') else { 'splits':{} }
                     if year_key not in output_dict[query_type]['pitches'][pitch_key]['years']:
                         output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = stats
                     
-                    rl_split_key = key[2]
+                    rl_split_key = key[2].upper()
                     if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
                         output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
                 
-                    ha_split_key = key[3]
+                    ha_split_key = key[3].upper() if (pitch_key == 'ALL') else key[3]
                     output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
             else:
                 # Sort our DataFrame so we have a prettier JSON format for the API
@@ -764,7 +764,7 @@ class Player(Resource):
                     if year_key not in output_dict[query_type]['years']:
                         output_dict[query_type]['years'][year_key] = { 'splits':{} }
                     
-                    rl_split_key = key[1]
+                    rl_split_key = key[1].upper()
                     if rl_split_key not in output_dict[query_type]['years'][year_key]['splits']:
                         output_dict[query_type]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
                 
