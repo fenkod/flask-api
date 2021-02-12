@@ -213,13 +213,12 @@ class Player(Resource):
                         f'loss::int AS "l", '
                         f'save::int AS "sv", '
                         f'hold::int AS "hld", '
-                        f'num_ip::int AS "ip", '
+                        f'num_ip AS "ip", '
                         f'num_runs::int AS "runs", '
                         f'num_earned_runs::int AS "earned_runs", '
                         f'lob::int, '
                         f'lob_pct, '
                         f'pitchtype, '
-                        f'year_played::text AS "year",' 
                         f'opponent_handedness AS "split-RL",'
                         f'avg_velocity AS "velo_avg",'
                         f'strikeout_pct,'
@@ -623,6 +622,7 @@ class Player(Resource):
                 result_dict = json.loads(results.to_json(orient='index'))
 
                 for keys, value in result_dict.items():
+
                     # json coversion returns tuple string
                     key = eval(keys)
                     gameid_key = key[0]
@@ -670,7 +670,7 @@ class Player(Resource):
                     del value['runs-scored']
                     del value['opponent-runs-scored']
 
-                    pitch_key = key[1]
+                    pitch_key = key[1].upper()
 
                     if pitch_key not in output_dict['logs'][gameid_key]['pitches']:
                         output_dict['logs'][gameid_key]['pitches'][pitch_key] = {'splits':{}}
@@ -710,7 +710,7 @@ class Player(Resource):
                 if gameid_key not in output_dict['logs']:
                     output_dict['logs'][gameid_key] = {'pitches':{}}
 
-                pitch_key = key[1]
+                pitch_key = key[1].upper()
 
                 if pitch_key not in output_dict['logs'][gameid_key]['pitches']:
                     output_dict['logs'][gameid_key]['pitches'][pitch_key] = {'splits':{}}
@@ -735,7 +735,7 @@ class Player(Resource):
                 for keys, value in result_dict.items():
                     # json coversion returns tuple string
                     key = eval(keys)
-                    pitch_key = key[0]
+                    pitch_key = key[0].upper()
 
                     if pitch_key not in output_dict[query_type]['pitches']:
                         output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
