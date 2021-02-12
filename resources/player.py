@@ -749,7 +749,7 @@ class Player(Resource):
                     if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
                         output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
                 
-                    ha_split_key = key[3].upper() if (pitch_key == 'ALL') else key[3]
+                    ha_split_key = key[3].upper() if (key[3] == 'All') else key[3]
                     output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
             else:
                 # Sort our DataFrame so we have a prettier JSON format for the API
