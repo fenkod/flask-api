@@ -88,8 +88,8 @@ class Player(Resource):
             if (self.is_pitcher):
                 return (
                     f'SELECT pitchermlbamid,'
-                        f'year,'
-                        f'g,'
+                        f'year::text,'
+                        f'g::int,'
                         f'ip,'
                         f'batting_average_percentile,'
                         f'hr_9_percentile,'
@@ -156,26 +156,26 @@ class Player(Resource):
             if (self.is_pitcher):
                 return (
                     f'SELECT year::text AS "year", '
-                        f'g, '
-                        f'gs, '
-                        f'w, '
-                        f'l, '
-                        f'sv, '
-                        f'hld, '
+                        f'g::int, '
+                        f'gs::int, '
+                        f'w::int, '
+                        f'l::int, '
+                        f'sv::int, '
+                        f'hld::int, '
                         f'ip, '
-                        f'cg, '
-                        f'sho, '
-                        f'runs, '
-                        f'unearned_runs, '
-                        f'earned_runs, '
+                        f'cg::int, '
+                        f'sho::int, '
+                        f'runs::int, '
+                        f'unearned_runs::int, '
+                        f'earned_runs::int, '
                         f'era, '
                         f'whip, '
                         f'lob_pct, '
                         f'k_pct, '
                         f'bb_pct, '
                         f'hr_flyball_pct, '
-                        f'hbp, '
-                        f'wp, '
+                        f'hbp::int, '
+                        f'wp::int, '
                         f'teams '
                     f'FROM mv_pitcher_career_stats '
                     f'WHERE pitchermlbamid = %s '
@@ -184,11 +184,11 @@ class Player(Resource):
             else:
                 return (
                     f'SELECT year::text AS "year", '
-                        f'g,'
-                        f'runs, '
-                        f'rbi, '
-                        f'sb, '
-                        f'cs, '
+                        f'g::int,'
+                        f'runs::int, '
+                        f'rbi::int, '
+                        f'sb::int, '
+                        f'cs::int, '
                         f'teams '
                     f'FROM mv_hitter_career_stats '
                     f'WHERE hittermlbamid = %s '
@@ -200,8 +200,26 @@ class Player(Resource):
                 return (
                     f'SELECT ghuid AS "gameid",'
                         f'game_played AS "game-date", '
+                        f'team, '
+                        f'thrown_for_team::int AS "team-id", '
+                        f'opponent, '
+                        f'thrown_against_team::int AS "opponent-team-id", '
+                        f'park, '
+                        f'team_result AS "team-result", '
+                        f'runs_scored::int AS "runs-scored", '
+                        f'opponent_runs_scored::int AS "opponent-runs-scored", '
+                        f'start::int AS "gs", '
+                        f'win::int AS "w", '
+                        f'loss::int AS "l", '
+                        f'save::int AS "sv", '
+                        f'hold::int AS "hld", '
+                        f'num_ip::int AS "ip", '
+                        f'num_runs::int AS "runs", '
+                        f'num_earned_runs::int AS "earned_runs", '
+                        f'lob::int, '
+                        f'lob_pct, '
                         f'pitchtype, '
-                        f'year_played AS "year",' 
+                        f'year_played::text AS "year",' 
                         f'opponent_handedness AS "split-RL",'
                         f'avg_velocity AS "velo_avg",'
                         f'strikeout_pct,'
@@ -251,7 +269,7 @@ class Player(Resource):
                         f'late_pct,'
                         f'non_bip_strike_pct,'
                         f'early_bip_pct,'
-                        f'num_pitches AS "pitch-count", num_hit AS "hits", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strikes AS "strikes", num_balls AS "balls", num_foul AS "foul", num_ibb AS "ibb", num_hbp AS "hbp", num_wp AS "wp" '                    
+                        f'num_pitches::int AS "pitch-count", num_hit::int AS "hits", num_bb::int AS "bb", num_1b::int AS "1b", num_2b::int AS "2b", num_3b::int AS "3b", num_hr::int AS "hr", num_k::int AS "k",num_pa::int AS "pa",num_strikes::int AS "strikes", num_balls::int AS "balls", num_foul::int AS "foul", num_ibb::int AS "ibb", num_hbp::int AS "hbp", num_wp::int AS "wp" '                    
                         f'FROM mv_pitcher_game_logs_2 '
                     f'WHERE pitchermlbamid=%s ' 
                     f'ORDER BY year_played DESC, month_played DESC, ghuid DESC;'
@@ -383,7 +401,7 @@ class Player(Resource):
             if (self.is_pitcher):
                 return (
                     f'SELECT pitchtype,' 
-                        f'year_played AS "year",' 
+                        f'year_played::text AS "year",' 
                         f'opponent_handedness AS "split-RL",'
                         f'home_away AS "split-HA",'
                         f'avg_velocity AS "velo_avg",'
@@ -434,7 +452,7 @@ class Player(Resource):
                         f'late_pct,'
                         f'non_bip_strike_pct,'
                         f'early_bip_pct,'
-                        f'num_pitches AS "pitch-count", num_hits AS "hits", num_bb AS "bb", num_1b AS "1b", num_2b AS "2b", num_3b AS "3b", num_hr AS "hr", num_k AS "k",num_pa AS "pa",num_strike AS "strikes", num_ball AS "balls", num_foul AS "foul", num_ibb AS "ibb", num_hbp AS "hbp", num_wp AS "wp" '
+                        f'num_pitches::int AS "pitch-count", num_hits::int AS "hits", num_bb::int AS "bb", num_1b::int AS "1b", num_2b::int AS "2b", num_3b::int AS "3b", num_hr::int AS "hr", num_k::int AS "k",num_pa::int AS "pa",num_strike::int AS "strikes", num_ball::int AS "balls", num_foul::int AS "foul", num_ibb::int AS "ibb", num_hbp::int AS "hbp", num_wp::int AS "wp" '
                     f'FROM player_page_repertoire '
                     f"WHERE pitchermlbamid = %s "
                     f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
@@ -604,14 +622,53 @@ class Player(Resource):
                 # Ensure we have valid data for NaN entries using json.dumps of Python None object
                 result_dict = json.loads(results.to_json(orient='index'))
 
-                var_dump(result_dict)
-
                 for keys, value in result_dict.items():
                     # json coversion returns tuple string
                     key = eval(keys)
                     gameid_key = key[0]
                     if gameid_key not in output_dict['logs']:
-                        output_dict['logs'][gameid_key] = {'game':{}, 'pitches':{}}
+                        output_dict['logs'][gameid_key] = { 'game': {
+                            'gs': value['gs'], 
+                            'w': value['w'], 
+                            'l': value['l'], 
+                            'sv': value['sv'],
+                            'hld': value['hld'],
+                            'ip': value['ip'],
+                            'r': value['runs'],
+                            'er': value['earned_runs'],
+                            'lob': value['lob'],
+                            'lob_pct': value['lob_pct'],
+                            'park': value['park'],
+                            'team-id': value['team-id'],
+                            'team': value['team'],
+                            'opponent-team-id': value['opponent-team-id'],
+                            'opponent': value['opponent'],
+                            'game-date': value['game-date'],
+                            'team-result': value['team-result'],
+                            'runs-scored': value['runs-scored'],
+                            'opponent-runs-scored': value['opponent-runs-scored']
+                        }, 'pitches':{}}
+                    
+                    # Delete keys from value dict
+                    del value['gs']
+                    del value['w']
+                    del value['l']
+                    del value['sv']
+                    del value['hld']
+                    del value['ip']
+                    del value['runs']
+                    del value['earned_runs']
+                    del value['lob']
+                    del value['lob_pct']
+                    del value['park']
+                    del value['team-id']
+                    del value['team']
+                    del value['opponent-team-id']
+                    del value['opponent']
+                    del value['game-date']
+                    del value['team-result']
+                    del value['runs-scored']
+                    del value['opponent-runs-scored']
 
                     pitch_key = key[1]
 
