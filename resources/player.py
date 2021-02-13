@@ -331,7 +331,9 @@ class Player(Resource):
                     f'num_ground_ball::int as "groundball",'
                     f'num_weak_bip::int as "weak-bip",'
                     f'num_medium_bip::int "medium-bip",'
-                    f'num_hard_bip::int as "hard-bip" '
+                    f'num_hard_bip::int as "hard-bip",'
+                    f'num_ab::int as "ab",'
+                    f'num_pa::int as "pa"
                     f'FROM mv_pitcher_game_logs_2 '
                 f'WHERE pitchermlbamid=%s ' 
                 f'ORDER BY year_played DESC, month_played DESC, ghuid DESC;'
