@@ -283,7 +283,7 @@ class Player(Resource):
                     f'num_ibb::int AS "ibb",' 
                     f'num_hbp::int AS "hbp",' 
                     f'num_wp::int AS "wp",'
-                    f'num_flyball::int as "flyball"'
+                    f'num_flyball::int as "flyball",'
                     f'num_whiff::int as "whiff",'
                     f'num_zone::int as "zone",'
                     f'total_velo,'
