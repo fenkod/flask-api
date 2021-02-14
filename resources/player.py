@@ -469,7 +469,7 @@ class Player(Resource):
                         f'num_ab::int as "ab",'
                         f'num_hard_bip::int as "hard-bip" '
                     f'FROM mv_hitter_game_logs_2 '
-                    f'WHERE hittermlbamid=%s ' 
+                    f'WHERE hittermlbamid=%s and game_played >= current_date - interval \'400 day\'' 
                     f'ORDER BY year_played DESC, month_played DESC, ghuid DESC;'
                 )
 
