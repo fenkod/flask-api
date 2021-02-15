@@ -922,49 +922,29 @@ class Player(Resource):
 
             result_dict = json.loads(results.to_json(orient='index'))
 
-            if (self.is_pitcher):
-                # Sort our DataFrame so we have a prettier JSON format for the API
-                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
+            # Sort our DataFrame so we have a prettier JSON format for the API
+            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
 
-                # Make sure our index keys exist in our dict structure then push on our data values
-                for keys, value in result_dict.items():
-                    # json coversion returns tuple string
-                    key = eval(keys)
-                    pitch_key = key[0].upper()
+            # Make sure our index keys exist in our dict structure then push on our data values
+            for keys, value in result_dict.items():
+                # json coversion returns tuple string
+                key = eval(keys)
+                pitch_key = key[0].upper()
 
-                    if pitch_key not in output_dict[query_type]['pitches']:
-                        output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
+                if pitch_key not in output_dict[query_type]['pitches']:
+                    output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
 
-                    year_key = key[1]
-                    stats = { 'total': self.career_stats[year_key], 'splits':{} } if (pitch_key == 'ALL') else { 'splits':{} }
-                    if year_key not in output_dict[query_type]['pitches'][pitch_key]['years']:
-                        output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = stats
-                    
-                    rl_split_key = key[2].upper()
-                    if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
-                        output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
+                year_key = key[1]
+                stats = { 'total': self.career_stats[year_key], 'splits':{} } if (pitch_key == 'ALL') else { 'splits':{} }
+                if year_key not in output_dict[query_type]['pitches'][pitch_key]['years']:
+                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = stats
                 
-                    ha_split_key = key[3].upper() if (key[3] == 'All') else key[3]
-                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
-            else:
-                # Sort our DataFrame so we have a prettier JSON format for the API
-                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'years':{}} }
-
-                # Make sure our index keys exist in our dict structure then push on our data values
-                for keys, value in result_dict.items():
-                    # json coversion returns tuple string
-                    key = eval(keys)
-
-                    year_key = key[0]
-                    if year_key not in output_dict[query_type]['years']:
-                        output_dict[query_type]['years'][year_key] = { 'splits':{} }
-                    
-                    rl_split_key = key[1].upper()
-                    if rl_split_key not in output_dict[query_type]['years'][year_key]['splits']:
-                        output_dict[query_type]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
-                
-                    ha_split_key = key[2]
-                    output_dict[query_type]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
+                rl_split_key = key[2].upper()
+                if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
+                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
+            
+                ha_split_key = key[3].upper() if (key[3] == 'All') else key[3]
+                output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
             
             return output_dict
 
