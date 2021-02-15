@@ -609,78 +609,78 @@ class Player(Resource):
                 )
             else:
                 return (
-                    f'SELECT 	year_played AS "year",' 
-                                f'opponent_handedness AS "split-RL",'
-                                f'home_away AS "split-HA",'
-                                f'avg_velocity AS "velo_avg",'
-                                f'k_pct,'
-                                f'bb_pct,'
-                                f'batting_average AS "batting_avg",'
-                                f'o_swing_pct,'
-                                f'zone_pct,'
-                                f'swinging_strike_pct,'
-                                f'called_strike_pct,'
-                                f'csw_pct,'
-                                f'null::numeric as cswf_pct,'
-                                f'plus_pct,'
-                                f'foul_pct,'
-                                f'contact_pct,'
-                                f'o_contact_pct,'
-                                f'z_contact_pct,'
-                                f'swing_pct,'
-                                f'strike_pct,'
-                                f'early_called_strike_pct,'
-                                f'late_o_swing_pct,'
-                                f'f_strike_pct,'
-                                f'true_f_strike_pct,'
-                                f'groundball_pct,'
-                                f'linedrive_pct,'
-                                f'flyball_pct,'
-                                f'hr_flyball_pct,'
-                                f'null::numeric as groundball_flyball_pct,'
-                                f'infield_flyball_pct,'
-                                f'weak_pct,'
-                                f'medium_pct,'
-                                f'hard_pct,'
-                                f'null::numeric as center_pct,'
-                                f'pull_pct,'
-                                f'opposite_field_pct,'
-                                f'babip_pct,'
-                                f'bacon_pct,'
-                                f'armside_pct,'
-                                f'gloveside_pct,'
-                                f'vertical_middle_location_pct AS "v_mid_pct",'
-                                f'horizonal_middle_location_pct AS "h_mid_pct",'
-                                f'high_pct,'
-                                f'low_pct,'
-                                f'heart_pct,'
-                                f'early_pct,'
-                                f'behind_pct,'
-                                f'late_pct,'
-                                f'non_bip_strike_pct,'
-                                f'early_bip_pct,'
-                                f'onbase_pct,'
-                                f'early_o_contact_pct,'
-                                f'late_o_contact_pct,'
-                                f'first_pitch_swing_pct,'
-                                f'num_pitches AS "pitch-count",'
-                                f'num_hits AS "hits",' 
-                                f'num_bb AS "bb",' 
-                                f'num_1b AS "1b",' 
-                                f'num_2b AS "2b",' 
-                                f'num_3b AS "3b",' 
-                                f'num_hr AS "hr",'
-                                f'num_k AS "k",'
-                                f'num_pa AS "pa",'
-                                f'num_strike AS "strikes",' 
-                                f'num_ball AS "balls",' 
-                                f'null::int AS "foul",' 
-                                f'null::int AS "ibb",' 
-                                f'null::int AS "hbp",'
-                                f'num_rbi AS "rbi" '
-                            f'FROM mv_hitter_page_stats '
-                            f"WHERE hittermlbamid = %s "
-                            f'ORDER BY year_played, opponent_handedness, home_away; '
+                    f'SELECT year_played AS "year",' 
+                        f'opponent_handedness AS "split-RL",'
+                        f'home_away AS "split-HA",'
+                        f'avg_velocity AS "velo_avg",'
+                        f'k_pct,'
+                        f'bb_pct,'
+                        f'batting_average AS "batting_avg",'
+                        f'o_swing_pct,'
+                        f'zone_pct,'
+                        f'swinging_strike_pct,'
+                        f'called_strike_pct,'
+                        f'csw_pct,'
+                        f'null::numeric as cswf_pct,'
+                        f'plus_pct,'
+                        f'foul_pct,'
+                        f'contact_pct,'
+                        f'o_contact_pct,'
+                        f'z_contact_pct,'
+                        f'swing_pct,'
+                        f'strike_pct,'
+                        f'early_called_strike_pct,'
+                        f'late_o_swing_pct,'
+                        f'f_strike_pct,'
+                        f'true_f_strike_pct,'
+                        f'groundball_pct,'
+                        f'linedrive_pct,'
+                        f'flyball_pct,'
+                        f'hr_flyball_pct,'
+                        f'null::numeric as groundball_flyball_pct,'
+                        f'infield_flyball_pct,'
+                        f'weak_pct,'
+                        f'medium_pct,'
+                        f'hard_pct,'
+                        f'null::numeric as center_pct,'
+                        f'pull_pct,'
+                        f'opposite_field_pct,'
+                        f'babip_pct,'
+                        f'bacon_pct,'
+                        f'armside_pct,'
+                        f'gloveside_pct,'
+                        f'vertical_middle_location_pct AS "v_mid_pct",'
+                        f'horizonal_middle_location_pct AS "h_mid_pct",'
+                        f'high_pct,'
+                        f'low_pct,'
+                        f'heart_pct,'
+                        f'early_pct,'
+                        f'behind_pct,'
+                        f'late_pct,'
+                        f'non_bip_strike_pct,'
+                        f'early_bip_pct,'
+                        f'onbase_pct,'
+                        f'early_o_contact_pct,'
+                        f'late_o_contact_pct,'
+                        f'first_pitch_swing_pct,'
+                        f'num_pitches AS "pitch-count",'
+                        f'num_hits AS "hits",' 
+                        f'num_bb AS "bb",' 
+                        f'num_1b AS "1b",' 
+                        f'num_2b AS "2b",' 
+                        f'num_3b AS "3b",' 
+                        f'num_hr AS "hr",'
+                        f'num_k AS "k",'
+                        f'num_pa AS "pa",'
+                        f'num_strike AS "strikes",' 
+                        f'num_ball AS "balls",' 
+                        f'null::int AS "foul",' 
+                        f'null::int AS "ibb",' 
+                        f'null::int AS "hbp",'
+                        f'num_rbi AS "rbi" '
+                    f'FROM mv_hitter_page_stats '
+                    f"WHERE hittermlbamid = %s "
+                    f'ORDER BY year_played, opponent_handedness, home_away; '
                 )
 
         queries = {
@@ -922,29 +922,50 @@ class Player(Resource):
 
             result_dict = json.loads(results.to_json(orient='index'))
 
-            # Sort our DataFrame so we have a prettier JSON format for the API
-            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
+            if (self.is_pitcher):
+                # Sort our DataFrame so we have a prettier JSON format for the API
+                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
 
-            # Make sure our index keys exist in our dict structure then push on our data values
-            for keys, value in result_dict.items():
-                # json coversion returns tuple string
-                key = eval(keys)
-                pitch_key = key[0].upper()
+                # Make sure our index keys exist in our dict structure then push on our data values
+                for keys, value in result_dict.items():
+                    # json coversion returns tuple string
+                    key = eval(keys)
+                    pitch_key = key[0].upper()
 
-                if pitch_key not in output_dict[query_type]['pitches']:
-                    output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
+                    if pitch_key not in output_dict[query_type]['pitches']:
+                        output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
 
-                year_key = key[1]
-                stats = { 'total': self.career_stats[year_key], 'splits':{} } if (pitch_key == 'ALL') else { 'splits':{} }
-                if year_key not in output_dict[query_type]['pitches'][pitch_key]['years']:
-                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = stats
+                    year_key = key[1]
+                    stats = { 'total': self.career_stats[year_key], 'splits':{} } if (pitch_key == 'ALL') else { 'splits':{} }
+                    if year_key not in output_dict[query_type]['pitches'][pitch_key]['years']:
+                        output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = stats
+                    
+                    rl_split_key = key[2].upper()
+                    if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
+                        output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
                 
-                rl_split_key = key[2].upper()
-                if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
-                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
-            
-                ha_split_key = key[3].upper() if (key[3] == 'All') else key[3]
-                output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
+                    ha_split_key = key[3].upper() if (key[3] == 'All') else key[3]
+                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
+            else:
+                # Sort our DataFrame so we have a prettier JSON format for the API
+                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'years':{}} }
+
+                # Make sure our index keys exist in our dict structure then push on our data values
+                for keys, value in result_dict.items():
+                    # json coversion returns tuple string
+                    key = eval(keys)
+
+                    year_key = key[0]
+                    stats = { 'total': self.career_stats[year_key], 'splits':{} }
+                    if year_key not in output_dict[query_type]['years']:
+                        output_dict[query_type]['years'][year_key] = stats
+                    
+                    rl_split_key = key[1].upper()
+                    if rl_split_key not in output_dict[query_type]['years'][year_key]['splits']:
+                        output_dict[query_type]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
+                
+                    ha_split_key = key[2]
+                    output_dict[query_type]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
             
             return output_dict
 
