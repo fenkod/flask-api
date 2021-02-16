@@ -822,15 +822,6 @@ class Player(Resource):
                     
                     # Delete keys from value dict
                     del value['gs']
-                    del value['w']
-                    del value['l']
-                    del value['sv']
-                    del value['hld']
-                    del value['ip']
-                    del value['runs']
-                    del value['earned_runs']
-                    del value['lob']
-                    del value['lob_pct']
                     del value['park']
                     del value['team-id']
                     del value['team']
