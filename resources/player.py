@@ -662,7 +662,7 @@ class Player(Resource):
                         f'non_bip_strike_pct,'
                         f'early_bip_pct,'
                         f'onbase_pct,'
-                        f'null::int AS "ops_pct",'
+                        f'ops_pct,'
                         f'null::int AS "wob_avg",'
                         f'early_o_contact_pct,'
                         f'late_o_contact_pct,'
