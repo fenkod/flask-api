@@ -24,7 +24,7 @@ def init_resource_endpoints():
     ]
     v3_roundup_routes = [
         '/v3/roundup/<string:player_type>/<string:day>/',
-        '/v3/roundup/<string:day>/',
+        '/v3/roundup/<string:player_type>/',
         '/v3/roundup/'
     ]
     current_app.api.add_resource(Player, *v3_player_routes, endpoint='player')
