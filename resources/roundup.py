@@ -71,7 +71,7 @@ class Roundup(Resource):
 
         def hitter():
             return (
-                f'SELECT h.gamepk AS "game_pk,"'
+                f'SELECT h.gamepk AS "game_pk",'
                     f'h.ghuid,'
                     f'hittermlbamid AS "player_id",'
                     f'hittername AS "playername",'
