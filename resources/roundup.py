@@ -10,27 +10,26 @@ import pandas as pd
 # It accepts both the batterbox and roundup endpoints 
 # Current Enpoint Structure:
 # `/roundup/${player_type}/${day}` - Hitters and Pitchers
-# `/batterbox/${day}` - Hitters only
 # @param ${player_type}: ('hitter'|'pitcher')
 # @param ${day}: ([0-9]2/[0-9]2/[0-9]4|'latest')
 ##
 class Roundup(Resource):
-    def __init__(self):
-        self.day = 'latest'
-        self.player_type = 'pitcher'
 
     def get(self, player_type='pitcher', day='latest'):
         if (day != 'latest' and (not date_validate(day))):
             day = 'latest'
-        
-        if (player_type == 'roundup'):
-            player_type = 'pitcher'
-        elif (player_type == 'battersbox'):
-            player_type == 'hitter'
+
+        if ( date_validate(player_type) ):
+            day = player_type
         
         if (player_type != 'pitcher' and player_type != 'hitter'):
             player_type = 'pitcher'
 
+        # Get the latest day
+        if ( day == 'latest'):
+            latest = self.fetch_result('currentday', player_type)
+            day = latest[0]['game_date']
+            
         self.day = day
         self.player_type = player_type
         
@@ -45,14 +44,19 @@ class Roundup(Resource):
             print('Bypassing Caching of JSON Results')
             result = self.fetch_data(player_type, day)
         else:
-            print('Using Cache for JSON Results')
+            print('Using Cache for JSON Results')            
             cache_key_resource_type = self.__class__.__name__
 
             cache_key = f'{cache_key_resource_type}-{player_type}-{day}'
             result = current_app.cache.get(cache_key)
             if (result is None):
                 result = self.fetch_data(player_type, day)
-                current_app.cache.set(cache_key, result,cache_timeout(cache_invalidate_hour()))
+                timeout = cache_timeout(cache_invalidate_hour())
+                if (player_type == 'currentday'):
+                    # Set timeout for date cache to 10 mins.
+                    timeout = 600
+
+                current_app.cache.set(cache_key, result, timeout)
 
         return result
 
@@ -68,6 +72,25 @@ class Roundup(Resource):
     def get_query(self, player_type, day):
         def default():
             return f"SELECT 'query not defined' AS error, '{player_type}' AS player_type, {day} AS day;"
+
+        def currentday():
+            # Get the latest gameday recorded for roundup.
+            if (day == 'pitcher'):
+                return (
+                    f"SELECT TO_CHAR(SP.game_date, 'YYYY-MM-DD') AS game_date "
+                    f'FROM schedule S, statcast_pitchers SP '
+                    f'WHERE S.ghuid=SP.ghuid '
+                    f'ORDER BY SP.game_date, S.game_time DESC '
+                    f'LIMIT 1'
+                )
+            else:
+                return (
+                    f"SELECT TO_CHAR(SH.game_date, 'YYYY-MM-DD') AS game_date "
+                    f'FROM schedule S, statcast_hitters SH '
+                    f'WHERE S.ghuid=SH.ghuid '
+                    f'ORDER BY SH.game_date, S.game_time DESC '
+                    f'LIMIT 1'
+                )
 
         def hitter():
             return (
@@ -104,7 +127,7 @@ class Roundup(Resource):
                 f'JOIN statsapi_schedule ss ON h.gamepk = ss.gamepk '
                 f'JOIN teams t_away ON ss.teams_away_team_id = t_away.mlb_id '
                 f'JOIN teams t_home ON ss.teams_home_team_id = t_home.mlb_id '
-                f"WHERE game_date = '2019-06-23';"
+                f"WHERE game_date = %s;"
             )
 
         def pitcher():
@@ -140,11 +163,12 @@ class Roundup(Resource):
                 f'JOIN statsapi_schedule ss ON p.gamepk = ss.gamepk '
                 f'JOIN teams t_away ON ss.teams_away_team_id = t_away.mlb_id '
                 f'JOIN teams t_home ON ss.teams_home_team_id = t_home.mlb_id '
-                f"WHERE game_date = '2019-06-23' "
+                f"WHERE game_date = %s "
                 f'AND start = 1;'
             )
 
         queries = {
+            "currentday": currentday,
             "hitter": hitter,
             "pitcher": pitcher
         }
