@@ -1,5 +1,5 @@
 import pandas as pd
-import datetime
+from datetime import datetime
 
 ##
 # Dump any variable including pandas data STDOUT
@@ -16,7 +16,7 @@ def var_dump(var):
 ##
 def date_validate(date_text):
     try:
-        datetime.datetime.strptime(date_text, '%Y-%m-%d')
+        datetime.strptime(date_text, '%Y-%m-%d')
         return True
     except ValueError:
         return False
