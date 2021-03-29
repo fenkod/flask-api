@@ -509,41 +509,37 @@ class Player(Resource):
                 )
             else:
                 return (
-                    f'SELECT ghuid AS "gameid",'
+                    f'SELECT DISTINCT ghuid AS "gameid",'
                         f'pitchtype,'
-                        f'hitterside AS "split-RL",'
-                        f'array_agg(pitch_location) AS "pitch_locations" '
-                    f'FROM pl_leaderboard_v2 '
-                    f"WHERE pitchermlbamid = %s "
-                    f'GROUP BY ghuid, pitchtype, hitterside '
+                        f'pitcherside AS "split-RL",'
+                        f'pitch_locations, '
+                        f'num_pitches AS "pitch-count", '
+                        f'usage_pct, '
+                        f'whiff, '
+                        f'called_strike, '
+                        f'csw_pct, '
+                        f'zone_pct, '
+                        f'zone_swing_pct, '
+                        f'swinging_strike_pct, '
+                        f'o_swing_pct, '
+                        f'avg_velocity '
+                    f'FROM mv_hitter_game_log_pitches '
+                    f"WHERE hittermlbamid = %s "
                     f'ORDER BY ghuid;'
                 )
 
         def locations():
-            if (self.is_pitcher):
-                return(
-                    f'SELECT pitchtype,' 
-                        f'year_played AS "year",' 
-                        f'opponent_handedness AS "split-RL",'
-                        f'home_away AS "split-HA",'
-                        f'pitch_locations '
-                    f'FROM player_page_repertoire '
-                    f"WHERE pitchermlbamid = %s "
-                    f"AND pitchtype <> 'All' AND year_played <> 'All' "
-                    f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
-                )
-            else:
-                return(
-                    f'SELECT pitchtype,' 
-                        f'year_played AS "year",' 
-                        f'opponent_handedness AS "split-RL",'
-                        f'home_away AS "split-HA",'
-                        f'pitch_locations '
-                    f'FROM player_page_repertoire '
-                    f"WHERE pitchermlbamid = %s "
-                    f"AND pitchtype <> 'All' AND year_played <> 'All' "
-                    f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
-                )    
+            return(
+                f'SELECT pitchtype,' 
+                    f'year_played AS "year",' 
+                    f'opponent_handedness AS "split-RL",'
+                    f'home_away AS "split-HA",'
+                    f'pitch_locations '
+                f'FROM player_page_repertoire '
+                f"WHERE pitchermlbamid = %s "
+                f"AND pitchtype <> 'All' AND year_played <> 'All' "
+                f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
+            )
 
         def positions():
             # TODOD: Add in filtering by hitter/pitcher as playerid (complementing 'all' player_id)
