@@ -1,6 +1,6 @@
 from flask import current_app
 from flask_restful import Resource
-from helpers import fetch_dataframe, date_validate, var_dump
+from helpers import fetch_dataframe, date_validate, get_player_positions, var_dump
 from cache import cache_timeout, cache_invalidate_hour
 import json as json
 import pandas as pd
@@ -14,6 +14,8 @@ import pandas as pd
 # @param ${day}: ([0-9]2/[0-9]2/[0-9]4|'latest')
 ##
 class Roundup(Resource):
+    def __init__(self):
+        self.valid_positions = ['1B', '2B', '3B', 'SS', 'C', 'OF', 'P']
 
     def get(self, player_type='pitcher', day='latest'):
         if (day != 'latest' and (not date_validate(day))):
@@ -206,10 +208,43 @@ class Roundup(Resource):
             output = []
             # Keep game data on top level and move all stats to its own object. Allows us to use for pitchers and hitters without needing to change code.
             for value in records:
+                player_id = value["player_id"]
+                positions = []
+                primary = ''
+
+                # Utilize cached endpoint to get position data
+                position_data = get_player_positions(player_id)
+                if not position_data:
+                    primary = 'UTIL'
+                    positions = ['UTIL']
+                else:
+                    player_data = position_data.pop()
+                    last_season_played = 0
+
+                    # Iterate over positions to build data set.
+                    for year_data in player_data["positions"]:
+                        for year in year_data.keys():
+                            if ( int(year) > last_season_played ):
+                                primary = ''
+                                primary_games_played = 0
+                                positions = []
+                                last_season_played = int(year)
+                                # TODO: We don't have games started vs games played so we can't follow any position eligibilty requirements.
+                                position_data = year_data[year]
+                                for pos in position_data.keys():
+                                    if (pos in self.valid_positions) and pos not in positions:
+                                        positions.append(pos)
+                                        if (int(position_data[pos]) > primary_games_played):
+                                            primary_games_played = int(position_data[pos])
+                                            primary = pos
+
+                # Grab our positions for our players
                 data_struct = { 
-                    "player_id": value["player_id"], 
+                    "player_id": player_id, 
                     "team": value["team"],
                     "playername": value["playername"],
+                    "primary-position": primary,
+                    "positions": positions,
                     "park": value["park"],
                     "opponent": value["opponent"],
                     "game_pk": value["game_pk"],
