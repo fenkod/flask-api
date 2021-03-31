@@ -257,7 +257,7 @@ def select_generator(leaderboard, tab):
                             'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'avg_launch_speed',
                             'avg_launch_angle', 'babip_pct', 'bacon_pct', 'num_pitches'],
             "overview": ['avg_velocity', 'usage_pct', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct',
-                         'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'num_pitches'],
+                         'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'num_pitches', 'plus_pct'],
             "standard": ['num_pitches', 'num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb',
                          'batting_average']
         },
@@ -273,7 +273,7 @@ def select_generator(leaderboard, tab):
                             'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'babip_pct',
                             'bacon_pct', 'num_ip'],
             "overview": ['num_ip', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
-                         'put_away_pct', 'babip_pct', 'hr_flyball_pct'],
+                         'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct'],
             "standard": ['num_pitches', 'num_hit', 'num_ip', 'num_hr', 'num_k', 'num_bb'],
         },
         "hitter": {
