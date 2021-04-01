@@ -50,11 +50,11 @@ class Player(Resource):
         # Caching wrapper for fetch_data
         result = None
 
-        if (current_app.config.get('BYPASS_CACHE')):
-            print('Bypassing Caching of JSON Results')
+        if (current_app.config.get('BYPASS_CACHE') == 'True'):
+            # Bypassing Caching of JSON Results
             result = self.fetch_data(query_type, player_id)
         else:
-            print('Using Cache for JSON Results')
+            # Using Cache for JSON Results
             cache_key_player_id = player_id
             cache_key_resource_type = self.__class__.__name__
             if (player_id == 'NA'):

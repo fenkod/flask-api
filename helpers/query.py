@@ -503,7 +503,7 @@ def create_search_query(leaderboard, handedness, opponent_handedness, league, di
     # To-do: Make sure to join hitters and pitchers by ID after querying DB to consolidate teams
     # To-do: SQL helper to add in the pitcher aggregation subquery for the pitch type leaderboard for usage %
 
-    print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    # print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     table_year = ''
     table = 'from pl_leaderboard_v2_daily base\n'
@@ -550,9 +550,9 @@ def create_search_query(leaderboard, handedness, opponent_handedness, league, di
     if sql_query == '':
         logging.error('No sql string generated')
 
-    print(sql_query)
+    # print(sql_query)
 
-    print("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    # print("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     return sql_query
@@ -575,7 +575,7 @@ def create_search_query_2_1(leaderboard, tab, handedness, opponent_handedness, l
     # To-do: Make sure to join hitters and pitchers by ID after querying DB to consolidate teams
     # To-do: SQL helper to add in the pitcher aggregation subquery for the pitch type leaderboard for usage %
 
-    print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    # print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     table_year = ''
     table = 'from pl_leaderboard_v2_daily base\n'
@@ -621,15 +621,15 @@ def create_search_query_2_1(leaderboard, tab, handedness, opponent_handedness, l
     if sql_query == '':
         logging.error('No sql string generated')
 
-    print(sql_query)
+    # print(sql_query)
 
-    print("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    # print("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     return sql_query
 
 def create_player_query(player_id):
-    print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    # print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     sql_query = ''
@@ -645,15 +645,12 @@ def create_player_query(player_id):
     if sql_query == '':
         logging.error('No sql string generated')
 
-    print(sql_query)
-
-    print("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     return sql_query
 
 def create_player_positions_query(player_id):
-    print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+    # print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     sql_query = ''
@@ -670,9 +667,6 @@ def create_player_positions_query(player_id):
     if sql_query == '':
         logging.error('No sql string generated')
 
-    print(sql_query)
-
-    print("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("SQL generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
     return sql_query

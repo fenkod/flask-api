@@ -1,6 +1,8 @@
 import os
 
 class base_config():
+    FLASK_ENV = os.environ.get('FLASK_ENV', 'production')
+    FLASK_DEBUG = os.environ.get('FLASK_DEBUG', False)
     PL_DB_HOST = os.environ.get('PL_DB_HOST')
     PL_DB_DATABASE = os.environ.get('PL_DB_DATABASE', 'pitcher-list')
     PL_DB_USER = os.environ.get('PL_DB_USER')

@@ -42,11 +42,14 @@ class Roundup(Resource):
         # Caching wrapper for fetch_data
         result = None
 
-        if (current_app.config.get('BYPASS_CACHE')):
-            print('Bypassing Caching of JSON Results')
+        # TODO: REMOVE THIS. TEMPORARY FIX FOR BYPASSING CACHE FOR ROUNDUP
+        return self.fetch_data(player_type, day)
+
+        if (current_app.config.get('BYPASS_CACHE') == 'True'):
+            # Bypassing Caching of JSON Results
             result = self.fetch_data(player_type, day)
         else:
-            print('Using Cache for JSON Results')            
+            # Using Cache for JSON Results          
             cache_key_resource_type = self.__class__.__name__
 
             cache_key = f'{cache_key_resource_type}-{player_type}-{day}'
