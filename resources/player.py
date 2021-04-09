@@ -226,7 +226,7 @@ class Player(Resource):
                     f'usage_pct,'
                     f'batting_average AS "batting_avg",' 
                     f'o_swing_pct,'
-                    f'null::numeric as z_swing_pct,'
+                    f'z_swing_pct,'
                     f'zone_pct,'
                     f'swinging_strike_pct,'
                     f'called_strike_pct,'
