@@ -129,7 +129,9 @@ def table_select_generator(year, select):
         2017: 'from pl_leaderboard_v2_daily_2017',
         2018: 'from pl_leaderboard_v2_daily_2018',
         2019: 'from pl_leaderboard_v2_daily_2019',
-        2020: 'from pl_leaderboard_v2_daily_2020'
+        2020: 'from pl_leaderboard_v2_daily_2020',
+        2021: 'from pl_leaderboard_v2_daily_2021',
+        2022: 'from pl_leaderboard_v2_daily_2022'
     }
     return choices.get(year) + ' ' + select + '\n'
 
