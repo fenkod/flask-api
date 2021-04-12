@@ -139,7 +139,7 @@ class Roundup(Resource):
                     f'p.ghuid,'
                     f'pitchermlbamid AS "player_id",'
                     f'pitchername AS "playername",'
-                    f'num_ip AS "ip",'
+                    f'num_ip::numeric(2,1) AS "ip",'
                     f'num_earned_runs AS "er",'
                     f'num_hits AS "hits",'
                     f'num_k AS "k",'
@@ -167,7 +167,8 @@ class Roundup(Resource):
                 f'JOIN teams t_away ON ss.teams_away_team_id = t_away.mlb_id '
                 f'JOIN teams t_home ON ss.teams_home_team_id = t_home.mlb_id '
                 f"WHERE game_date = %s "
-                f'AND start = 1;'
+                f'AND start = 1'
+                f'ORDER BY num_earned_runs asc;'
             )
 
         queries = {
