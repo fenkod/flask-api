@@ -30,17 +30,20 @@ class Player(Resource):
         elif (player_id == 'NA' and query_type.isnumeric()):
             player_id = int(query_type)
             query_type = 'bio'
-
+        
         # Grab basic player data which tells us if we have a pitcher or hitter.
         # Also grabs career & current season stats
         if (type(player_id) is int):
-            player_info = self.fetch_result('info', player_id)
             self.player_id = int(player_id)
-            self.first_name = player_info[0]['name_first']
-            self.last_name = player_info[0]['name_last']
-            self.dob = player_info[0]['birth_date']
-            self.is_pitcher = bool(player_info[0]['is_pitcher'])
-            self.is_active = bool(player_info[0]['is_active'])
+
+            player_info = self.fetch_result('info', player_id)
+            if player_info:
+                self.first_name = player_info[0]['name_first']
+                self.last_name = player_info[0]['name_last']
+                self.dob = player_info[0]['birth_date']
+                self.is_pitcher = bool(player_info[0]['is_pitcher'])
+                self.is_active = bool(player_info[0]['is_active'])
+            
             self.career_stats = self.fetch_result('career', player_id)
         
         return self.fetch_result(query_type, player_id)
@@ -50,11 +53,11 @@ class Player(Resource):
         # Caching wrapper for fetch_data
         result = None
 
-        if (current_app.config.get('BYPASS_CACHE')):
-            print('Bypassing Caching of JSON Results')
+        if (current_app.config.get('BYPASS_CACHE') == 'True'):
+            # Bypassing Caching of JSON Results
             result = self.fetch_data(query_type, player_id)
         else:
-            print('Using Cache for JSON Results')
+            # Using Cache for JSON Results
             cache_key_player_id = player_id
             cache_key_resource_type = self.__class__.__name__
             if (player_id == 'NA'):
@@ -281,8 +284,7 @@ class Player(Resource):
                     f'num_strikes::int AS "strikes",' 
                     f'num_balls::int AS "balls",' 
                     f'num_foul::int AS "foul",' 
-                    f'num_ibb::int AS "ibb",' 
-                    f'num_hbp::int AS "hbp",' 
+                    f'num_ibb::int AS "ibb",'
                     f'num_wp::int AS "wp",'
                     f'num_flyball::int as "flyball",'
                     f'num_whiff::int as "whiff",'
@@ -717,11 +719,6 @@ class Player(Resource):
             return formatted_results
         
         def gamelogs():
-            #if (self.is_pitcher):
-            #data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric,downcast='integer')
-            #else: 
-            #    data[['runs-scored','opponent-runs-scored','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric,downcast='integer')
-
             formatted_data = data.set_index(['gameid','pitchtype','split-RL'])
             return formatted_data
 
