@@ -53,7 +53,7 @@ class Player(Resource):
         # Caching wrapper for fetch_data
         result = None
 
-        if (current_app.config.get('BYPASS_CACHE') == 'True'):
+        if (current_app.config.get('BYPASS_CACHE')):
             # Bypassing Caching of JSON Results
             result = self.fetch_data(query_type, player_id)
         else:
