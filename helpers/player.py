@@ -1,5 +1,5 @@
 from resources import player
-from helpers import var_dump
+
 ##
 # Get the positions of a player.
 # Caches and Returns json
