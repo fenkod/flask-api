@@ -40,16 +40,8 @@ class Roundup(Resource):
         # Caching wrapper for fetch_data
         result = None
 
-<<<<<<< HEAD
-        if (current_app.config.get('BYPASS_CACHE') == 'True'):
-            # Bypassing Caching of JSON Results
-=======
-        # TODO: REMOVE THIS. TEMPORARY FIX FOR BYPASSING CACHE FOR ROUNDUP
-        return self.fetch_data(player_type, day)
-
         if (current_app.config.get('BYPASS_CACHE')):
-            print('Bypassing Caching of JSON Results')
->>>>>>> origin/staging
+            # Bypassing Caching of JSON Results
             result = self.fetch_data(player_type, day)
         else:
             # Using Cache for JSON Results          
