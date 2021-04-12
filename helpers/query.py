@@ -129,7 +129,9 @@ def table_select_generator(year, select):
         2017: 'from pl_leaderboard_v2_daily_2017',
         2018: 'from pl_leaderboard_v2_daily_2018',
         2019: 'from pl_leaderboard_v2_daily_2019',
-        2020: 'from pl_leaderboard_v2_daily_2020'
+        2020: 'from pl_leaderboard_v2_daily_2020',
+        2021: 'from pl_leaderboard_v2_daily_2021',
+        2022: 'from pl_leaderboard_v2_daily_2022'
     }
     return choices.get(year) + ' ' + select + '\n'
 
@@ -254,10 +256,9 @@ def select_generator(leaderboard, tab):
                                  'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'num_pitches',
                                  'early_called_strike_pct', 'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct'],
             "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
-                            'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'avg_launch_speed',
-                            'avg_launch_angle', 'babip_pct', 'bacon_pct', 'num_pitches'],
+                            'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'babip_pct', 'bacon_pct', 'num_pitches'],
             "overview": ['avg_velocity', 'usage_pct', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct',
-                         'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'num_pitches'],
+                         'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'num_pitches', 'plus_pct'],
             "standard": ['num_pitches', 'num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb',
                          'batting_average']
         },
@@ -273,7 +274,7 @@ def select_generator(leaderboard, tab):
                             'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'babip_pct',
                             'bacon_pct', 'num_ip'],
             "overview": ['num_ip', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
-                         'put_away_pct', 'babip_pct', 'hr_flyball_pct'],
+                         'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct'],
             "standard": ['num_pitches', 'num_hit', 'num_ip', 'num_hr', 'num_k', 'num_bb'],
         },
         "hitter": {
