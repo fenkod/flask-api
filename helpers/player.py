@@ -8,3 +8,4 @@ def get_player_positions(player_id='NA'):
     # Unicode to check if numeric
     p = player.Player()
     return p.get('positions', player_id)
+
