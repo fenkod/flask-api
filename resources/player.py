@@ -285,6 +285,7 @@ class Player(Resource):
                     f'num_balls::int AS "balls",' 
                     f'num_foul::int AS "foul",' 
                     f'num_ibb::int AS "ibb",'
+                    f'num_hbp::int AS "hbp",' 
                     f'num_wp::int AS "wp",'
                     f'num_flyball::int as "flyball",'
                     f'num_whiff::int as "whiff",'
