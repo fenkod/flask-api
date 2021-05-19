@@ -159,7 +159,7 @@ class Roundup(Resource):
                         f"WHEN park = 'HOME' THEN t_away.abbreviation "
                         f"WHEN park = 'AWAY' THEN t_home.abbreviation "
                         f'END AS "opponent",'
-                    f'line_status'
+                    f'line_status '
                 f'FROM statcast_pitchers p '
                 f'JOIN statsapi_schedule ss ON p.gamepk = ss.gamepk '
                 f'JOIN teams t_away ON ss.teams_away_team_id = t_away.mlb_id '
