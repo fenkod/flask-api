@@ -753,9 +753,9 @@ class Player(Resource):
 
         def bio():
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
-            results.fillna(value=json.dumps(None), inplace=True)
             results['lastgame'] = pd.to_datetime(results['lastgame']).dt.strftime("%a %m/%d/%Y")
             results['birth_date'] = pd.to_datetime(results['birth_date']).dt.strftime("%a %m/%d/%Y")
+            results.fillna(value=json.dumps(None), inplace=True)
 
             # Allow date formatting to_json instead of to_dict. Convert back to dict with json.loads
             return json.loads(results.to_json(orient='records', date_format='iso'))
