@@ -26,7 +26,7 @@ class Roundup(Resource):
             player_type = 'pitcher'
 
         # Get the latest day
-        if ( day == 'latest'):
+        if ( day == 'latest' ):
             latest = self.fetch_result('currentday', player_type)
             day = latest[0]['game_date']
             

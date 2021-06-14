@@ -1,6 +1,6 @@
 from flask import current_app
 from flask_restful import Resource
-from helpers import fetch_dataframe, get_connection, create_player_query, create_player_positions_query, var_dump
+from helpers import fetch_dataframe, var_dump
 from cache import cache_timeout, cache_invalidate_hour
 import json as json
 import pandas as pd
@@ -153,7 +153,17 @@ class Player(Resource):
                 )
         
         def bio():
-            return create_player_query(player_id)
+            sql_query = ''
+
+            table_select = 'SELECT A.mlbamid, A.playername, A.teamid, B.abbreviation AS "team", A.lastgame, A.ispitcher AS "is_pitcher", A.isactive AS "is_active", A.name_first, A.name_last, A.birth_date FROM pl_players A, teams B WHERE A.teamid=B.team_id \n'
+            player_select = ''
+
+            if player_id != 'NA':
+                player_select = 'AND mlbamid = %s'
+
+            sql_query = table_select + player_select
+
+            return sql_query
 
         def career():
             if (self.is_pitcher):
@@ -545,8 +555,16 @@ class Player(Resource):
             )
 
         def positions():
-            # TODOD: Add in filtering by hitter/pitcher as playerid (complementing 'all' player_id)
-            return create_player_positions_query(player_id)
+            table_select = "SELECT p.mlbamid as id, p.playername as name, json_agg(DISTINCT jsonb_build_object(pp.game_year, (SELECT json_object_agg(pp2.position, pp2.games_played) FROM pl_playerpositions pp2 WHERE pp2.mlbamid = pp.mlbamid AND pp2.game_year = pp.game_year))) as positions FROM pl_players p INNER JOIN pl_playerpositions pp USING(mlbamid)\n"
+            player_select = ''
+            group_by = 'GROUP BY p.mlbamid, p.playername'
+
+            if player_id != 'NA':
+                player_select = 'WHERE p.mlbamid = %s'
+
+            sql_query = table_select + player_select + group_by
+
+            return sql_query
 
         def stats():
             if (self.is_pitcher):
@@ -969,4 +987,3 @@ class Player(Resource):
         }
 
         return json_data.get(query_type, default)()
-

@@ -10,3 +10,4 @@ class base_config():
     BYPASS_CACHE = os.environ.get('BYPASS_CACHE', False)
     CACHE_INVALIDATE_HOUR = os.environ.get('CACHE_INVALIDATE_HOUR', 10)
     REDIS_URL = os.environ.get('REDIS_URL', '')
+    API_PORT = os.environ.get('API_PORT', '8080')
