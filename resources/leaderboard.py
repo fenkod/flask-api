@@ -5,13 +5,7 @@ from cache import cache_timeout, cache_invalidate_hour
 from datetime import date, datetime
 from webargs import fields, validate
 from webargs.flaskparser import use_kwargs, parser, abort
-
 import json as json
-import pandas as pd
-
-# TODO: REMOVE THESE DEPENDENCIES
-from pathlib import Path
-import logging
 
 ##
 # This is the flask_restful Resource Class for the Leaderboard API.
@@ -22,12 +16,11 @@ class Leaderboard(Resource):
     current_date = date.today()
     leaderboard_kwargs = {
         "handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
-        "tab": fields.Str(required=False, missing="overview", validate=validate.OneOf(["overview", "standard", "advanced", "approach", "plate_discipline", "batted_ball"])),
         "opponent_handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
         "league": fields.Str(required=False, missing="NA", validate=validate.OneOf(["AL","NL","NA"])),
         "division": fields.Str(required=False, missing="NA", validate=validate.OneOf(["East","Central","West","NA"])),
         "team": fields.Str(required=False, missing="NA", validate=validate.OneOf(valid_teams)),
-        "home_away": fields.Str(required=False, missing="NA", validate=validate.OneOf(["home","away","NA"])),
+        "home_away": fields.Str(required=False, missing="NA", validate=validate.OneOf(["Home","Away","NA"])),
         "year": fields.Str(required=False, missing=current_date.year),
         "month": fields.Str(required=False, missing="NA", validate=validate.OneOf(["1","2","3","4","5","6","7","8","9","10","11","12","NA"])),
         "half": fields.Str(required=False, missing="NA", validate=validate.OneOf(["First","Second","NA"])),
@@ -129,6 +122,7 @@ class Leaderboard(Resource):
             "avg_x_movement": "ROUND((SUM(total_x_movement) / NULLIF(SUM(num_x_movement), 0))::DECIMAL, 1)",
             "avg_z_movement": "ROUND((SUM(total_z_movement) / NULLIF(SUM(num_z_movement), 0))::DECIMAL, 1)",
             "armside_pct": "ROUND(100 * (SUM(num_armside) / NULLIF(SUM(base.num_pitches), 0)), 1)",
+            "babip_pct": "ROUND(((SUM(num_hit) - SUM(num_hr)) / NULLIF((sum(num_ab) - SUM(num_hr) - SUM(num_k) + SUM(num_sacrifice)), 0)), 3)",
             "gloveside_pct": "ROUND(100 * (SUM(num_gloveside) / NULLIF(SUM(base.num_pitches), 0)), 1)",
             "inside_pct": "ROUND(100 * (SUM(num_inside) / NULLIF(SUM(base.num_pitches), 0)), 1)",
             "outside_pct": "ROUND(100 * (SUM(num_outside) / NULLIF(SUM(base.num_pitches), 0)), 1)",
@@ -169,9 +163,7 @@ class Leaderboard(Resource):
             "batting_average": "ROUND(SUM(num_hit) / NULLIF(SUM(num_ab), 0), 3)",
             "strikeout_pct": "ROUND(100 * (SUM(num_k) / NULLIF(SUM(num_pa), 0)), 1)",
             "walk_pct": "ROUND(100 * (SUM(num_bb) / NULLIF(SUM(num_pa), 0)), 1)",
-            "hr_flyball_pct": "ROUND(100 * (SUM(num_hr) / NULLIF(SUM(num_fly_ball), 0)), 1)",
-            "babip_pct": "ROUND(((SUM(num_hit) - SUM(num_hr)) / NULLIF((SUM(num_ab) - SUM(num_hr) - SUM(num_k) + SUM(num_sacrifice)), 0)), 3)",
-            "bacon_pct": "ROUND(SUM(num_hit) / NULLIF((SUM(num_ab) - SUM(num_k) + SUM(num_sacrifice)), 0), 3)",
+            "hr_flyball_pct": "ROUND(100 * (SUM(num_hr) / NULLIF((SUM(num_fly_ball) + SUM(num_sacrifice)), 0)), 3)",
             "on_base_pct": "ROUND((SUM(num_hit) + SUM(num_bb) + SUM(num_hbp)) / NULLIF((SUM(num_ab) + SUM(num_bb) + SUM(num_sacrifice) + SUM(num_hbp)), 0), 3)",
             "whip": "ROUND((SUM(num_hit) + SUM(num_bb)) / NULLIF(SUM(num_outs) / 3, 0), 2)",
             "num_ip": "ROUND(NULLIF(SUM(num_outs) / 3, 0), 1)",
@@ -268,7 +260,7 @@ class Leaderboard(Resource):
 
     # Validate our query args
     @use_kwargs(leaderboard_kwargs)
-    def get(self, query_type='pitch', **kwargs):
+    def get(self, query_type='pitch', tab='overview', **kwargs):
         start_year = None
         end_year = None
 
@@ -286,9 +278,9 @@ class Leaderboard(Resource):
             self.query_year = kwargs['year']
 
         # Tab specific formats
-        self.tab = kwargs['tab']
+        self.tab = tab
         # Set woba on overview tab
-        if (kwargs['tab'] == 'overview'):
+        if (self.tab == 'overview'):
             if (self.query_year):
                 if (self.current_year == self.query_year):
                     self.woba_year = self.query_year - 1
@@ -319,7 +311,8 @@ class Leaderboard(Resource):
             result = current_app.cache.get(cache_key)
             if (result is None):
                 result = self.fetch_data(query_type, **query_args)
-                current_app.cache.set(cache_key, result,cache_timeout(cache_invalidate_hour()))
+                # Set Cache expiration to 5 mins
+                current_app.cache.set(cache_key, result, 300)
 
         return result
 
@@ -388,9 +381,9 @@ class Leaderboard(Resource):
             self.stmt = f"{self.stmt} WHERE"
             for col, val in conditions.items():
                 if (col in self.syntax_filters):
-                    self.stmt = f"{self.stmt} {col} {val} AND"
+                    self.stmt = f'{self.stmt} {col} {val} AND'
                 else:
-                    self.stmt = f"{self.stmt} {col} = {val} AND"
+                    self.stmt = f"{self.stmt} {col} = '{val}' AND"
 
             self.stmt = self.stmt[:-3]
             
@@ -506,7 +499,7 @@ class Leaderboard(Resource):
                 'player_home_away': 'pitcher_home_away',
                 'num_starts': 'COALESCE(start.num_starts, 0)'
             }
-            for colname in self.tab_display_fields[leaderboard][kwargs['tab']]:
+            for colname in self.tab_display_fields[leaderboard][self.tab]:
                 if colname == 'woba':
                     for woba_variable in woba_list:
                         fields[woba_variable] = self.aggregate_fields[woba_variable]
@@ -535,7 +528,7 @@ class Leaderboard(Resource):
                 'pitchtype': 'pitchtype'
             }
 
-            for colname in self.tab_display_fields[leaderboard][kwargs['tab']]:
+            for colname in self.tab_display_fields[leaderboard][self.tab]:
                 if colname == 'woba':
                     for woba_variable in woba_list:
                         fields[woba_variable] = self.aggregate_fields[woba_variable]
@@ -563,7 +556,7 @@ class Leaderboard(Resource):
                 'player_home_away': 'hitter_home_away',
             }
 
-            for colname in self.tab_display_fields[leaderboard][kwargs['tab']]:
+            for colname in self.tab_display_fields[leaderboard][self.tab]:
                 if colname == 'woba':
                     for woba_variable in woba_list:
                         fields[woba_variable] = self.aggregate_fields[woba_variable]
@@ -624,8 +617,7 @@ class Leaderboard(Resource):
         # Add the corresponding cols to the WHERE conditions
         for filter, fieldname in self.filter_fields.items():
             if (kwargs[filter] != 'NA'):
-                key = self.cols[fieldname]
-                groupby[key] = f"{kwargs[filter]}"
+                groupby.append(fieldname)
 
         def pitch():
             groupby_fields = ["pitchermlbamid", "pitchername", "pitcherteam", "pitcherteam_abb", "pitchtype", "pldp.num_pitches", "start.num_starts"]
@@ -673,7 +665,7 @@ class Leaderboard(Resource):
                 if (col in self.syntax_filters):
                     stmt = f"{stmt} {col} {val} AND"
                 else:
-                    stmt = f"{stmt} {col} = {val} AND"
+                    stmt = f"{stmt} {col} = '{val}' AND"
                     
                 groupby = f"{groupby}, {col}"
 
@@ -691,7 +683,7 @@ class Leaderboard(Resource):
                 if (col in self.syntax_filters):
                     stmt = f"{stmt} {col} {val} AND"
                 else:
-                    stmt = f"{stmt} {col} = {val} AND"
+                    stmt = f"{stmt} {col} = '{val}' AND"
                     
                 groupby = f"{groupby}, {col}"
 
@@ -700,9 +692,9 @@ class Leaderboard(Resource):
             
             return stmt
  
-        groups = {
+        joins = {
             "pitch": pitch,
             "pitcher": pitcher
         }
 
-        return groups.get(leaderboard, default)()
+        return joins.get(leaderboard, default)()

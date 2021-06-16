@@ -102,12 +102,9 @@ class Leaderboard_2(Resource):
 
 class Leaderboard_2_1(Resource):
     @current_app.cache.cached(timeout = cache_timeout(cache_invalidate_hour()))
-    def get(self, leaderboard='pitcher',tab='standard', handedness='NA', opponent_handedness='NA', league='NA', division='NA',
-            team='NA', home_away='NA', year=datetime.now().strftime('%Y'), month='NA', half='NA', arbitrary_start='NA',
-            arbitrary_end='NA'):
+    def get(self, leaderboard='pitcher',tab='standard', handedness='NA', opponent_handedness='NA', league='NA', division='NA', team='NA', home_away='NA', year=datetime.now().strftime('%Y'), month='NA', half='NA', arbitrary_start='NA', arbitrary_end='NA'):
 
-        result = leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, league, division,
-                                                   team, home_away, year, month, half, arbitrary_start, arbitrary_end)
+        result = leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, league, division, team, home_away, year, month, half, arbitrary_start, arbitrary_end)
 
         json_response = json.loads(result.to_json(orient='records', date_format='iso'))
         return (json_response)

@@ -982,8 +982,7 @@ class Player(Resource):
             "gamelogs": gamelogs,
             "locationlogs": locationlogs,
             "locations": stats, 
-            "repertoire": stats,
-            "stats": stats
+            "repertoire": stats
         }
 
         return json_data.get(query_type, default)()

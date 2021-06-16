@@ -1,9 +1,7 @@
 from flask import current_app
 from flask_restful import Resource
 from helpers import fetch_dataframe, date_validate, var_dump
-from cache import cache_timeout, cache_invalidate_hour
 import json as json
-import pandas as pd
 
 ##
 # This is the flask_restful Resource Class for the SP Roundup and Batterbox API.
@@ -51,12 +49,8 @@ class Roundup(Resource):
             result = current_app.cache.get(cache_key)
             if (result is None):
                 result = self.fetch_data(player_type, day)
-                timeout = cache_timeout(cache_invalidate_hour())
-                if (player_type == 'currentday'):
-                    # Set timeout for date cache to 10 mins.
-                    timeout = 600
-
-                current_app.cache.set(cache_key, result, timeout)
+                # Set expiration for cache to 5 mins.
+                current_app.cache.set(cache_key, result, 300)
 
         return result
 
