@@ -13,6 +13,11 @@ import json as json
 ##
 class Roundup(Resource):
 
+    def __init__(self):
+        self.day = 'latest'
+        self.player_type = 'pitcher'
+        self.bypass_cache = True
+
     def get(self, player_type='pitcher', day='latest'):
         if (day != 'latest' and (not date_validate(day))):
             day = 'latest'
@@ -35,10 +40,11 @@ class Roundup(Resource):
 
     
     def fetch_result(self, player_type, day):
+
         # Caching wrapper for fetch_data
         result = None
 
-        if (current_app.config.get('BYPASS_CACHE')):
+        if (current_app.config.get('BYPASS_CACHE') or self.bypass_cache):
             # Bypassing Caching of JSON Results
             result = self.fetch_data(player_type, day)
         else:
