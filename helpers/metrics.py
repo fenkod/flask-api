@@ -522,6 +522,8 @@ def weightedonbasepercentage(year, num_ab, num_bb, num_ibb, num_hbp, num_sf, num
                 const[year]['w1B'] * float(num_1b)) + (const[year]['w2B'] * float(num_2b)) + (
                 const[year]['w3B'] * float(num_3b)) + (const[year]['wHR'] * float(num_hr))
         denominator = float(num_ab + num_bb - num_ibb + num_sf + num_hbp)
+        if denominator == 0 or math.isnan(denominator):
+            return float('NaN')
         return numerator / denominator
 
 

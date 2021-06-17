@@ -7,6 +7,7 @@ from config import base_config
 
 application = Flask(__name__)
 application.config
+
 # Set API in our current_app context
 def init_api():
     application.api = Api(application)
@@ -19,5 +20,6 @@ with application.app_context():
     init_resource_endpoints()
 
 if __name__ == '__main__':
+    apiport = application.config.get('API_PORT')
     # db_connection = get_connection()
-    application.run(host='0.0.0.0', port='8080')
+    application.run(host='0.0.0.0', port=apiport)
