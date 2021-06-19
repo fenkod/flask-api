@@ -30,6 +30,8 @@ class Roundup(Resource):
 
         # Get the latest day
         if ( day == 'latest' ):
+            # Don't cache the latest day
+            self.bypass_cache = True
             latest = self.fetch_result('currentday', player_type)
             day = latest[0]['game_date']
             
@@ -80,7 +82,7 @@ class Roundup(Resource):
                     f"SELECT TO_CHAR(SP.game_date, 'YYYY-MM-DD') AS game_date "
                     f'FROM schedule S, statcast_pitchers SP '
                     f'WHERE S.ghuid=SP.ghuid '
-                    f'ORDER BY SP.game_date, S.game_time DESC '
+                    f'ORDER BY SP.game_date DESC, S.game_time DESC '
                     f'LIMIT 1'
                 )
             else:
@@ -88,7 +90,7 @@ class Roundup(Resource):
                     f"SELECT TO_CHAR(SH.game_date, 'YYYY-MM-DD') AS game_date "
                     f'FROM schedule S, statcast_hitters SH '
                     f'WHERE S.ghuid=SH.ghuid '
-                    f'ORDER BY SH.game_date, S.game_time DESC '
+                    f'ORDER BY SH.game_date DESC, S.game_time DESC '
                     f'LIMIT 1'
                 )
 
@@ -166,7 +168,7 @@ class Roundup(Resource):
                 f'JOIN teams t_home ON ss.teams_home_team_id = t_home.mlb_id '
                 f"WHERE game_date = %s "
                 f'AND start = 1'
-                f'ORDER BY num_earned_runs asc;'
+                f'ORDER BY num_earned_runs ASC;'
             )
 
         queries = {

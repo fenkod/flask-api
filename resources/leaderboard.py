@@ -217,7 +217,7 @@ class Leaderboard(Resource):
             "num_weak_bip": "SUM(num_weak_bip)",
             "num_medium_bip": "SUM(num_medium_bip)",
             "num_hard_bip": "SUM(num_hard_bip)",
-            "num_out": "SUM(num_outs)",
+            "num_outs": "SUM(num_outs)",
             "num_pa": "SUM(num_pa)",
             "num_ab": "SUM(num_ab)",
             "num_1b": "SUM(num_1b)",
