@@ -981,7 +981,8 @@ class Player(Resource):
             "career": career,
             "gamelogs": gamelogs,
             "locationlogs": locationlogs,
-            "locations": stats, 
+            "locations": stats,
+            "stats": stats,
             "repertoire": stats
         }
 
