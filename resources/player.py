@@ -1,6 +1,6 @@
 from flask import current_app
 from flask_restful import Resource
-from helpers import fetch_dataframe, get_connection, create_player_query, create_player_positions_query, var_dump
+from helpers import fetch_dataframe, var_dump
 from cache import cache_timeout, cache_invalidate_hour
 import json as json
 import pandas as pd
@@ -30,17 +30,20 @@ class Player(Resource):
         elif (player_id == 'NA' and query_type.isnumeric()):
             player_id = int(query_type)
             query_type = 'bio'
-
+        
         # Grab basic player data which tells us if we have a pitcher or hitter.
         # Also grabs career & current season stats
         if (type(player_id) is int):
-            player_info = self.fetch_result('info', player_id)
             self.player_id = int(player_id)
-            self.first_name = player_info[0]['name_first']
-            self.last_name = player_info[0]['name_last']
-            self.dob = player_info[0]['birth_date']
-            self.is_pitcher = bool(player_info[0]['is_pitcher'])
-            self.is_active = bool(player_info[0]['is_active'])
+
+            player_info = self.fetch_result('info', player_id)
+            if player_info:
+                self.first_name = player_info[0]['name_first']
+                self.last_name = player_info[0]['name_last']
+                self.dob = player_info[0]['birth_date']
+                self.is_pitcher = bool(player_info[0]['is_pitcher'])
+                self.is_active = bool(player_info[0]['is_active'])
+            
             self.career_stats = self.fetch_result('career', player_id)
         
         return self.fetch_result(query_type, player_id)
@@ -51,10 +54,10 @@ class Player(Resource):
         result = None
 
         if (current_app.config.get('BYPASS_CACHE')):
-            print('Bypassing Caching of JSON Results')
+            # Bypassing Caching of JSON Results
             result = self.fetch_data(query_type, player_id)
         else:
-            print('Using Cache for JSON Results')
+            # Using Cache for JSON Results
             cache_key_player_id = player_id
             cache_key_resource_type = self.__class__.__name__
             if (player_id == 'NA'):
@@ -150,7 +153,17 @@ class Player(Resource):
                 )
         
         def bio():
-            return create_player_query(player_id)
+            sql_query = ''
+
+            table_select = 'SELECT A.mlbamid, A.playername, A.teamid, B.abbreviation AS "team", A.lastgame, A.ispitcher AS "is_pitcher", A.isactive AS "is_active", A.name_first, A.name_last, A.birth_date FROM pl_players A, teams B WHERE A.teamid=B.team_id \n'
+            player_select = ''
+
+            if player_id != 'NA':
+                player_select = 'AND mlbamid = %s'
+
+            sql_query = table_select + player_select
+
+            return sql_query
 
         def career():
             if (self.is_pitcher):
@@ -281,7 +294,7 @@ class Player(Resource):
                     f'num_strikes::int AS "strikes",' 
                     f'num_balls::int AS "balls",' 
                     f'num_foul::int AS "foul",' 
-                    f'num_ibb::int AS "ibb",' 
+                    f'num_ibb::int AS "ibb",'
                     f'num_hbp::int AS "hbp",' 
                     f'num_wp::int AS "wp",'
                     f'num_flyball::int as "flyball",'
@@ -542,8 +555,16 @@ class Player(Resource):
             )
 
         def positions():
-            # TODOD: Add in filtering by hitter/pitcher as playerid (complementing 'all' player_id)
-            return create_player_positions_query(player_id)
+            table_select = "SELECT p.mlbamid as id, p.playername as name, json_agg(DISTINCT jsonb_build_object(pp.game_year, (SELECT json_object_agg(pp2.position, pp2.games_played) FROM pl_playerpositions pp2 WHERE pp2.mlbamid = pp.mlbamid AND pp2.game_year = pp.game_year))) as positions FROM pl_players p INNER JOIN pl_playerpositions pp USING(mlbamid)\n"
+            player_select = ''
+            group_by = 'GROUP BY p.mlbamid, p.playername'
+
+            if player_id != 'NA':
+                player_select = 'WHERE p.mlbamid = %s'
+
+            sql_query = table_select + player_select + group_by
+
+            return sql_query
 
         def stats():
             if (self.is_pitcher):
@@ -717,11 +738,6 @@ class Player(Resource):
             return formatted_results
         
         def gamelogs():
-            #if (self.is_pitcher):
-            #data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric,downcast='integer')
-            #else: 
-            #    data[['runs-scored','opponent-runs-scored','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']] = data[['win','loss','save','hold','ip','hits','r','er','bb','k','pitch-count','pa','ab','hbp','hr','flyball','sac','whiff','csw','strikeout_pct','bb_pct','babip_pct','hr_fb_pct','left_on_base_pct','swinging_strike_pct','csw_pct']].apply(pd.to_numeric,downcast='integer')
-
             formatted_data = data.set_index(['gameid','pitchtype','split-RL'])
             return formatted_data
 
@@ -755,9 +771,9 @@ class Player(Resource):
 
         def bio():
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
-            results.fillna(value=json.dumps(None), inplace=True)
             results['lastgame'] = pd.to_datetime(results['lastgame']).dt.strftime("%a %m/%d/%Y")
             results['birth_date'] = pd.to_datetime(results['birth_date']).dt.strftime("%a %m/%d/%Y")
+            results.fillna(value=json.dumps(None), inplace=True)
 
             # Allow date formatting to_json instead of to_dict. Convert back to dict with json.loads
             return json.loads(results.to_json(orient='records', date_format='iso'))
@@ -965,10 +981,9 @@ class Player(Resource):
             "career": career,
             "gamelogs": gamelogs,
             "locationlogs": locationlogs,
-            "locations": stats, 
-            "repertoire": stats,
-            "stats": stats
+            "locations": stats,
+            "stats": stats,
+            "repertoire": stats
         }
 
         return json_data.get(query_type, default)()
-

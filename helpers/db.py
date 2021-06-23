@@ -21,7 +21,10 @@ def fetch_dataframe(query, query_var=None):
     
         cursor_list = list()
         if (query_var):
-            cursor_list.append(query_var)
+            if (type(query_var) is list):
+                cursor_list.extend(query_var)
+            else:
+                cursor_list.append(query_var)
 
         try:
             cursor.execute(query, cursor_list)

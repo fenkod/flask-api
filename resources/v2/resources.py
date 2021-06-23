@@ -15,9 +15,6 @@ class Leaderboard_2(Resource):
         raw_data = collect_leaderboard_statistics(leaderboard, handedness, opponent_handedness, league, division,
                                                    team, home_away, year, month, half, arbitrary_start, arbitrary_end)
 
-        print("Generating subsets at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-        logging.debug("Generating subsets at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
         if leaderboard=='pitcher':
             advanced=raw_data[['player_id', 'player_name', 'player_team_abb', 'avg_velocity', 'avg_launch_speed',
                                'avg_launch_angle', 'avg_release_extension', 'avg_spin_rate', 'barrel_pct',
@@ -95,9 +92,6 @@ class Leaderboard_2(Resource):
         overview_response = json.loads(overview.to_json(orient='records', date_format='iso'))
         standard_response = json.loads(standard.to_json(orient='records', date_format='iso'))
 
-        print("Subsets generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-        logging.debug("Subsets generated at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
         return{'advanced': advanced_response,
                'approach': approach_response,
                'plate_discipline': plate_discipline_response,
@@ -105,19 +99,13 @@ class Leaderboard_2(Resource):
                'overview': overview_response,
                'standard': standard_response
                }
-        # return(advanced_response)
-
 
 class Leaderboard_2_1(Resource):
     @current_app.cache.cached(timeout = cache_timeout(cache_invalidate_hour()))
-    def get(self, leaderboard='pitcher',tab='standard', handedness='NA', opponent_handedness='NA', league='NA', division='NA',
-            team='NA', home_away='NA', year=datetime.now().strftime('%Y'), month='NA', half='NA', arbitrary_start='NA',
-            arbitrary_end='NA'):
+    def get(self, leaderboard='pitcher',tab='standard', handedness='NA', opponent_handedness='NA', league='NA', division='NA', team='NA', home_away='NA', year=datetime.now().strftime('%Y'), month='NA', half='NA', arbitrary_start='NA', arbitrary_end='NA'):
 
-        result = leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, league, division,
-                                                   team, home_away, year, month, half, arbitrary_start, arbitrary_end)
+        result = leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, league, division, team, home_away, year, month, half, arbitrary_start, arbitrary_end)
 
         json_response = json.loads(result.to_json(orient='records', date_format='iso'))
-        print("JSON Response {json_response}")
-        logging.debug("JSON Response {json_response}")
         return (json_response)
+        

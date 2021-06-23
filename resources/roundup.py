@@ -1,9 +1,7 @@
 from flask import current_app
 from flask_restful import Resource
 from helpers import fetch_dataframe, date_validate, var_dump
-from cache import cache_timeout, cache_invalidate_hour
 import json as json
-import pandas as pd
 
 ##
 # This is the flask_restful Resource Class for the SP Roundup and Batterbox API.
@@ -14,6 +12,11 @@ import pandas as pd
 # @param ${day}: ([0-9]2/[0-9]2/[0-9]4|'latest')
 ##
 class Roundup(Resource):
+
+    def __init__(self):
+        self.day = 'latest'
+        self.player_type = 'pitcher'
+        self.bypass_cache = True
 
     def get(self, player_type='pitcher', day='latest'):
         if (day != 'latest' and (not date_validate(day))):
@@ -26,7 +29,9 @@ class Roundup(Resource):
             player_type = 'pitcher'
 
         # Get the latest day
-        if ( day == 'latest'):
+        if ( day == 'latest' ):
+            # Don't cache the latest day
+            self.bypass_cache = True
             latest = self.fetch_result('currentday', player_type)
             day = latest[0]['game_date']
             
@@ -37,29 +42,23 @@ class Roundup(Resource):
 
     
     def fetch_result(self, player_type, day):
+
         # Caching wrapper for fetch_data
         result = None
 
-        # TODO: REMOVE THIS. TEMPORARY FIX FOR BYPASSING CACHE FOR ROUNDUP
-        return self.fetch_data(player_type, day)
-
-        if (current_app.config.get('BYPASS_CACHE')):
-            print('Bypassing Caching of JSON Results')
+        if (current_app.config.get('BYPASS_CACHE') or self.bypass_cache):
+            # Bypassing Caching of JSON Results
             result = self.fetch_data(player_type, day)
         else:
-            print('Using Cache for JSON Results')            
+            # Using Cache for JSON Results          
             cache_key_resource_type = self.__class__.__name__
 
             cache_key = f'{cache_key_resource_type}-{player_type}-{day}'
             result = current_app.cache.get(cache_key)
             if (result is None):
                 result = self.fetch_data(player_type, day)
-                timeout = cache_timeout(cache_invalidate_hour())
-                if (player_type == 'currentday'):
-                    # Set timeout for date cache to 10 mins.
-                    timeout = 600
-
-                current_app.cache.set(cache_key, result, timeout)
+                # Set expiration for cache to 5 mins.
+                current_app.cache.set(cache_key, result, 300)
 
         return result
 
@@ -83,7 +82,7 @@ class Roundup(Resource):
                     f"SELECT TO_CHAR(SP.game_date, 'YYYY-MM-DD') AS game_date "
                     f'FROM schedule S, statcast_pitchers SP '
                     f'WHERE S.ghuid=SP.ghuid '
-                    f'ORDER BY SP.game_date, S.game_time DESC '
+                    f'ORDER BY SP.game_date DESC, S.game_time DESC '
                     f'LIMIT 1'
                 )
             else:
@@ -91,7 +90,7 @@ class Roundup(Resource):
                     f"SELECT TO_CHAR(SH.game_date, 'YYYY-MM-DD') AS game_date "
                     f'FROM schedule S, statcast_hitters SH '
                     f'WHERE S.ghuid=SH.ghuid '
-                    f'ORDER BY SH.game_date, S.game_time DESC '
+                    f'ORDER BY SH.game_date DESC, S.game_time DESC '
                     f'LIMIT 1'
                 )
 
@@ -161,14 +160,15 @@ class Roundup(Resource):
                     f'CASE '
                         f"WHEN park = 'HOME' THEN t_away.abbreviation "
                         f"WHEN park = 'AWAY' THEN t_home.abbreviation "
-                        f'END AS "opponent" '
+                        f'END AS "opponent",'
+                    f'line_status '
                 f'FROM statcast_pitchers p '
                 f'JOIN statsapi_schedule ss ON p.gamepk = ss.gamepk '
                 f'JOIN teams t_away ON ss.teams_away_team_id = t_away.mlb_id '
                 f'JOIN teams t_home ON ss.teams_home_team_id = t_home.mlb_id '
                 f"WHERE game_date = %s "
                 f'AND start = 1'
-                f'ORDER BY num_earned_runs asc;'
+                f'ORDER BY num_earned_runs ASC;'
             )
 
         queries = {
