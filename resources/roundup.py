@@ -79,19 +79,13 @@ class Roundup(Resource):
             # Get the latest gameday recorded for roundup.
             if (day == 'pitcher'):
                 return (
-                    f"SELECT TO_CHAR(SP.game_date, 'YYYY-MM-DD') AS game_date "
-                    f'FROM schedule S, statcast_pitchers SP '
-                    f'WHERE S.ghuid=SP.ghuid '
-                    f'ORDER BY SP.game_date DESC, S.game_time DESC '
-                    f'LIMIT 1'
+                    f"select to_char(least(max(game_date), current_date), 'YYYY-MM-DD') as game_date "
+                    f'from statcast_pitchers'
                 )
             else:
                 return (
-                    f"SELECT TO_CHAR(SH.game_date, 'YYYY-MM-DD') AS game_date "
-                    f'FROM schedule S, statcast_hitters SH '
-                    f'WHERE S.ghuid=SH.ghuid '
-                    f'ORDER BY SH.game_date DESC, S.game_time DESC '
-                    f'LIMIT 1'
+                    f"select to_char(least(max(game_date), current_date), 'YYYY-MM-DD') as game_date "
+                    f"from statcast_hitters"
                 )
 
         def hitter():
