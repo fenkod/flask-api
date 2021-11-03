@@ -11,42 +11,44 @@ def init_resource_endpoints():
     # Legacy Instantiators
     from .v1 import init_v1_resource_endpoints
     from .v2 import init_v2_resource_endpoints
+    from .v3 import init_v3_resource_endpoints
 
     # Legacy Endpoints
     init_v1_resource_endpoints()
     init_v2_resource_endpoints()
+    init_v3_resource_endpoints()
 
-    # v3 resource endpoints
-    v3_player_routes = [
-        '/v3/player/<string:query_type>/<int:player_id>/',
-        '/v3/player/<string:query_type>/<int:player_id>',
-        '/v3/player/<int:player_id>/',
-        '/v3/player/<int:player_id>',
-        '/v3/player/<string:query_type>/',
-        '/v3/player/<string:query_type>',
-        '/v3/player/',
-        '/v3/player'
+    # v4 resource endpoints
+    v4_player_routes = [
+        '/v4/player/<string:query_type>/<int:player_id>/',
+        '/v4/player/<string:query_type>/<int:player_id>',
+        '/v4/player/<int:player_id>/',
+        '/v4/player/<int:player_id>',
+        '/v4/player/<string:query_type>/',
+        '/v4/player/<string:query_type>',
+        '/v4/player/',
+        '/v4/player'
     ]
-    v3_roundup_routes = [
-        '/v3/roundup/<string:player_type>/<string:day>/',
-        '/v3/roundup/<string:player_type>/<string:day>',
-        '/v3/roundup/<string:player_type>/',
-        '/v3/roundup/<string:player_type>',
-        '/v3/roundup/',
-        '/v3/roundup'
+    v4_roundup_routes = [
+        '/v4/roundup/<string:player_type>/<string:day>/',
+        '/v4/roundup/<string:player_type>/<string:day>',
+        '/v4/roundup/<string:player_type>/',
+        '/v4/roundup/<string:player_type>',
+        '/v4/roundup/',
+        '/v4/roundup'
     ]
-    v3_leaderboard_routes = [
-        '/v3/leaderboard/<string:query_type>/<string:tab>/',
-        '/v3/leaderboard/<string:query_type>/<string:tab>',
-        '/v3/leaderboard/<string:query_type>/',
-        '/v3/leaderboard/<string:query_type>',
-        '/v3/leaderboard/',
-        '/v3/leaderboard'
+    v4_leaderboard_routes = [
+        '/v4/leaderboard/<string:query_type>/<string:tab>/',
+        '/v4/leaderboard/<string:query_type>/<string:tab>',
+        '/v4/leaderboard/<string:query_type>/',
+        '/v4/leaderboard/<string:query_type>',
+        '/v4/leaderboard/',
+        '/v4/leaderboard'
     ]
 
-    current_app.api.add_resource(Player, *v3_player_routes, endpoint='player')
-    current_app.api.add_resource(Roundup, *v3_roundup_routes, endpoint='roundup')
-    current_app.api.add_resource(Leaderboard, *v3_leaderboard_routes, endpoint='leaderboard')
+    current_app.api.add_resource(Player, *v4_player_routes, endpoint='player')
+    current_app.api.add_resource(Roundup, *v4_roundup_routes, endpoint='roundup')
+    current_app.api.add_resource(Leaderboard, *v4_leaderboard_routes, endpoint='leaderboard')
 
     # Utility Endpoints
     current_app.api.add_resource(Status, '/')
