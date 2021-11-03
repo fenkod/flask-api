@@ -34,6 +34,6 @@ def init_v3_resource_endpoints():
         '/v3/leaderboard'
     ]
 
-    current_app.api.add_resource(Player, *v3_player_routes, endpoint='player')
-    current_app.api.add_resource(Roundup, *v3_roundup_routes, endpoint='roundup')
-    current_app.api.add_resource(Leaderboard, *v3_leaderboard_routes, endpoint='leaderboard')
+    current_app.api.add_resource(Player, *v3_player_routes, endpoint='playerv3')
+    current_app.api.add_resource(Roundup, *v3_roundup_routes, endpoint='roundupv3')
+    current_app.api.add_resource(Leaderboard, *v3_leaderboard_routes, endpoint='leaderboardv3')
