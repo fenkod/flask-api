@@ -9,7 +9,7 @@ import pandas as pd
 ##
 def get_team_info(team=None):
 
-    query = f'SELECT abbreviation, team_name, mlb_id, league, division FROM teams'
+    query = f'SELECT abbreviation, team_name, mlb_team_id as "mlb_id", league, division FROM teams'
     cache_key = f'team-info-all'
 
     if (team):

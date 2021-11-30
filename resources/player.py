@@ -36,7 +36,7 @@ class Player(Resource):
         if (type(player_id) is int):
             self.player_id = int(player_id)
 
-            player_info = self.fetch_result('info', player_id)
+            player_info = self.fetch_result('bio', player_id)
             if player_info:
                 self.first_name = player_info[0]['name_first']
                 self.last_name = player_info[0]['name_last']
@@ -155,11 +155,41 @@ class Player(Resource):
         def bio():
             sql_query = ''
 
-            table_select = 'SELECT A.mlbamid, A.playername, A.teamid, B.abbreviation AS "team", A.lastgame, A.ispitcher AS "is_pitcher", A.isactive AS "is_active", A.name_first, A.name_last, A.birth_date FROM pl_players A, teams B WHERE A.teamid=B.team_id \n'
+            table_select =  (f'select 	players.mlb_player_id as "mlbamid",'
+                                        f'players.full_name as "playername",'
+                                        f'cast(current_team.team_id as int4) as "teamid",'
+                                        f'current_team.abbreviation as "team",'
+                                        f'CAST(null as date) as "lastgame",'
+                                        f'case when players.primary_position in (\'SP\', \'RP\', \'P\') then 1 else 0 end as "is_pitcher",'
+                                        f'case when players.status in (\'A\') then 1 else 0 end as "is_active",'
+                                        f'players.first_name as "name_first",'
+                                        f'players.last_name as "name_last",'
+                                        f'players.birth_date as "birth_date",'
+                                        f'players.primary_position as "primary_position",'
+                                        f'players.status as "status",'
+                                        f'players.batting_hand as "batting_hand",'
+                                        f'players.throwing_hand as "throwing_hand",'
+                                        f'players.birth_city as "birth_city",'
+                                        f'players.birth_country as "birth_country",'
+                                        f'players.birth_state as "birth_state",'
+                                        f'players.college as "college",'
+                                        f'players.high_school as "high_school",'
+                                        f'cast(players.pro_debut_date as date) as "pro_debut_date",'
+                                        f'players.draft_round as "draft_round",'
+                                        f'players.draft_pick as "draft_pick",'
+                                        f'players.draft_year as "draft_year",'
+                                        f'draft_team.team_id as "draft_team_id",'
+                                        f'draft_team.abbreviation as "draft_team",'
+                                        f'players.jersey_number as "jersey_number",'
+                                        f'players.height as "height",'
+                                        f'players.weight as "weight" '
+                                f'from players '
+                                f'left join teams as current_team on current_team.team_id = players.current_team_id '
+                                f'left join teams as draft_team on draft_team.team_id = players.draft_team_id  \n')
             player_select = ''
 
             if player_id != 'NA':
-                player_select = 'AND mlbamid = %s'
+                player_select = 'WHERE players.mlb_player_id = %s'
 
             sql_query = table_select + player_select
 
@@ -488,17 +518,6 @@ class Player(Resource):
                     f'ORDER BY year_played DESC, month_played DESC, ghuid DESC;'
                 )
 
-        def info():
-            return (
-                f'SELECT name_first,'
-                    f'name_last,'
-                    f'birth_date,'
-                    f'ispitcher AS "is_pitcher",'
-                    f'isactive AS "is_active" '
-                f'FROM pl_players '
-                f'WHERE mlbamid=%s;'
-            )
-
         def locationlogs():
             if (self.is_pitcher):
                 return (
@@ -709,7 +728,6 @@ class Player(Resource):
             "bio": bio,
             "career": career,
             "gamelogs": gamelogs,
-            "info": info,
             "locationlogs": locationlogs,
             "locations": locations,
             "positions": positions,
@@ -773,6 +791,7 @@ class Player(Resource):
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
             results['lastgame'] = pd.to_datetime(results['lastgame']).dt.strftime("%a %m/%d/%Y")
             results['birth_date'] = pd.to_datetime(results['birth_date']).dt.strftime("%a %m/%d/%Y")
+            results['pro_debut_date'] = pd.to_datetime(results['pro_debut_date']).dt.strftime("%a %m/%d/%Y")
             results.fillna(value=json.dumps(None), inplace=True)
 
             # Allow date formatting to_json instead of to_dict. Convert back to dict with json.loads
