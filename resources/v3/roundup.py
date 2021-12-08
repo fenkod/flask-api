@@ -52,8 +52,9 @@ class Roundup(Resource):
         else:
             # Using Cache for JSON Results          
             cache_key_resource_type = self.__class__.__name__
+            cache_key_version = 'v3'
 
-            cache_key = f'{cache_key_resource_type}-{player_type}-{day}'
+            cache_key = f'{cache_key_resource_type}-{cache_key_version}-{player_type}-{day}'
             result = current_app.cache.get(cache_key)
             if (result is None):
                 result = self.fetch_data(player_type, day)
@@ -65,7 +66,7 @@ class Roundup(Resource):
     def fetch_data(self, player_type, day):
         query = self.get_query(player_type, day)
 
-        raw = fetch_dataframe(query,day)
+        raw = fetch_dataframe(query,day, True)
         results = self.format_results(player_type, raw)
         output = self.get_json(player_type,day,results)
 

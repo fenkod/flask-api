@@ -12,7 +12,7 @@ class Schedule(Resource):
     @current_app.cache.cached(timeout=300)
     def get(self, game_date):
         pl_host = os.getenv('PL_DB_HOST')
-        pl_db = os.getenv('PL_DB_DATABASE', 'pitcher-list')
+        pl_db = os.getenv('PL_DB_DATABASE_LEGACY', 'pitcher-list')
         pl_user = os.getenv('PL_DB_USER')
         pl_password = os.getenv('PL_DB_PW')
         db_connection = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
