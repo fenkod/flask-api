@@ -2,19 +2,27 @@ from flask import g, current_app
 import psycopg2
 import pandas as pd
 
-def get_connection():
-    if ('db' not in g):
-        pl_host = current_app.config.get('PL_DB_HOST')
-        pl_db = current_app.config.get('PL_DB_DATABASE')
-        pl_user = current_app.config.get('PL_DB_USER')
-        pl_password = current_app.config.get('PL_DB_PW')
-        g.db = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
-    
-    return g.db
+def get_connection(is_legacy = False):
+    if is_legacy:
+        if('legacy_db' not in g):
+            pl_host = current_app.config.get('PL_DB_HOST')
+            pl_db = current_app.config.get('PL_DB_DATABASE_LEGACY')
+            pl_user = current_app.config.get('PL_DB_USER')
+            pl_password = current_app.config.get('PL_DB_PW')
+            g.legacy_db = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+        return g.legacy_db
+    else:
+        if ('db' not in g):
+            pl_host = current_app.config.get('PL_DB_HOST')
+            pl_db = current_app.config.get('PL_DB_DATABASE')
+            pl_user = current_app.config.get('PL_DB_USER')
+            pl_password = current_app.config.get('PL_DB_PW')
+            g.db = psycopg2.connect(host=pl_host, port=5432, dbname=pl_db, user=pl_user, password=pl_password)
+        return g.db
 
 # Fetch a raw Pandas DataFrame object from the DB for a given SQL query.
-def fetch_dataframe(query, query_var=None):
-    db_connection = get_connection()
+def fetch_dataframe(query, query_var=None, is_legacy=False):
+    db_connection = get_connection(is_legacy)
 
     # Manage cursor conext and ensure cursor closes after leaving context but allow connection to remain open.
     with db_connection.cursor() as cursor:
