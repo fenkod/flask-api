@@ -344,7 +344,7 @@ def collect_leaderboard_statistics(leaderboard, handedness, opponent_handedness,
 
 def leaderboard_collection(leaderboard, tab, handedness, opponent_handedness, league, division, team, home_away, year,
                            month, half, arbitrary_start, arbitrary_end):
-    db_connection = get_connection()
+    db_connection = get_connection(True)
     cursor = db_connection.cursor()
     query = create_search_query_2_1(leaderboard, tab, handedness, opponent_handedness, league, division, team,
                                     home_away, year, month, half, arbitrary_start, arbitrary_end)
