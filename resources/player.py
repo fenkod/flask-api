@@ -182,10 +182,16 @@ class Player(Resource):
                                         f'draft_team.abbreviation as "draft_team",'
                                         f'players.jersey_number as "jersey_number",'
                                         f'players.height as "height",'
-                                        f'players.weight as "weight" '
+                                        f'players.weight as "weight",'
+                                        f'highest_hitter_depth_chart_position.position as hitter_depth_chart_position,'
+                                        f'highest_hitter_depth_chart_position.depth as hitter_depth_chart_depth,'
+                                        f'highest_pitcher_depth_chart_position.position as pitcher_depth_chart_position,'
+                                        f'highest_pitcher_depth_chart_position.depth as pitcher_depth_chart_depth '
                                 f'from players '
                                 f'left join teams as current_team on current_team.team_id = players.current_team_id '
-                                f'left join teams as draft_team on draft_team.team_id = players.draft_team_id  \n')
+                                f'left join teams as draft_team on draft_team.team_id = players.draft_team_id '
+                                f'left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = current_team.team_id and depth_charts."position" not in (\'SP\', \'BP\', \'CL\') order by depth_charts."depth" fetch first row only) highest_hitter_depth_chart_position on true '
+                                f'left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = current_team.team_id and depth_charts."position" in (\'SP\', \'BP\', \'CL\') order by depth_charts."depth" fetch first row only) highest_pitcher_depth_chart_position on true  \n')
             player_select = ''
 
             if player_id != 'NA':
