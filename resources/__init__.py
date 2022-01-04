@@ -7,6 +7,7 @@ def init_resource_endpoints():
     from .roundup import Roundup
     from .leaderboard import Leaderboard
     from .team import Team
+    from .standings import Standings
     from .util import Status, ClearCache
 
     # Legacy Instantiators
@@ -54,10 +55,21 @@ def init_resource_endpoints():
         '/v4/team/<string:query_type>'
     ]
 
+    v4_standings_routes = [
+        '/v4/standings/<string:query_type>/<int:query_year>/',
+        '/v4/standings/<string:query_type>/<int:query_year>',
+        '/v4/standings/<string:query_type>/',
+        '/v4/standings/<string:query_type>',
+        '/v4/standings/<int:query_year>/',
+        '/v4/standings/<int:query_year>',
+        '/v4/standings/',
+        '/v4/standings'
+    ]
 
     current_app.api.add_resource(Player, *v4_player_routes, endpoint='player')
     current_app.api.add_resource(Roundup, *v4_roundup_routes, endpoint='roundup')
     current_app.api.add_resource(Leaderboard, *v4_leaderboard_routes, endpoint='leaderboard')
+    current_app.api.add_resource(Standings, *v4_standings_routes, endpoint='standings')
     current_app.api.add_resource(Team, *v4_team_routes, endpoint='team')
 
     # Utility Endpoints
