@@ -6,6 +6,7 @@ def init_resource_endpoints():
     from .player import Player
     from .roundup import Roundup
     from .leaderboard import Leaderboard
+    from .team import Team
     from .standings import Standings
     from .util import Status, ClearCache
 
@@ -47,6 +48,13 @@ def init_resource_endpoints():
         '/v4/leaderboard'
     ]
 
+    v4_team_routes = [
+        '/v4/team/<string:query_type>/<int:team_id>/',
+        '/v4/team/<string:query_type>/<int:team_id>',
+        '/v4/team/<string:query_type>/',
+        '/v4/team/<string:query_type>'
+    ]
+
     v4_standings_routes = [
         '/v4/standings/<string:query_type>/<int:query_year>/',
         '/v4/standings/<string:query_type>/<int:query_year>',
@@ -62,6 +70,7 @@ def init_resource_endpoints():
     current_app.api.add_resource(Roundup, *v4_roundup_routes, endpoint='roundup')
     current_app.api.add_resource(Leaderboard, *v4_leaderboard_routes, endpoint='leaderboard')
     current_app.api.add_resource(Standings, *v4_standings_routes, endpoint='standings')
+    current_app.api.add_resource(Team, *v4_team_routes, endpoint='team')
 
     # Utility Endpoints
     current_app.api.add_resource(Status, '/')
