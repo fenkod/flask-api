@@ -221,7 +221,8 @@ class Player(Resource):
                         f'wp::int, '
                         f'teams '
                     f'FROM mv_pitcher_career_stats '
-                    f'WHERE pitchermlbamid = %s '
+                    f'INNER JOIN players on players.player_id = mv_pitcher_career_stats.pitcher_id '
+                    f'WHERE players.mlb_player_id = %s '
                     f'ORDER BY year ASC;'
                 )
             else:
