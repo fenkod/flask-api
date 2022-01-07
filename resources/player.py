@@ -540,23 +540,24 @@ class Player(Resource):
         def locationlogs():
             if (self.is_pitcher):
                 return (
-                    f'SELECT DISTINCT ghuid AS "gameid",'
-                        f'pitchtype,'
-                        f'hitterside AS "split-RL",'
-                        f'pitch_locations, '
-                        f'num_pitches AS "pitch-count", '
-                        f'usage_pct, '
-                        f'whiff, '
-                        f'called_strike, '
-                        f'csw_pct, '
-                        f'zone_pct, '
-                        f'zone_swing_pct, '
-                        f'swinging_strike_pct, '
-                        f'o_swing_pct, '
-                        f'avg_velocity '
-                    f'FROM mv_pitcher_game_log_pitches '
-                    f"WHERE pitchermlbamid = %s "
-                    f'ORDER BY ghuid;'
+                    f'SELECT DISTINCT game_id AS "gameid", ' 
+                            f'pitchtype, '
+                            f'hitterside AS "split-RL", '
+                            f'pitch_locations, '
+                            f'num_pitches AS "pitch-count", '
+                            f'usage_pct, '
+                            f'whiff, '
+                            f'called_strike, '
+                            f'csw_pct, '
+                            f'zone_pct, '
+                            f'zone_swing_pct, '
+                            f'swinging_strike_pct, '
+                            f'o_swing_pct, '
+                            f'avg_velocity '
+                        f'FROM mv_pitcher_game_log_pitches '
+                        f'inner join players on players.player_id = mv_pitcher_game_log_pitches.pitcher_id '
+                        f'WHERE players.mlb_player_id = %s '
+                        f'ORDER BY game_id;'
                 )
             else:
                 return (
