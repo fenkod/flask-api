@@ -593,12 +593,17 @@ class Player(Resource):
             )
 
         def positions():
-            table_select = "SELECT p.mlbamid as id, p.playername as name, json_agg(DISTINCT jsonb_build_object(pp.game_year, (SELECT json_object_agg(pp2.position, pp2.games_played) FROM pl_playerpositions pp2 WHERE pp2.mlbamid = pp.mlbamid AND pp2.game_year = pp.game_year))) as positions FROM pl_players p INNER JOIN pl_playerpositions pp USING(mlbamid)\n"
+            table_select =  (f'SELECT players.mlb_player_id as id, '
+                                f'players.full_name as name, '
+                                f'json_agg(DISTINCT jsonb_build_object(pp.game_year, (SELECT json_object_agg(pp2.position, pp2.games_played) FROM pl_playerpositions pp2 WHERE pp2.mlb_player_id = pp.mlb_player_id AND pp2.game_year = pp.game_year))) as positions '
+                                f'FROM players '
+                                f'INNER JOIN pl_playerpositions pp '
+                                f'USING(mlb_player_id)\n')
             player_select = ''
-            group_by = 'GROUP BY p.mlbamid, p.playername'
+            group_by = 'GROUP BY players.mlb_player_id, players.full_name'
 
             if player_id != 'NA':
-                player_select = 'WHERE p.mlbamid = %s'
+                player_select = 'WHERE players.mlb_player_id = %s'
 
             sql_query = table_select + player_select + group_by
 
