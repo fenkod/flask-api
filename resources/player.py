@@ -564,7 +564,7 @@ class Player(Resource):
                         f'inner join players on players.player_id = mv_pitcher_game_log_pitches.pitcher_id '
                         f'inner join games on games.game_id = mv_pitcher_game_log_pitches.game_id '
                         f'WHERE players.mlb_player_id = %s '
-                        f'ORDER BY game_id;'
+                        f'ORDER BY games.mlb_game_id;'
                 )
             else:
                 return (
