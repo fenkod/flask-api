@@ -242,7 +242,7 @@ class Player(Resource):
         def gamelogs():
             if (self.is_pitcher):
                 return (
-                    f'SELECT mv_pitcher_game_logs.game_id AS "gameid",'
+                    f'SELECT games.mlb_game_id AS "gameid",'
                             f'game_played AS "game-date",'
                             f'team,'
                             f'pitcher_team_id::int AS "team-id",'
@@ -540,7 +540,7 @@ class Player(Resource):
         def locationlogs():
             if (self.is_pitcher):
                 return (
-                    f'SELECT DISTINCT game_id AS "gameid", ' 
+                    f'SELECT DISTINCT games.mlb_game_id AS "gameid", ' 
                             f'pitchtype, '
                             f'hitterside AS "split-RL", '
                             f'pitch_locations, '
@@ -556,6 +556,7 @@ class Player(Resource):
                             f'avg_velocity '
                         f'FROM mv_pitcher_game_log_pitches '
                         f'inner join players on players.player_id = mv_pitcher_game_log_pitches.pitcher_id '
+                        f'inner join games on games.game_id = mv_pitcher_game_log_pitches.game_id '
                         f'WHERE players.mlb_player_id = %s '
                         f'ORDER BY game_id;'
                 )
