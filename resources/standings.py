@@ -64,6 +64,7 @@ class Standings(Resource):
             sql_query = ''
 
             table_select =  (f'select 	year,'
+                                        f'mlb_team_id as team_id,'
                                         f'league_standings.league,'
                                         f'league_standings.division,'
                                         f'teams.team_name,'
