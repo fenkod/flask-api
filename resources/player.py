@@ -251,33 +251,37 @@ class Player(Resource):
                     f'SELECT games.mlb_game_id AS "gameid",'
                             f'game_played AS "game-date",'
                             f'team,'
-                            f'pitcher_team_id::int AS "team-id",'
+                            f'pitcherteam.mlb_team_id::int AS "team-id",'
                             f'opponent,'
-                            f'opponent_team_id::int AS "opponent-team-id",'
+                            f'opponentteam.mlb_team_id::int AS "opponent-team-id",'
                             f'park,'
                             f'team_result AS "team-result",'
                             f'runs_scored::int AS "runs-scored",'
                             f'opponent_runs_scored::int AS "opponent-runs-scored",'
-                            f'pitching_game_log.start::int AS "gs",'
-                            f'pitching_game_log.play ::int AS "g",'
-                            f'pitching_game_log.complete::int AS "cg",'
-                            f'pitching_game_log.win::int AS "w",'
-                            f'pitching_game_log.loss::int AS "l",'
-                            f'pitching_game_log.save::int AS "sv",'
-                            f'pitching_game_log.blown_save::int AS "bsv",'
-                            f'pitching_game_log.hold::int AS "hld",'
-                            f'pitching_game_log.qstart::int AS "qs",'
-                            f'pitching_game_log.ip AS "ip",'
-                            f'pitching_game_log.outs AS "outs",'
-                            f'pitching_game_log.r::int AS "runs",'
-                            f'pitching_game_log.er::int AS "earned_runs",'
-                            f'pitching_game_log.lob::int,'
-                            f'lob_pct,'
+                            f'mv_pitcher_game_stats.start::int AS "gs",'
+                            f'mv_pitcher_game_stats.play ::int AS "g",'
+                            f'mv_pitcher_game_stats.complete::int AS "cg",'
+                            f'mv_pitcher_game_stats.win::int AS "w",'
+                            f'mv_pitcher_game_stats.loss::int AS "l",'
+                            f'mv_pitcher_game_stats.save::int AS "sv",'
+                            f'mv_pitcher_game_stats.blown_save::int AS "bsv",'
+                            f'mv_pitcher_game_stats.hold::int AS "hld",'
+                            f'mv_pitcher_game_stats.qstart::int AS "qs",'
+                            f'mv_pitcher_game_stats.shutout ::int AS "sho",'
+                            f'mv_pitcher_game_stats.ip AS "ip",'
+                            f'mv_pitcher_game_stats.num_outs AS "outs",'
+                            f'mv_pitcher_game_stats.runs::int AS "runs",'
+                            f'mv_pitcher_game_stats.earned_runs::int AS "earned_runs",'
+                            f'mv_pitcher_game_stats.lob::int,'
+                            f'mv_pitcher_game_stats.lob_pct,'
+                            f'mv_pitcher_game_stats.era,'
+                            f'mv_pitcher_game_stats.whip,'
+                            f'mv_pitcher_game_stats.x_era as "x-era",'
                             f'pitchtype,'
                             f'opponent_handedness AS "split-RL",'
                             f'avg_velocity AS "velo_avg",'
                             f'strikeout_pct,'
-                            f'bb_pct,'
+                            f'mv_pitcher_game_logs.bb_pct,'
                             f'usage_pct,'
                             f'batting_average AS "batting_avg",' 
                             f'o_swing_pct,'
@@ -301,7 +305,7 @@ class Player(Resource):
                             f'groundball_pct,'
                             f'linedrive_pct,'
                             f'flyball_pct,'
-                            f'hr_flyball_pct,'
+                            f'mv_pitcher_game_logs.hr_flyball_pct,'
                             f'groundball_flyball_pct,'
                             f'infield_flyball_pct,'
                             f'weak_pct,'
@@ -324,7 +328,7 @@ class Player(Resource):
                             f'late_pct,'
                             f'non_bip_strike_pct,'
                             f'early_bip_pct,'
-                            f'num_pitches::int AS "pitch-count",'
+                            f'mv_pitcher_game_logs.num_pitches::int AS "pitch-count",'
                             f'num_hit::int AS "hits",'
                             f'num_bb::int AS "bb",'
                             f'num_1b::int AS "1b",' 
@@ -429,11 +433,23 @@ class Player(Resource):
                             f'secondary_pct as "secondary-pct",'
                             f'early_secondary_pct as "early-secondary-pct",'
                             f'late_secondary_pct as "late-secondary-pct",'
-                            f'put_away_pct as "put-away-pct" '
+                            f'put_away_pct as "put-away-pct",'
+                            f'whiff_pct as "whiff-pct",'
+                            f'slug_pct as "slug-pct",'
+                            f'on_base_pct as "on-base-pct",'
+                            f'ops_pct as "ops-pct",'
+                            f'woba_pct as "woba-pct",'
+                            f'x_avg as "x-avg",'
+                            f'x_slug_pct as "x-slug-pct",'
+                            f'x_babip as "x-babip-pct",'
+                            f'x_woba as "x-woba-pct",'
+                            f'x_wobacon as "x-wobacon-pct" '
                         f'FROM mv_pitcher_game_logs '
                         f'inner join players on players.player_id = mv_pitcher_game_logs.pitcher_id '
                         f'inner join games on games.game_id = mv_pitcher_game_logs.game_id '
-                        f'inner join pitching_game_log on pitching_game_log.game_id = mv_pitcher_game_logs.game_id and pitching_game_log.player_id = players.player_id '
+                        f'inner join teams as pitcherteam on pitcherteam.team_id = mv_pitcher_game_logs.pitcher_team_id '
+                        f'inner join teams as opponentteam on opponentteam.team_id = mv_pitcher_game_logs.opponent_team_id '
+                        f'inner join mv_pitcher_game_stats on mv_pitcher_game_stats.game_id = mv_pitcher_game_logs.game_id and mv_pitcher_game_stats.pitcher_id = players.player_id '
                         f'WHERE players.mlb_player_id = %s '
                         f'ORDER BY mv_pitcher_game_logs.year_played DESC, mv_pitcher_game_logs.month_played DESC, mv_pitcher_game_logs.game_played DESC;'
                 )
@@ -946,7 +962,10 @@ class Player(Resource):
                             'team-result': value['team-result'],
                             'runs-scored': value['runs-scored'],
                             'opponent-runs-scored': value['opponent-runs-scored'],
-                            
+                            'sho': value['sho'],
+                            'era': value['era'],
+                            'whip': value['whip'],
+                            'x-era': value['x-era'],
                         }, 'pitches':{}}
                     
                     # Delete keys from value dict
@@ -976,6 +995,10 @@ class Player(Resource):
                     del value['team-result']
                     del value['runs-scored']
                     del value['opponent-runs-scored']
+                    del value['sho']
+                    del value['era']
+                    del value['whip']
+                    del value['x-era']
 
                     pitch_key = key[1].upper()
 
