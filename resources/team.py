@@ -78,7 +78,8 @@ class Team(Resource):
                                         f'highest_pitcher_depth_chart_position.position as pitcher_depth_chart_position,'
                                         f'highest_pitcher_depth_chart_position.depth as pitcher_depth_chart_depth,'
                                         f'teams.mlb_team_id as team_id,'
-		                                f'teams.team_name '
+		                                f'teams.team_name,'
+                                        f'players.jersey_number '
                                 f'from players '
                                 f'inner join teams on teams.team_id = players.current_team_id '
                                 f'left join lateral (select games.game_id, games.game_date from games where games.home_team_id = players.current_team_id or games.away_team_id = players.current_team_id order by games.game_date desc fetch first row only) last_game on true '
@@ -128,13 +129,15 @@ class Team(Resource):
 
             records = []
 
-            teamGroupings = results.groupby(['team_id', 'team_name'])
+            teamGroupings = results.groupby(['team_id', 'team_name', 'last_game_date'])
             for keys, teamValues in teamGroupings:
                 teamRecord = {}
                 teamRecord['team_id'] = int(keys[0])
                 teamRecord['team_name'] = keys[1]
+                teamRecord['last_game_date'] = keys[2]
                 del teamValues['team_id']
                 del teamValues['team_name']
+                del teamValues['last_game_date']
                 teamRecord['players'] = json.loads(teamValues.sort_values(by='full_name').to_json(orient='records'))
                 records.append(teamRecord)
 
