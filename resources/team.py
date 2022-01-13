@@ -71,17 +71,18 @@ class Team(Resource):
                                         f'last_game.game_date as last_game_date,'
                                         f'game_lineups."position" as last_game_position,'
                                         f'game_lineups."order" as last_game_order,'
-                                        f'case when game_lineups.inning = 0 then 1 else 0 end as last_game_started,'
+                                        f'case when game_lineups.inning = 0 then true else false end as last_game_started,'
                                         f'projected_start.game_date as next_start,'
                                         f'highest_hitter_depth_chart_position.position as hitter_depth_chart_position,'
                                         f'highest_hitter_depth_chart_position.depth as hitter_depth_chart_depth,'
                                         f'highest_pitcher_depth_chart_position.position as pitcher_depth_chart_position,'
                                         f'highest_pitcher_depth_chart_position.depth as pitcher_depth_chart_depth,'
                                         f'teams.mlb_team_id as team_id,'
-		                                f'teams.team_name '
+		                                f'teams.team_name,'
+                                        f'players.jersey_number '
                                 f'from players '
                                 f'inner join teams on teams.team_id = players.current_team_id '
-                                f'left join lateral (select games.game_id, games.game_date from games where games.home_team_id = players.current_team_id or games.away_team_id = players.current_team_id order by games.mlb_game_id desc fetch first row only) last_game on true '
+                                f'left join lateral (select games.game_id, games.game_date from games where games.home_team_id = players.current_team_id or games.away_team_id = players.current_team_id order by games.game_date desc fetch first row only) last_game on true '
                                 f'left join game_lineups on game_lineups.game_id = last_game.game_id and game_lineups.player_id = players.player_id '
                                 f'left join lateral (select games.game_id, games.game_date from games where (games.home_projected_starting_pitcher_id = players.player_id or games.away_projected_starting_pitcher_id = players.player_id) and games.status = \'scheduled\' order by games.game_date fetch first row only) projected_start on true '
                                 f'left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = teams.team_id and depth_charts."position" not in (\'SP\', \'BP\', \'CL\') order by depth_charts."depth" fetch first row only) highest_hitter_depth_chart_position on true '
@@ -123,19 +124,20 @@ class Team(Resource):
         def roster():
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
             results['last_game_date'] = pd.to_datetime(results['last_game_date']).dt.strftime("%a %m/%d/%Y")
-            results['last_game_started'] = pd.to_datetime(results['last_game_started']).dt.strftime("%a %m/%d/%Y")
             results['next_start'] = pd.to_datetime(results['next_start']).dt.strftime("%a %m/%d/%Y")
             results.fillna(value=json.dumps(None), inplace=True)
 
             records = []
 
-            teamGroupings = results.groupby(['team_id', 'team_name'])
+            teamGroupings = results.groupby(['team_id', 'team_name', 'last_game_date'])
             for keys, teamValues in teamGroupings:
                 teamRecord = {}
                 teamRecord['team_id'] = int(keys[0])
                 teamRecord['team_name'] = keys[1]
+                teamRecord['last_game_date'] = keys[2]
                 del teamValues['team_id']
                 del teamValues['team_name']
+                del teamValues['last_game_date']
                 teamRecord['players'] = json.loads(teamValues.sort_values(by='full_name').to_json(orient='records'))
                 records.append(teamRecord)
 
