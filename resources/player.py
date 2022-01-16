@@ -159,7 +159,7 @@ class Player(Resource):
                                         f'players.full_name as "playername",'
                                         f'cast(current_team.team_id as int4) as "teamid",'
                                         f'current_team.abbreviation as "team",'
-                                        f'CAST(null as date) as "lastgame",'
+                                        f'last_game.game_date as "lastgame",'
                                         f'case when players.primary_position in (\'SP\', \'RP\', \'P\') then 1 else 0 end as "is_pitcher",'
                                         f'case when players.status in (\'A\') then 1 else 0 end as "is_active",'
                                         f'players.first_name as "name_first",'
@@ -186,18 +186,26 @@ class Player(Resource):
                                         f'highest_hitter_depth_chart_position.position as hitter_depth_chart_position,'
                                         f'highest_hitter_depth_chart_position.depth as hitter_depth_chart_depth,'
                                         f'highest_pitcher_depth_chart_position.position as pitcher_depth_chart_position,'
-                                        f'highest_pitcher_depth_chart_position.depth as pitcher_depth_chart_depth '
+                                        f'highest_pitcher_depth_chart_position.depth as pitcher_depth_chart_depth,'
+                                        f'cast(players.updated as date) as "updated",'
+                                        f'case when last_game.game_date > cast(players.updated as date) then last_game.game_date else cast(players.updated as date) end as "last_update" '
                                 f'from players '
                                 f'left join teams as current_team on current_team.team_id = players.current_team_id '
                                 f'left join teams as draft_team on draft_team.team_id = players.draft_team_id '
                                 f'left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = current_team.team_id and depth_charts."position" not in (\'SP\', \'BP\', \'CL\') order by depth_charts."depth" fetch first row only) highest_hitter_depth_chart_position on true '
-                                f'left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = current_team.team_id and depth_charts."position" in (\'SP\', \'BP\', \'CL\') order by depth_charts."depth" fetch first row only) highest_pitcher_depth_chart_position on true  \n')
+                                f'left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = current_team.team_id and depth_charts."position" in (\'SP\', \'BP\', \'CL\') order by depth_charts."depth" fetch first row only) highest_pitcher_depth_chart_position on true '
+                                f'left join lateral (select games.game_id from pitching_game_log inner join games on games.game_id = pitching_game_log.game_id where pitching_game_log.player_id = players.player_id order by games.game_date desc fetch first row only) last_pitching_game on true '
+                                f'left join lateral (select games.game_id from hitting_game_log inner join games on games.game_id = hitting_game_log.game_id where hitting_game_log.player_id = players.player_id order by games.game_date desc fetch first row only) last_hitting_game on true '
+                                f'left join lateral (select games.game_id from fielding_game_log inner join games on games.game_id = fielding_game_log.game_id where fielding_game_log.player_id = players.player_id order by games.game_date desc fetch first row only) last_fielding_game on true '
+                                f'left join lateral (select games.game_date from games where games.game_id in (last_pitching_game.game_id, last_hitting_game.game_id, last_fielding_game.game_id) order by games.game_date desc fetch first row only) last_game on true \n ')
             player_select = ''
 
             if player_id != 'NA':
                 player_select = 'WHERE players.mlb_player_id = %s'
 
-            sql_query = table_select + player_select
+            order_by = 'order by players.last_name'
+
+            sql_query = table_select + player_select + order_by
 
             return sql_query
 
@@ -289,7 +297,7 @@ class Player(Resource):
                             f'mv_pitcher_game_stats.qstart::int AS "qs",'
                             f'mv_pitcher_game_stats.shutout ::int AS "sho",'
                             f'mv_pitcher_game_stats.ip AS "ip",'
-                            f'mv_pitcher_game_stats.num_outs AS "outs",'
+                            f'mv_pitcher_game_logs.num_outs AS "outs",'
                             f'mv_pitcher_game_stats.runs::int AS "runs",'
                             f'mv_pitcher_game_stats.earned_runs::int AS "earned_runs",'
                             f'mv_pitcher_game_stats.lob::int,'
@@ -1026,7 +1034,6 @@ class Player(Resource):
                             'bsv': value['bsv'],
                             'hld': value['hld'],
                             'qs': value['qs'],
-                            'outs': value['outs'],
                             'ip': value['ip'],
                             'r': value['runs'],
                             'er': value['earned_runs'],
@@ -1061,7 +1068,6 @@ class Player(Resource):
                     del value['bsv']
                     del value['hld']
                     del value['qs']
-                    del value['outs']
                     del value['ip']
                     del value['runs']
                     del value['earned_runs']
