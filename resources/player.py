@@ -289,7 +289,7 @@ class Player(Resource):
                             f'mv_pitcher_game_stats.qstart::int AS "qs",'
                             f'mv_pitcher_game_stats.shutout ::int AS "sho",'
                             f'mv_pitcher_game_stats.ip AS "ip",'
-                            f'mv_pitcher_game_stats.num_outs AS "outs",'
+                            f'mv_pitcher_game_logs.num_outs AS "outs",'
                             f'mv_pitcher_game_stats.runs::int AS "runs",'
                             f'mv_pitcher_game_stats.earned_runs::int AS "earned_runs",'
                             f'mv_pitcher_game_stats.lob::int,'
@@ -1026,7 +1026,6 @@ class Player(Resource):
                             'bsv': value['bsv'],
                             'hld': value['hld'],
                             'qs': value['qs'],
-                            'outs': value['outs'],
                             'ip': value['ip'],
                             'r': value['runs'],
                             'er': value['earned_runs'],
@@ -1061,7 +1060,6 @@ class Player(Resource):
                     del value['bsv']
                     del value['hld']
                     del value['qs']
-                    del value['outs']
                     del value['ip']
                     del value['runs']
                     del value['earned_runs']
