@@ -1,5 +1,6 @@
 from flask import current_app
 from flask_restful import Resource
+from sqlalchemy import false, true
 from helpers import fetch_dataframe, var_dump
 from cache import cache_timeout, cache_invalidate_hour
 import json as json
@@ -21,6 +22,10 @@ class Player(Resource):
         self.is_pitcher = False
         self.is_hitter = False
         self.is_active = False
+        self.primary_position = ''
+        self.hitter_depth_chart_position = ''
+        self.pitcher_depth_chart_position = ''
+
         self.career_stats = {}
 
     def get(self, query_type='NA', player_id='NA'):
@@ -43,9 +48,14 @@ class Player(Resource):
                 self.dob = player_info[0]['birth_date']
                 self.is_pitcher = bool(player_info[0]['is_pitcher'])
                 self.is_active = bool(player_info[0]['is_active'])
+                self.primary_position = player_info[0]['primary_position']
+                self.hitter_depth_chart_position = player_info[0]['hitter_depth_chart_position']
+                self.pitcher_depth_chart_position = player_info[0]['pitcher_depth_chart_position']
             
+
+
             self.career_stats = self.fetch_result('career', player_id)
-        
+
         return self.fetch_result(query_type, player_id)
 
     
@@ -70,18 +80,31 @@ class Player(Resource):
                 current_app.cache.set(cache_key, result,cache_timeout(cache_invalidate_hour()))
 
         return result
-
     def fetch_data(self, query_type, player_id):
-        query = self.get_query(query_type, player_id)
         query_var=None
         if (type(player_id) is int):
             query_var = player_id
 
-        raw = fetch_dataframe(query,query_var)
-        results = self.format_results(query_type, raw)
-        output = self.get_json(query_type,player_id,results)
+        # If running player rankings queries, have to run multiple queries. Need to go down a different path here
+        if(query_type == "startingpitcherrankings"):
+            return self.fetch_starting_pitcher_rankings_data(query_type, player_id)
+        elif(query_type == 'startingpitcherpoolrankings'):
+            query = self.get_query('default', player_id)
 
-        return output
+            raw = fetch_dataframe(query,query_var)
+            results = self.format_results(query_type, raw)
+            output = self.get_json(query_type,player_id,results)
+
+            return output
+        else:
+            query = self.get_query(query_type, player_id)
+
+
+            raw = fetch_dataframe(query,query_var)
+            results = self.format_results(query_type, raw)
+            output = self.get_json(query_type,player_id,results)
+
+            return output
 
     def get_query(self, query_type, player_id):
         def default():
@@ -914,6 +937,54 @@ class Player(Resource):
                     f'ORDER BY year_played, opponent_handedness, home_away; '
                 )
 
+        def startingpitcherpoolrankingslookup():
+            return (f'select 	mv_pitcher_career_stats."year"::int as "year",'
+                               f' mv_starting_pitcher_pool_rankings.qualified_rank '
+                        f'from players '
+                        f'inner join mv_pitcher_career_stats on mv_pitcher_career_stats.pitcher_id = players.player_id '
+                        f'left join mv_starting_pitcher_pool_rankings on mv_starting_pitcher_pool_rankings.year_played = mv_pitcher_career_stats."year"::int and mv_starting_pitcher_pool_rankings.player_id = mv_pitcher_career_stats.pitcher_id '
+                        f'where mv_pitcher_career_stats."year" != \'ALL\' '
+                        f'and players.mlb_player_id = %s ')
+
+        def startingpitcherpoolrankings():
+            return (f'select 	mv_starting_pitcher_pool_rankings.* '
+                        f'from mv_starting_pitcher_pool_rankings '
+                        f'inner join players on mv_starting_pitcher_pool_rankings.player_id = players.player_id '
+                        f'where players.mlb_player_id = %s '
+                        f'and mv_starting_pitcher_pool_rankings.year_played = %s ')
+
+        def startingpitcherrankings():
+            return (
+                    f'SELECT pitchermlbamid,'
+                        f'year::text,'
+                        f'g::int,'
+                        f'ip,'
+                        f'batting_average_percentile,'
+                        f'hr_9_percentile,'
+                        f'era_percentile,'
+                        f'k_pct_percentile,'
+                        f'bb_pct_percentile,'
+                        f'whip_pct_percentile,'
+                        f'csw_pct_percentile,'
+                        f'o_swing_pct_percentile,'
+                        f'babip_pct_percentile,'
+                        f'hr_fb_rate_percentile,'
+                        f'lob_pct_percentile,'
+                        f'flyball_pct_percentile,'
+                        f'groundball_pct_percentile,'
+                        f'woba_rhb_percentile,'
+                        f'woba_lhb_percentile,'
+                        f'swinging_strike_pct_percentile,'
+                        f'called_strike_pct_percentile,'
+                        f'hbp_percentile,'
+                        f'batting_average_risp_percentile,'
+                        f'batting_average_no_runners,'
+                        f'ips_percentile,'
+                        f'true_f_strike_pct_percentile '
+                    f'FROM mv_pitcher_percentiles '
+                    f'WHERE pitchermlbamid = %s;'
+                )
+
         queries = {
             "abilities": abilities,
             "bio": bio,
@@ -923,7 +994,10 @@ class Player(Resource):
             "locations": locations,
             "positions": positions,
             "repertoire": stats,
-            "stats": stats
+            "stats": stats,
+            "startingpitcherpoolrankingslookup": startingpitcherpoolrankingslookup,
+            "startingpitcherpoolrankings": startingpitcherpoolrankings,
+            "startingpitcherrankings": startingpitcherrankings
         }
 
         return queries.get(query_type, default)()
@@ -1241,3 +1315,39 @@ class Player(Resource):
         }
 
         return json_data.get(query_type, default)()
+    
+    def fetch_starting_pitcher_rankings_data(self, query_type, player_id):
+        lookupquery = self.get_query('startingpitcherpoolrankingslookup', player_id)
+        rawlookupdata = fetch_dataframe(lookupquery,player_id)
+
+        rankings_df = pd.DataFrame()
+        for index, row in rawlookupdata.iterrows():
+            year = row['year']
+            qualified_rank = row['qualified_rank']
+
+            year_rankings = {}
+            year_rankings['year'] = year
+            year_rankings['qualified_rank'] = qualified_rank
+            year_rankings['is_qualified'] = bool(qualified_rank is not None)
+            if(qualified_rank != None):
+                # Get qualified data for this year
+                qualifieddataquery = self.get_query('startingpitcherpoolrankings', player_id)
+                rawqualifieddata = fetch_dataframe(qualifieddataquery, [player_id, int(year)])
+                qualifieddata = rawqualifieddata.iloc[0]
+                
+                year_rankings['w'] = qualifieddata['w']
+
+            else:
+                # Get unqualified data for this year
+                print()
+
+            rankings_df = rankings_df.append(year_rankings,ignore_index=True) 
+
+        output = self.get_json(query_type,player_id, rankings_df)
+
+
+
+        return output
+
+    
+   
