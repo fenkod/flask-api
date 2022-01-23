@@ -1203,6 +1203,204 @@ class Player(Resource):
         def startingpitcherpoolaverages():
             return f'select * from mv_starting_pitcher_averages' # where year_played = %s
         
+        def startingpitcherpitchpoolrankingslookup():
+            return (f'select 	f.year_played,'
+                                f'f.pitchtype,'
+                                f'f.pitch_count,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.qualified_rank '
+                        f'from '
+                        f'( '
+                            f'select 	year_played,'
+                                    f'pitchtype,'
+                                    f'pitcher_id,'
+                                    f'sum(mv_pitcher_repertoire_by_position.num_pitches) as pitch_count '
+                            f'from mv_pitcher_repertoire_by_position '
+                            f'inner join players on players.player_id = mv_pitcher_repertoire_by_position.pitcher_id '
+                            f'where mv_pitcher_repertoire_by_position.pitchtype != \'ALL\' '
+                            f'and mv_pitcher_repertoire_by_position."position" = \'SP\' '
+                            f'and players.mlb_player_id = %s '
+                            f'group by year_played, pitchtype, pitcher_id '
+                        f') f '
+                        f'left join mv_starting_pitcher_pitch_pool_rankings on mv_starting_pitcher_pitch_pool_rankings.year_played = f.year_played and mv_starting_pitcher_pitch_pool_rankings.pitchtype = f.pitchtype and mv_starting_pitcher_pitch_pool_rankings.pitcher_id = f.pitcher_id '
+                        )
+        
+        def startingpitcherpitchpoolrankings():
+            return (f'select 	mv_starting_pitcher_pitch_pool_rankings.year_played as "year",'
+                                f'mv_starting_pitcher_pitch_pool_rankings.pitchtype,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.qualified_rank AS "qualified-rank",'
+                                f'mv_starting_pitcher_pitch_pool_rankings.usage_pct,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.usage_pct_percentile,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.usage_pct_rank,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_velocity,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_velocity_percentile,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_velocity_rank,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.swinging_strike_pct,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.swinging_strike_pct_percentile,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.swinging_strike_pct_rank,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.csw_pct,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.csw_pct_percentile,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.csw_pct_rank,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.x_avg,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.x_avg_percentile,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.x_avg_rank,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.x_wobacon,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.x_wobacon_percentile,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.x_wobacon_rank,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_x_movement,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_x_movement_percentile,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_x_movement_rank,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_y_movement,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_y_movement_percentile,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_y_movement_rank,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_spin_rate,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_spin_rate_percentile,'
+                                f'mv_starting_pitcher_pitch_pool_rankings.avg_spin_rate_rank,'
+                                f'yearly_averages.usage_pct as league_usage_pct,'
+                                f'yearly_averages.avg_velocity as league_avg_velocity,'
+                                f'yearly_averages.swinging_strike_pct as league_swinging_strike_pct,'
+                                f'yearly_averages.csw_pct as league_csw_pct,'
+                                f'yearly_averages.x_avg as league_x_avg,'
+                                f'yearly_averages.x_wobacon as league_x_wobacon,'
+                                f'yearly_averages.avg_x_movement as league_avg_x_movement,'
+                                f'yearly_averages.avg_y_movement as league_avg_y_movement,'
+                                f'yearly_averages.avg_spin_rate as league_avg_spin_rate,'
+                                f'yearly_averages.league_usage_pct_percentage,'
+                                f'yearly_averages.league_avg_velocity_percentage,'
+                                f'yearly_averages.league_swinging_strike_pct_percentage,'
+                                f'yearly_averages.league_csw_pct_percentage,'
+                                f'yearly_averages.league_x_avg_percentage,'
+                                f'yearly_averages.league_x_wobacon_percentage,'
+                                f'yearly_averages.league_avg_x_movement_percentage,'
+                                f'yearly_averages.league_avg_y_movement_percentage,'
+                                f'yearly_averages.league_avg_spin_rate_percentage '
+                        f'from mv_starting_pitcher_pitch_pool_rankings '
+                        f'inner join players on mv_starting_pitcher_pitch_pool_rankings.pitcher_id = players.player_id '
+                        f'inner join lateral (select * from mv_starting_pitcher_pitch_averages where mv_starting_pitcher_pitch_averages.year_played = mv_starting_pitcher_pitch_pool_rankings.year_played and mv_starting_pitcher_pitch_averages.pitchtype = mv_starting_pitcher_pitch_pool_rankings.pitchtype) yearly_averages on true '
+                        f'where players.mlb_player_id = %s ')
+
+        def startingpitcherpitchcustomrankings():
+            return (f'select	g.year_played as "year",'
+                                f'g.pitchtype,'
+                                f'g.qualified_rank AS "qualified-rank",'
+                                f'g.usage_pct,'
+                                f'g.usage_pct_percentile,'
+                                f'g.usage_pct_rank,'
+                                f'g.avg_velocity,'
+                                f'g.avg_velocity_percentile,'
+                                f'g.avg_velocity_rank,'
+                                f'g.swinging_strike_pct,'
+                                f'g.swinging_strike_pct_percentile,'
+                                f'g.swinging_strike_pct_rank,'
+                                f'g.csw_pct,'
+                                f'g.csw_pct_percentile,'
+                                f'g.csw_pct_rank,'
+                                f'g.x_avg,'
+                                f'g.x_avg_percentile,'
+                                f'g.x_avg_rank,'
+                                f'g.x_wobacon,'
+                                f'g.x_wobacon_percentile,'
+                                f'g.x_wobacon_rank,'
+                                f'g.avg_x_movement,'
+                                f'g.avg_x_movement_percentile,'
+                                f'g.avg_x_movement_rank,'
+                                f'g.avg_y_movement,'
+                                f'g.avg_y_movement_percentile,'
+                                f'g.avg_y_movement_rank,'
+                                f'g.avg_spin_rate,'
+                                f'g.avg_spin_rate_percentile,'
+                                f'g.avg_spin_rate_rank,'
+                                f'yearly_averages.usage_pct,'
+                                f'yearly_averages.avg_velocity,'
+                                f'yearly_averages.swinging_strike_pct,'
+                                f'yearly_averages.csw_pct,'
+                                f'yearly_averages.x_avg,'
+                                f'yearly_averages.x_wobacon,'
+                                f'yearly_averages.avg_x_movement,'
+                                f'yearly_averages.avg_y_movement,'
+                                f'yearly_averages.avg_spin_rate,'
+                                f'yearly_averages.league_usage_pct_percentage,'
+                                f'yearly_averages.league_avg_velocity_percentage,'
+                                f'yearly_averages.league_swinging_strike_pct_percentage,'
+                                f'yearly_averages.league_csw_pct_percentage,'
+                                f'yearly_averages.league_x_avg_percentage,'
+                                f'yearly_averages.league_x_wobacon_percentage,'
+                                f'yearly_averages.league_avg_x_movement_percentage,'
+                                f'yearly_averages.league_avg_y_movement_percentage,'
+                                f'yearly_averages.league_avg_spin_rate_percentage '
+                        f'from '
+                        f'( '
+                            f'select 	f.year_played,'
+                                    f'f.pitcher_id,'
+                                    f'f.pitchtype,'
+                                    f'f.pitcher_rank AS qualified_rank,'
+                                    f'f.usage_pct,'
+                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.usage_pct))::numeric, 2) AS usage_pct_percentile,'
+                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.usage_pct DESC) AS usage_pct_rank,'
+                                    f'f.avg_velocity,'
+                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_velocity))::numeric, 2) AS avg_velocity_percentile,'
+                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_velocity DESC) AS avg_velocity_rank,'
+                                    f'f.swinging_strike_pct,'
+                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.swinging_strike_pct))::numeric, 2) AS swinging_strike_pct_percentile,'
+                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.swinging_strike_pct DESC) AS swinging_strike_pct_rank,'
+                                    f'f.csw_pct,'
+                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.csw_pct))::numeric, 2) AS csw_pct_percentile,'
+                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.csw_pct DESC) AS csw_pct_rank,'
+                                    f'f.x_avg,'
+                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_avg DESC))::numeric, 2) AS x_avg_percentile,'
+                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_avg) AS x_avg_rank,'
+                                    f'f.x_wobacon,'
+                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_wobacon DESC))::numeric, 2) AS x_wobacon_percentile,'
+                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_wobacon) AS x_wobacon_rank,'
+                                    f'f.avg_x_movement,'
+                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_x_movement))::numeric, 2) AS avg_x_movement_percentile,'
+                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_x_movement DESC) AS avg_x_movement_rank,'
+                                    f'f.avg_y_movement,'
+                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_y_movement))::numeric, 2) AS avg_y_movement_percentile,'
+                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_y_movement DESC) AS avg_y_movement_rank,'
+                                    f'f.avg_spin_rate,'
+                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_spin_rate))::numeric, 2) AS avg_spin_rate_percentile,'
+                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_spin_rate DESC) AS avg_spin_rate_rank '
+                            f'from '
+                            f'( '
+                                f'select 	year_played,'
+                                        f'pitcher_id,'
+                                        f'pitchtype,'
+                                        f'usage_pct,'
+                                        f'avg_velocity,'
+                                        f'swinging_strike_pct,'
+                                        f'csw_pct,'
+                                        f'x_avg,'
+                                        f'x_wobacon,'
+                                        f'avg_x_movement,'
+                                        f'avg_y_movement,'
+                                        f'avg_spin_rate,'
+                                        f'pitcher_rank '
+                                f'from mv_starting_pitcher_pitch_pool '
+                                f'where mv_starting_pitcher_pitch_pool.pitchtype != \'ALL\' '
+                                f'union '
+                                f'select 	year_played,'
+                                        f'pitcher_id,'
+                                        f'pitchtype,'
+                                        f'usage_pct,'
+                                        f'avg_velocity,'
+                                        f'swinging_strike_pct,'
+                                        f'csw_pct,'
+                                        f'x_avg,'
+                                        f'x_wobacon,'
+                                        f'avg_x_movement,'
+                                        f'avg_y_movement,'
+                                        f'avg_spin_rate,'
+                                        f'0 as pitcher_rank '
+                                f'from mv_pitcher_repertoire_by_position '
+                                f'inner join players on mv_pitcher_repertoire_by_position.pitcher_id = players.player_id '
+                                f'where players.mlb_player_id = %s '
+                                f'and mv_pitcher_repertoire_by_position.pitchtype != \'ALL\' '
+                                f'and mv_pitcher_repertoire_by_position.position = \'SP\' '
+                            f') f '
+                        f') g '
+                        f'inner join players on g.pitcher_id = players.player_id '
+                        f'inner join lateral (select * from mv_starting_pitcher_pitch_averages where mv_starting_pitcher_pitch_averages.year_played = g.year_played and mv_starting_pitcher_pitch_averages.pitchtype = g.pitchtype) yearly_averages on true '
+                        f'where players.mlb_player_id = %s and g.qualified_rank = 0 ')
 
         queries = {
             "abilities": abilities,
@@ -1217,7 +1415,10 @@ class Player(Resource):
             "startingpitcherpoolrankingslookup": startingpitcherpoolrankingslookup,
             "startingpitchercustomrankings": startingpitchercustomrankings,
             "startingpitcherpoolrankings": startingpitcherpoolrankings,
-            "startingpitcherpoolaverages": startingpitcherpoolaverages
+            "startingpitcherpoolaverages": startingpitcherpoolaverages,
+            "startingpitcherpitchpoolrankingslookup": startingpitcherpitchpoolrankingslookup,
+            "startingpitcherpitchpoolrankings": startingpitcherpitchpoolrankings,
+            "startingpitcherpitchcustomrankings": startingpitcherpitchcustomrankings
         }
 
         return queries.get(query_type, default)()
@@ -1546,12 +1747,25 @@ class Player(Resource):
         unqualifieddataquery = self.get_query('startingpitchercustomrankings', player_id)
         rawunqualifieddata = fetch_dataframe(unqualifieddataquery, [player_id, player_id])
 
+        lookuppitchquery = self.get_query('startingpitcherpitchpoolrankingslookup', player_id)
+        rawlookuppitchdata = fetch_dataframe(lookuppitchquery,player_id)
+
+        qualifiedpitchdataquery = self.get_query('startingpitcherpitchpoolrankings', player_id)
+        rawqualifiedpitchdata = fetch_dataframe(qualifiedpitchdataquery, [player_id])
+
+        unqualifiedpitchdataquery = self.get_query('startingpitcherpitchcustomrankings', player_id)
+        rawunqualifiedpitchdata = fetch_dataframe(unqualifiedpitchdataquery, [player_id, player_id])
+
         rankings_df = pd.DataFrame()
+        pitch_rankings_df = pd.DataFrame()
         for index, row in rawlookupdata.iterrows():
             year = row['year']
-            qualified_rank = row['qualified_rank']
+            
 
+            # Yearly Total Rankings
             year_rankings = {}
+
+            qualified_rank = row['qualified_rank']
             if(qualified_rank != None):
                 # SP is qualified for this year. Get qualified data for this year
                 matchingdata = rawqualifieddata[rawqualifieddata.year == year]
@@ -1567,10 +1781,35 @@ class Player(Resource):
 
             year_rankings['is_qualified'] = bool(qualified_rank is not None)
 
-            rankings_df = rankings_df.append(year_rankings,ignore_index=True) 
+            rankings_df = rankings_df.append(year_rankings,ignore_index=True)
 
-        rankings_df[['w']] = rankings_df[['w']].apply(pd.to_numeric,downcast='integer')
+            # Individual Pitch Rankings
+            yearpitches = rawlookuppitchdata[rawlookuppitchdata.year_played == year]
+            for pitchindex, pitchrow in yearpitches.iterrows():
+                year_pitch_rankings = {}
+                pitchtype = pitchrow['pitchtype']
+                qualified_pitch_rank = pitchrow['qualified_rank']
+                isqualified = not pd.isnull(qualified_pitch_rank) and not pd.isna(qualified_pitch_rank)
+                if(isqualified):
+                    # Pitch is qualified for this year. Get qualified data for this year
+                    matchingdata = rawqualifiedpitchdata[(rawqualifiedpitchdata.year == year) & (rawqualifiedpitchdata.pitchtype == pitchtype)]
+                    if len(matchingdata) != 1:
+                        continue
+                    year_pitch_rankings = matchingdata.head(1)
+
+                else:
+                    # Pitch is not qualified for this year.  Get unqualified data for this year
+                    matchingdata = rawunqualifiedpitchdata[(rawunqualifiedpitchdata.year == year) & (rawunqualifiedpitchdata.pitchtype == pitchtype)]
+                    if len(matchingdata) != 1:
+                        continue
+                    year_pitch_rankings = matchingdata.head(1)
+                year_pitch_rankings['is_qualified'] = bool(isqualified)
+
+                pitch_rankings_df = pitch_rankings_df.append(year_pitch_rankings,ignore_index=True)
+                
+
         rankings_df.fillna(value=0, inplace=True)            
+        pitch_rankings_df.fillna(value=0, inplace=True)
 
         records = {}
 
@@ -1676,6 +1915,90 @@ class Player(Resource):
             x_woba_model['league-avwobage-stat-value'] = float(year_data['league-x-woba'])
             x_woba_model['league-avwobage-stat-percentile'] = float(year_data['league-x-woba-percentile'])
             year_model['x-woba-pct'] = x_woba_model
+
+            matching_year_pitches = pitch_rankings_df[pitch_rankings_df.year == year]
+            pitches_model = {}
+            for pitchindex, pitchrow in matching_year_pitches.iterrows():
+                pitch_model = {}
+                pitchtype = pitchrow['pitchtype']
+                pitch_model['is-qualified'] = bool(pitchrow['is_qualified'])
+
+                usage_pct_model = {}
+                usage_pct_model['player-stat-value'] = float(pitchrow['usage_pct'])
+                usage_pct_model['player-stat-rank'] = int(pitchrow['usage_pct_rank'])
+                usage_pct_model['player-stat-percentile'] = float(pitchrow['usage_pct_percentile'])
+                usage_pct_model['league-average-stat-value'] = float(pitchrow['league_usage_pct'])
+                usage_pct_model['league-average-stat-percentile'] = float(pitchrow['league_usage_pct_percentage'])
+                pitch_model['usage_pct'] = usage_pct_model
+
+                avg_velocity_model = {}
+                avg_velocity_model['player-stat-value'] = float(pitchrow['avg_velocity'])
+                avg_velocity_model['player-stat-rank'] = int(pitchrow['avg_velocity_rank'])
+                avg_velocity_model['player-stat-percentile'] = float(pitchrow['avg_velocity_percentile'])
+                avg_velocity_model['league-average-stat-value'] = float(pitchrow['league_avg_velocity'])
+                avg_velocity_model['league-average-stat-percentile'] = float(pitchrow['league_avg_velocity_percentage'])
+                pitch_model['avg_velocity'] = avg_velocity_model
+
+                swinging_strike_pct_model = {}
+                swinging_strike_pct_model['player-stat-value'] = float(pitchrow['swinging_strike_pct'])
+                swinging_strike_pct_model['player-stat-rank'] = int(pitchrow['swinging_strike_pct_rank'])
+                swinging_strike_pct_model['player-stat-percentile'] = float(pitchrow['swinging_strike_pct_percentile'])
+                swinging_strike_pct_model['league-average-stat-value'] = float(pitchrow['league_swinging_strike_pct'])
+                swinging_strike_pct_model['league-average-stat-percentile'] = float(pitchrow['league_swinging_strike_pct_percentage'])
+                pitch_model['swinging_strike_pct'] = swinging_strike_pct_model
+
+                csw_pct_model = {}
+                csw_pct_model['player-stat-value'] = float(pitchrow['csw_pct'])
+                csw_pct_model['player-stat-rank'] = int(pitchrow['csw_pct_rank'])
+                csw_pct_model['player-stat-percentile'] = float(pitchrow['csw_pct_percentile'])
+                csw_pct_model['league-average-stat-value'] = float(pitchrow['league_csw_pct'])
+                csw_pct_model['league-average-stat-percentile'] = float(pitchrow['league_csw_pct_percentage'])
+                pitch_model['csw_pct'] = csw_pct_model
+
+                x_avg_model = {}
+                x_avg_model['player-stat-value'] = float(pitchrow['x_avg'])
+                x_avg_model['player-stat-rank'] = int(pitchrow['x_avg_rank'])
+                x_avg_model['player-stat-percentile'] = float(pitchrow['x_avg_percentile'])
+                x_avg_model['league-average-stat-value'] = float(pitchrow['league_x_avg'])
+                x_avg_model['league-average-stat-percentile'] = float(pitchrow['league_x_avg_percentage'])
+                pitch_model['x-avg'] = x_avg_model
+
+                x_wobacon_model = {}
+                x_wobacon_model['player-stat-value'] = float(pitchrow['x_wobacon'])
+                x_wobacon_model['player-stat-rank'] = int(pitchrow['x_wobacon_rank'])
+                x_wobacon_model['player-stat-percentile'] = float(pitchrow['x_wobacon_percentile'])
+                x_wobacon_model['league-average-stat-value'] = float(pitchrow['league_x_wobacon'])
+                x_wobacon_model['league-average-stat-percentile'] = float(pitchrow['league_x_wobacon_percentage'])
+                pitch_model['x-wobacon-pct'] = x_wobacon_model
+
+                avg_x_movement_model = {}
+                avg_x_movement_model['player-stat-value'] = float(pitchrow['avg_x_movement'])
+                avg_x_movement_model['player-stat-rank'] = int(pitchrow['avg_x_movement_rank'])
+                avg_x_movement_model['player-stat-percentile'] = float(pitchrow['avg_x_movement_percentile'])
+                avg_x_movement_model['league-average-stat-value'] = float(pitchrow['league_avg_x_movement'])
+                avg_x_movement_model['league-average-stat-percentile'] = float(pitchrow['league_avg_x_movement_percentage'])
+                pitch_model['x-release-avg'] = avg_x_movement_model
+
+                avg_y_movement_model = {}
+                avg_y_movement_model['player-stat-value'] = float(pitchrow['avg_y_movement'])
+                avg_y_movement_model['player-stat-rank'] = int(pitchrow['avg_y_movement_rank'])
+                avg_y_movement_model['player-stat-percentile'] = float(pitchrow['avg_y_movement_percentile'])
+                avg_y_movement_model['league-average-stat-value'] = float(pitchrow['league_avg_y_movement'])
+                avg_y_movement_model['league-average-stat-percentile'] = float(pitchrow['league_avg_y_movement_percentage'])
+                pitch_model['y-release-avg'] = avg_y_movement_model
+
+                avg_spin_rate_model = {}
+                avg_spin_rate_model['player-stat-value'] = float(pitchrow['avg_spin_rate'])
+                avg_spin_rate_model['player-stat-rank'] = int(pitchrow['avg_spin_rate_rank'])
+                avg_spin_rate_model['player-stat-percentile'] = float(pitchrow['avg_spin_rate_percentile'])
+                avg_spin_rate_model['league-average-stat-value'] = float(pitchrow['league_avg_spin_rate'])
+                avg_spin_rate_model['league-average-stat-percentile'] = float(pitchrow['league_avg_spin_rate_percentage'])
+                pitch_model['spin-rate-avg'] = avg_spin_rate_model
+
+
+                pitches_model[pitchtype] = pitch_model
+
+            year_model['pitches'] = pitches_model
 
             records[str(year)] = year_model
 
