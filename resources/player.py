@@ -86,9 +86,16 @@ class Player(Resource):
             query_var = player_id
 
         # If running player rankings queries, have to run multiple queries. Need to go down a different path here
-        if(query_type == "startingpitcherrankings"):
-            return self.fetch_starting_pitcher_rankings_data(query_type, player_id)
-        elif(query_type == 'startingpitcherpoolrankings'):
+        if(query_type == "ranks"):
+            return self.fetch_ranks_data(query_type, player_id)
+        # Do not allow query to go through if attempting to hit the helper functions
+        elif(query_type == 'startingpitcherpoolrankingslookup' 
+            or query_type == 'startingpitcherpoolrankings'
+            or query_type == 'startingpitchercustomrankings'
+            or query_type == 'startingpitcherpoolaverages'
+            or query_type == 'startingpitcherpitchpoolrankingslookup'
+            or query_type == 'startingpitcherpitchpoolrankings'
+            or query_type == 'startingpitcherpitchcustomrankings'):
             query = self.get_query('default', player_id)
 
             raw = fetch_dataframe(query,query_var)
@@ -96,6 +103,7 @@ class Player(Resource):
             output = self.get_json(query_type,player_id,results)
 
             return output
+        # Otherwise, use default query mapping
         else:
             query = self.get_query(query_type, player_id)
 
@@ -1737,7 +1745,8 @@ class Player(Resource):
 
         return json_data.get(query_type, default)()
     
-    def fetch_starting_pitcher_rankings_data(self, query_type, player_id):
+    def fetch_ranks_data(self, query_type, player_id):
+        # Starting Pitcher Queries
         lookupquery = self.get_query('startingpitcherpoolrankingslookup', player_id)
         rawlookupdata = fetch_dataframe(lookupquery,player_id)
 
@@ -1817,8 +1826,8 @@ class Player(Resource):
         for year, yearValues in yearGroupings:
             year_data = yearValues.iloc[0]
 
-            year_model = {}
-            year_model['is-qualified'] = bool(year_data['is_qualified'])
+            sp_year_model = {}
+            sp_year_model['is-qualified'] = bool(year_data['is_qualified'])
 
             w_model = {}
             w_model['player-stat-value'] = int(year_data['w'])
@@ -1826,7 +1835,7 @@ class Player(Resource):
             w_model['player-stat-percentile'] = float(year_data['w-percentile'])
             w_model['league-average-stat-value'] = int(year_data['league-w'])
             w_model['league-average-stat-percentile'] = float(year_data['league-w-percentile'])
-            year_model['w'] = w_model
+            sp_year_model['w'] = w_model
 
             ip_model = {}
             ip_model['player-stat-value'] = int(year_data['ip'])
@@ -1834,7 +1843,7 @@ class Player(Resource):
             ip_model['player-stat-percentile'] = float(year_data['ip-percentile'])
             ip_model['league-average-stat-value'] = int(year_data['league-ip'])
             ip_model['league-average-stat-percentile'] = float(year_data['league-ip-percentile'])
-            year_model['ip'] = ip_model
+            sp_year_model['ip'] = ip_model
 
             era_model = {}
             era_model['player-stat-value'] = float(year_data['era'])
@@ -1842,7 +1851,7 @@ class Player(Resource):
             era_model['player-stat-percentile'] = float(year_data['era-percentile'])
             era_model['league-average-stat-value'] = float(year_data['league-era'])
             era_model['league-average-stat-percentile'] = float(year_data['league-era-percentile'])
-            year_model['era'] = era_model
+            sp_year_model['era'] = era_model
 
             whip_model = {}
             whip_model['player-stat-value'] = float(year_data['whip'])
@@ -1850,7 +1859,7 @@ class Player(Resource):
             whip_model['player-stat-percentile'] = float(year_data['whip-percentile'])
             whip_model['league-average-stat-value'] = float(year_data['league-whip'])
             whip_model['league-average-stat-percentile'] = float(year_data['league-whip-percentile'])
-            year_model['whip'] = whip_model
+            sp_year_model['whip'] = whip_model
 
             k_pct_model = {}
             k_pct_model['player-stat-value'] = float(year_data['k-pct'])
@@ -1858,7 +1867,7 @@ class Player(Resource):
             k_pct_model['player-stat-percentile'] = float(year_data['k-pct-percentile'])
             k_pct_model['league-average-stat-value'] = float(year_data['league-k-pct'])
             k_pct_model['league-average-stat-percentile'] = float(year_data['league-k-pct-percentile'])
-            year_model['k_pct'] = k_pct_model
+            sp_year_model['k_pct'] = k_pct_model
 
             bb_pct_model = {}
             bb_pct_model['player-stat-value'] = float(year_data['bb-pct'])
@@ -1866,7 +1875,7 @@ class Player(Resource):
             bb_pct_model['player-stat-percentile'] = float(year_data['bb-pct-percentile'])
             bb_pct_model['league-average-stat-value'] = float(year_data['league-bb-pct'])
             bb_pct_model['league-average-stat-percentile'] = float(year_data['league-bb-pct-percentile'])
-            year_model['bb_pct'] = bb_pct_model
+            sp_year_model['bb_pct'] = bb_pct_model
 
             csw_pct_model = {}
             csw_pct_model['player-stat-value'] = float(year_data['csw-pct'])
@@ -1874,7 +1883,7 @@ class Player(Resource):
             csw_pct_model['player-stat-percentile'] = float(year_data['csw-pct-percentile'])
             csw_pct_model['league-average-stat-value'] = float(year_data['league-csw-pct'])
             csw_pct_model['league-average-stat-percentile'] = float(year_data['league-csw-pct-percentile'])
-            year_model['csw_pct'] = csw_pct_model
+            sp_year_model['csw_pct'] = csw_pct_model
 
             swinging_strike_pct_model = {}
             swinging_strike_pct_model['player-stat-value'] = float(year_data['swinging-strike-pct'])
@@ -1882,7 +1891,7 @@ class Player(Resource):
             swinging_strike_pct_model['player-stat-percentile'] = float(year_data['swinging-strike-pct-percentile'])
             swinging_strike_pct_model['league-average-stat-value'] = float(year_data['league-swinging-strike-pct'])
             swinging_strike_pct_model['league-average-stat-percentile'] = float(year_data['league-swinging-strike-pct-percentile'])
-            year_model['swinging_strike_pct'] = swinging_strike_pct_model
+            sp_year_model['swinging_strike_pct'] = swinging_strike_pct_model
 
             hard_pct_model = {}
             hard_pct_model['player-stat-value'] = float(year_data['hard-pct'])
@@ -1890,7 +1899,7 @@ class Player(Resource):
             hard_pct_model['player-stat-percentile'] = float(year_data['hard-pct-percentile'])
             hard_pct_model['league-average-stat-value'] = float(year_data['league-hard-pct'])
             hard_pct_model['league-average-stat-percentile'] = float(year_data['league-hard-pct-percentile'])
-            year_model['hard_pct'] = hard_pct_model
+            sp_year_model['hard_pct'] = hard_pct_model
 
             groundball_pct_model = {}
             groundball_pct_model['player-stat-value'] = float(year_data['groundball-pct'])
@@ -1898,7 +1907,7 @@ class Player(Resource):
             groundball_pct_model['player-stat-percentile'] = float(year_data['groundball-pct-percentile'])
             groundball_pct_model['league-average-stat-value'] = float(year_data['league-groundball-pct'])
             groundball_pct_model['league-average-stat-percentile'] = float(year_data['league-groundball-pct-percentile'])
-            year_model['groundball_pct'] = groundball_pct_model
+            sp_year_model['groundball_pct'] = groundball_pct_model
 
             x_era_model = {}
             x_era_model['player-stat-value'] = float(year_data['x-era'])
@@ -1906,7 +1915,7 @@ class Player(Resource):
             x_era_model['player-stat-percentile'] = float(year_data['x-era-percentile'])
             x_era_model['league-average-stat-value'] = float(year_data['league-x-era'])
             x_era_model['league-average-stat-percentile'] = float(year_data['league-x-era-percentile'])
-            year_model['x-era'] = x_era_model
+            sp_year_model['x-era'] = x_era_model
 
             x_woba_model = {}
             x_woba_model['player-stat-value'] = float(year_data['x-woba'])
@@ -1914,7 +1923,7 @@ class Player(Resource):
             x_woba_model['player-stat-percentile'] = float(year_data['x-woba-percentile'])
             x_woba_model['league-avwobage-stat-value'] = float(year_data['league-x-woba'])
             x_woba_model['league-avwobage-stat-percentile'] = float(year_data['league-x-woba-percentile'])
-            year_model['x-woba-pct'] = x_woba_model
+            sp_year_model['x-woba-pct'] = x_woba_model
 
             matching_year_pitches = pitch_rankings_df[pitch_rankings_df.year == year]
             pitches_model = {}
@@ -1998,9 +2007,12 @@ class Player(Resource):
 
                 pitches_model[pitchtype] = pitch_model
 
-            year_model['pitches'] = pitches_model
+            sp_year_model['pitches'] = pitches_model
 
-            records[str(year)] = year_model
+            if not str(year) in records:    
+                year_model = {}
+                records[str(year)] = year_model
+                year_model['SP'] = sp_year_model
 
         return json.loads(json.dumps(records))
 
