@@ -328,7 +328,7 @@ class Player(Resource):
                             f'mv_pitcher_game_stats.qstart::int AS "qs",'
                             f'mv_pitcher_game_stats.shutout ::int AS "sho",'
                             f'mv_pitcher_game_stats.ip AS "ip",'
-                            f'mv_pitcher_game_logs.num_outs AS "outs",'
+                            f'0::int AS "outs",'
                             f'mv_pitcher_game_stats.runs::int AS "runs",'
                             f'mv_pitcher_game_stats.earned_runs::int AS "earned_runs",'
                             f'mv_pitcher_game_stats.lob::int,'
@@ -502,7 +502,10 @@ class Player(Resource):
                             f'x_slug_pct as "x-slug-pct",'
                             f'x_babip as "x-babip-pct",'
                             f'x_woba as "x-woba-pct",'
-                            f'x_wobacon as "x-wobacon-pct" '
+                            f'x_wobacon as "x-wobacon-pct",'
+                            f'num_center_bip as "center-bip",'
+                            f'mv_pitcher_game_logs.num_outs as "bip-outs",'
+                            f'0::numeric as "flyball-exit-velo-avg" '
                         f'FROM mv_pitcher_game_logs '
                         f'inner join players on players.player_id = mv_pitcher_game_logs.pitcher_id '
                         f'inner join games on games.game_id = mv_pitcher_game_logs.game_id '
@@ -1838,7 +1841,7 @@ class Player(Resource):
             sp_year_model['w'] = w_model
 
             ip_model = {}
-            ip_model['player-stat-value'] = int(year_data['ip'])
+            ip_model['player-stat-value'] = float(year_data['ip'])
             ip_model['player-stat-rank'] = int(year_data['ip-rank'])
             ip_model['player-stat-percentile'] = float(year_data['ip-percentile'])
             ip_model['league-average-stat-value'] = int(year_data['league-ip'])
