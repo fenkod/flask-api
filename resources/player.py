@@ -1838,7 +1838,7 @@ class Player(Resource):
             sp_year_model['w'] = w_model
 
             ip_model = {}
-            ip_model['player-stat-value'] = int(year_data['ip'])
+            ip_model['player-stat-value'] = float(year_data['ip'])
             ip_model['player-stat-rank'] = int(year_data['ip-rank'])
             ip_model['player-stat-percentile'] = float(year_data['ip-percentile'])
             ip_model['league-average-stat-value'] = int(year_data['league-ip'])
