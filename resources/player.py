@@ -506,7 +506,8 @@ class Player(Resource):
                             f'x_wobacon as "x-wobacon-pct",'
                             f'num_center_bip as "center-bip",'
                             f'mv_pitcher_game_logs.num_outs as "bip-outs",'
-                            f'0::numeric as "flyball-exit-velo-avg" '
+                            f'num_fly_ball_launch_speed as "total-flyball-exit-velo",'
+                            f'average_fly_ball_launch_speed as "flyball-exit-velo-avg" '
                         f'FROM mv_pitcher_game_logs '
                         f'inner join players on players.player_id = mv_pitcher_game_logs.pitcher_id '
                         f'inner join games on games.game_id = mv_pitcher_game_logs.game_id '
@@ -865,7 +866,8 @@ class Player(Resource):
                                 f'x_slug_pct as "x-slug-pct",'
                                 f'x_babip as "x-babip-pct",'
                                 f'x_woba as "x-woba-pct",'
-                                f'x_wobacon as "x-wobacon-pct" '
+                                f'x_wobacon as "x-wobacon-pct",'
+                                f'average_fly_ball_launch_speed as "flyball-exit-velo-avg" '
                             f'FROM player_page_repertoire '
                             f'inner join players on players.player_id = player_page_repertoire.pitcher_id '
                             f'WHERE players.mlb_player_id = %s '
@@ -951,10 +953,10 @@ class Player(Resource):
 
         def startingpitcherpoolrankingslookup():
             return (f'select 	mv_pitcher_career_stats."year"::int as "year",'
-                               f' mv_starting_pitcher_pool_rankings.qualified_rank '
+                               f' mv_starting_pitcher_pool.pitcher_rank as qualified_rank '
                         f'from players '
                         f'inner join mv_pitcher_career_stats on mv_pitcher_career_stats.pitcher_id = players.player_id '
-                        f'left join mv_starting_pitcher_pool_rankings on mv_starting_pitcher_pool_rankings.year_played = mv_pitcher_career_stats."year"::int and mv_starting_pitcher_pool_rankings.player_id = mv_pitcher_career_stats.pitcher_id '
+                        f'left join mv_starting_pitcher_pool on mv_starting_pitcher_pool.year_played = mv_pitcher_career_stats."year"::int and mv_starting_pitcher_pool.player_id = mv_pitcher_career_stats.pitcher_id '
                         f'where mv_pitcher_career_stats."year" != \'ALL\' '
                         f'and mv_pitcher_career_stats.gs > 0 '
                         f'and players.mlb_player_id = %s ')
@@ -1147,7 +1149,7 @@ class Player(Resource):
             return (f'select 	f.year_played,'
                                 f'f.pitchtype,'
                                 f'f.pitch_count,'
-                                f'mv_starting_pitcher_pitch_pool_rankings.qualified_rank '
+                                f'mv_starting_pitcher_pitch_pool.pitcher_rank as qualified_rank '
                         f'from '
                         f'( '
                             f'select 	year_played,'
@@ -1161,7 +1163,7 @@ class Player(Resource):
                             f'and players.mlb_player_id = %s '
                             f'group by year_played, pitchtype, pitcher_id '
                         f') f '
-                        f'left join mv_starting_pitcher_pitch_pool_rankings on mv_starting_pitcher_pitch_pool_rankings.year_played = f.year_played and mv_starting_pitcher_pitch_pool_rankings.pitchtype = f.pitchtype and mv_starting_pitcher_pitch_pool_rankings.pitcher_id = f.pitcher_id '
+                        f'left join mv_starting_pitcher_pitch_pool on mv_starting_pitcher_pitch_pool.year_played = f.year_played and mv_starting_pitcher_pitch_pool.pitchtype = f.pitchtype and mv_starting_pitcher_pitch_pool.pitcher_id = f.pitcher_id '
                         )  
 
         def startingpitcherpitchcustomrankings():

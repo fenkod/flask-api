@@ -75,16 +75,13 @@ class League(Resource):
             sql_query = ''
 
             table_select =  (f'select		mv_starting_pitcher_averages.year_played::text AS "year",'
-                                        f'0::int as g,' 
-                                        #--mv_starting_pitcher_averages.g::int,'
+                                        f'mv_starting_pitcher_averages.g::int,'
                                         f'mv_starting_pitcher_averages.gs::int,'
                                         f'mv_starting_pitcher_averages.w::int,'
                                         f'mv_starting_pitcher_averages.l::int,'
-                                        f'0::int as sv,' 
-                                        #--mv_starting_pitcher_averages.sv::int,'
-                                        f'0::int as bsv,' 
-                                        f'0::int as hld,' 
-                                        #--mv_starting_pitcher_averages.hld::int,'
+                                        f'mv_starting_pitcher_averages.sv::int,'
+                                        f'mv_starting_pitcher_averages.bsv::int,'
+                                        f'mv_starting_pitcher_averages.hld::int,'
                                         f'mv_starting_pitcher_averages.ip,'
                                         f'mv_starting_pitcher_averages.cg::int,'
                                         f'mv_starting_pitcher_averages.sho::int,'
@@ -95,16 +92,12 @@ class League(Resource):
                                         f'mv_starting_pitcher_averages.whip,'
                                         f'mv_starting_pitcher_averages.lob_pct,'
                                         f'mv_starting_pitcher_averages.qs::int,'
-                                        #f'mv_starting_pitcher_averages.pa::int,'
                                         f'mv_starting_pitcher_averages.x_era as "x-era",'
                                         f'mv_starting_pitcher_averages.fip,'
-                                        f'0::numeric as "x-fip",' 
-                                        #--mv_starting_pitcher_averages.x_fip as "x-fip",'
-                                        f'0::numeric as "innings-per-game",' 
-                                        #--mv_starting_pitcher_averages.innings_per_game as "innings-per-game",'
+                                        f'mv_starting_pitcher_averages.x_fip as "x-fip",'
+                                        f'mv_starting_pitcher_averages.ip_per_game as "innings-per-game",'
                                         f'mv_starting_pitcher_averages.pitches_per_game as "pitches-per-game",'
-                                        f'0::numeric as "hits-per-nine",' 
-                                        #--mv_starting_pitcher_averages.hits_per_nine as "hits-per-nine",'
+                                        f'mv_starting_pitcher_averages.hits_per_nine as "hits-per-nine",'
                                         f'mv_starting_pitcher_pitch_averages.pitchtype,'
                                         f'mv_starting_pitcher_pitch_averages.avg_velocity AS "velo_avg",'
                                         f'mv_starting_pitcher_pitch_averages.k_pct,'
@@ -257,7 +250,6 @@ class League(Resource):
                                         f'mv_relief_pitcher_averages.whip,'
                                         f'mv_relief_pitcher_averages.lob_pct,'
                                         f'mv_relief_pitcher_averages.qs::int,'
-                                        #f'mv_relief_pitcher_averages.pa::int,'
                                         f'mv_relief_pitcher_averages.x_era as "x-era",'
                                         f'mv_relief_pitcher_averages.fip,'
                                         f'mv_relief_pitcher_averages.x_fip as "x-fip",'
@@ -444,7 +436,8 @@ class League(Resource):
                 year = key[0]
                 if year not in output_dict:
                     output_dict[year] = {}
-                output_dict[year][starting_pitcher_key] = {}
+                if starting_pitcher_key not in output_dict[year]:
+                    output_dict[year][starting_pitcher_key] = {}
                 
                 if "total" not in output_dict[year][starting_pitcher_key]:
                     output_dict[year][starting_pitcher_key] = { 'total': {
@@ -517,7 +510,8 @@ class League(Resource):
                 year = key[0]
                 if year not in output_dict:
                     output_dict[year] = {}
-                output_dict[year][relief_pitcher_key] = {}
+                if relief_pitcher_key not in output_dict[year]:
+                    output_dict[year][relief_pitcher_key] = {}
                 
                 if "total" not in output_dict[year][relief_pitcher_key]:
                     output_dict[year][relief_pitcher_key] = { 'total': {
