@@ -51,7 +51,9 @@ class League(Resource):
             return self.fetch_averages_data(query_year)
         # Do not allow query to go through if attempting to hit the helper functions
         elif(query_type == 'startingpitcheraverages' 
-            or query_type == 'reliefpitcheraverages'):
+            or query_type == 'reliefpitcheraverages'
+            or query_type == 'hitteraverages'
+            or query_type == 'wobaconstants'):
             query = self.get_query('default', query_year)
             raw = fetch_dataframe(query,query_year)
             results = self.format_results(query_type, raw)
@@ -217,13 +219,14 @@ class League(Resource):
                                         f'mv_starting_pitcher_pitch_averages.x_slug_pct as "x-slug-pct",'
                                         f'mv_starting_pitcher_pitch_averages.x_babip as "x-babip-pct",'
                                         f'mv_starting_pitcher_pitch_averages.x_woba as "x-woba-pct",'
-                                        f'mv_starting_pitcher_pitch_averages.x_wobacon as "x-wobacon-pct" '
+                                        f'mv_starting_pitcher_pitch_averages.x_wobacon as "x-wobacon-pct",'
+                                        f'mv_starting_pitcher_pitch_averages.average_flyball_launch_speed as "flyball-exit-velo-avg" '
                                 f'from mv_starting_pitcher_averages '
                                 f'inner join mv_starting_pitcher_pitch_averages on mv_starting_pitcher_pitch_averages.year_played = mv_starting_pitcher_averages.year_played ')
             year_select = ''
 
             if query_year != 'NA':
-                year_select = 'and mv_starting_pitcher_averages.year_played = %s '
+                year_select = 'where mv_starting_pitcher_averages.year_played = %s '
             order_query = 'order by mv_starting_pitcher_averages.year_played'
             sql_query = table_select + year_select + order_query
 
@@ -375,21 +378,188 @@ class League(Resource):
                                         f'mv_relief_pitcher_pitch_averages.x_slug_pct as "x-slug-pct",'
                                         f'mv_relief_pitcher_pitch_averages.x_babip as "x-babip-pct",'
                                         f'mv_relief_pitcher_pitch_averages.x_woba as "x-woba-pct",'
-                                        f'mv_relief_pitcher_pitch_averages.x_wobacon as "x-wobacon-pct" '
+                                        f'mv_relief_pitcher_pitch_averages.x_wobacon as "x-wobacon-pct",'
+                                        f'mv_relief_pitcher_pitch_averages.average_flyball_launch_speed as "flyball-exit-velo-avg" '
                                 f'from mv_relief_pitcher_averages '
                                 f'inner join mv_relief_pitcher_pitch_averages on mv_relief_pitcher_pitch_averages.year_played = mv_relief_pitcher_averages.year_played ')
             year_select = ''
 
             if query_year != 'NA':
-                year_select = 'and mv_relief_pitcher_averages.year_played = %s '
+                year_select = 'where mv_relief_pitcher_averages.year_played = %s '
             order_query = 'order by mv_relief_pitcher_averages.year_played'
             sql_query = table_select + year_select + order_query
 
             return sql_query
 
+        def hitteraverages():
+            sql_query = ''
+
+            table_select =  (f'select	year_played::text AS "year",'
+                                        f'g::int,'
+                                        f'gs::int,'
+                                        f'runs::int,'
+                                        f'sb::int,'
+                                        f'cs::int,'
+                                        f'rbi::int,'
+                                        f'avg_velocity AS "velo_avg",'
+                                        f'k_pct,'
+                                        f'bb_pct,'
+                                        f'batting_average AS "batting_avg",' 
+                                        f'o_swing_pct,'
+                                        f'zone_pct,'
+                                        f'swinging_strike_pct,'
+                                        f'called_strike_pct,'
+                                        f'csw_pct,'
+                                        f'cswf_pct,'
+                                        f'plus_pct,'
+                                        f'foul_pct,'
+                                        f'contact_pct,'
+                                        f'o_contact_pct,'
+                                        f'z_contact_pct,'
+                                        f'swing_pct,'
+                                        f'strike_pct,'
+                                        f'early_called_strike_pct,'
+                                        f'late_o_swing_pct,'
+                                        f'f_strike_pct,'
+                                        f'true_f_strike_pct,'
+                                        f'groundball_pct,'
+                                        f'linedrive_pct,'
+                                        f'flyball_pct,'
+                                        f'hr_flyball_pct,'
+                                        f'groundball_flyball_pct,'
+                                        f'infield_flyball_pct,'
+                                        f'weak_pct,'
+                                        f'medium_pct,'
+                                        f'hard_pct,'
+                                        f'center_pct,'
+                                        f'pull_pct,'
+                                        f'opposite_field_pct,'
+                                        f'babip_pct,'
+                                        f'bacon_pct,'
+                                        f'armside_pct,'
+                                        f'gloveside_pct,'
+                                        f'vertical_middle_location_pct AS "v_mid_pct",'
+                                        f'horizonal_middle_location_pct AS "h_mid_pct",'
+                                        f'high_pct,'
+                                        f'low_pct,'
+                                        f'heart_pct,'
+                                        f'early_pct,'
+                                        f'behind_pct,'
+                                        f'late_pct,'
+                                        f'non_bip_strike_pct,'
+                                        f'early_bip_pct,'
+                                        f'num_pitches::int AS "pitch-count",' 
+                                        f'num_hits::int AS "hits",' 
+                                        f'num_bb::int AS "bb",' 
+                                        f'num_1b::int AS "1b",' 
+                                        f'num_2b::int AS "2b",'
+                                        f'num_3b::int AS "3b",' 
+                                        f'num_hr::int AS "hr",' 
+                                        f'num_k::int AS "k",'
+                                        f'num_pa::int AS "pa",'
+                                        f'num_strike::int AS "strikes",' 
+                                        f'num_ball::int AS "balls",' 
+                                        f'num_foul::int AS "foul",' 
+                                        f'num_ibb::int AS "ibb",' 
+                                        f'num_hbp::int AS "hbp",' 
+                                        f'num_wp::int AS "wp",'
+                                        f'num_fastball AS "fastball",'
+                                        f'num_secondary AS "secondary",'
+                                        f'num_inside AS "inside",'
+                                        f'num_outside AS "outside",'
+                                        f'num_early_secondary as "early-secondary",'
+                                        f'num_late_secondary as "late-secondary",'
+                                        f'num_put_away as "putaway",'
+                                        f'num_topped::int as "top-bip",'
+                                        f'num_under::int as "under-bip",'
+                                        f'num_flare_or_burner::int as "flare-burner-bip",'
+                                        f'num_solid::int as "solid-bip",'
+                                        f'num_barrel::int as "barrel-bip",'
+                                        f'num_sweet_spot::int as "sweet-spot-bip",'
+                                        f'num_launch_speed::int as "total-exit-velo",'
+                                        f'num_launch_angle::int as "total-launch-angle",'
+                                        f'num_ideal::int as "ideal-bip",'
+                                        f'num_x_movement::int as "total-x-movement",'
+                                        f'num_y_movement::int as "total-y-movement",'
+                                        f'num_x_release::int as "total-x-release",'
+                                        f'num_y_release::int as "total-y-release",'
+                                        f'num_pitch_extension::int as "total-pitch-extension",'
+                                        f'num_spin_rate::int as "total-spin-rate",'
+                                        f'spin_rate_counter::int as "spin-rates-tracked",'
+                                        f'topped_pct as "top-pct",'
+                                        f'under_pct as "under-pct",'
+                                        f'flare_or_burner_pct as "flare-burner-pct",'
+                                        f'solid_pct as "solid-pct",'
+                                        f'barrel_pct as "barrel-pct",'
+                                        f'sweet_spot_pct as "sweet-spot-pct",'
+                                        f'average_launch_speed as "exit-velo-avg",'
+                                        f'average_launch_angle as "launch-angle-avg",'
+                                        f'ideal_bbe_pct as "ideal-bbe-pct",'
+                                        f'ideal_pa_pct as "ideal-pa-pct",'
+                                        f'avg_x_movement as "x-movement-avg",'
+                                        f'avg_y_movement as "y-movement-avg",'
+                                        f'avg_x_release as "x-release-avg",'
+                                        f'avg_y_release as "y-release-avg",'
+                                        f'avg_pitch_extension as "pitch-extension-avg",'
+                                        f'avg_spin_rate as "spin-rate-avg",'
+                                        f'inside_pct as "inside-pct",'
+                                        f'outside_pct as "outside-pct",'
+                                        f'fastball_pct as "fastball-pct",'
+                                        f'secondary_pct as "secondary-pct",'
+                                        f'early_secondary_pct as "early-secondary-pct",'
+                                        f'late_secondary_pct as "late-secondary-pct",'
+                                        f'put_away_pct as "put-away-pct",'
+                                        f'whiff_pct as "whiff-pct",'
+                                        f'slug_pct as "slug-pct",'
+                                        f'on_base_pct as "on-base-pct",'
+                                        f'ops_pct as "ops-pct",'
+                                        f'woba_pct as "woba-pct",'
+                                        f'x_avg as "x-avg",'
+                                        f'x_slug_pct as "x-slug-pct",'
+                                        f'x_babip as "x-babip-pct",'
+                                        f'x_woba as "x-woba-pct",'
+                                        f'x_wobacon as "x-wobacon-pct",'
+                                        f'average_flyball_launch_speed as "flyball-exit-velo-avg",'
+                                        f'num_xbh as "xbh",'
+                                        f'max_launch_speed as "max-exit-velo" '
+                                f'from mv_hitter_averages ')
+            year_select = ''
+
+            if query_year != 'NA':
+                year_select = 'where year_played = %s '
+            order_query = 'order by year_played'
+            sql_query = table_select + year_select + order_query
+
+            return sql_query
+
+        def wobaconstants():
+            sql_query = ''
+
+            table_select =  (f'select 	year::text as "year",'
+                                        f'woba,'
+                                        f'woba_scale,'
+                                        f'woba_bb,'
+                                        f'woba_hbp,'
+                                        f'woba_single,'
+                                        f'woba_double,'
+                                        f'woba_triple,'
+                                        f'woba_home_run '
+                                f'from pitch_estimator_constants ')
+            year_select = ''
+
+            if query_year != 'NA':
+                year_select = 'where year = %s '
+            order_query = 'order by year'
+            sql_query = table_select + year_select + order_query
+
+            return sql_query
+           
+
         queries = {
             "startingpitcheraverages": startingpitcheraverages,
             "reliefpitcheraverages": reliefpitcheraverages,
+            "hitteraverages": hitteraverages,
+            "wobaconstants": wobaconstants
         }
 
         return queries.get(query_type, default)()
@@ -569,5 +739,48 @@ class League(Resource):
 
                 if pitch_key not in output_dict[year][relief_pitcher_key]['pitches']:
                     output_dict[year][relief_pitcher_key]['pitches'][pitch_key] = value
+
+        hitterAveragesQuery = self.get_query('hitteraverages', query_year)
+        hitterAverages = fetch_dataframe(hitterAveragesQuery, query_year)
+        
+        hitterAverages.set_index(['year'], inplace=True)
+        hitterAverages.fillna(value=json.dumps(None), inplace=True)
+        h_result_dict = json.loads(hitterAverages.to_json(orient='index'))
+
+        hitter_key = 'H'
+        for keys, value in h_result_dict.items():
+            # json coversion returns tuple string
+                year = keys
+                if year not in output_dict:
+                    output_dict[year] = {}
+                if hitter_key not in output_dict[year]:
+                    output_dict[year][hitter_key] = {}
+                
+                if "total" not in output_dict[year][hitter_key]:
+                    output_dict[year][hitter_key] = { 'total': value }
+
+        wobaConstantsQuery = self.get_query('wobaconstants', query_year)
+        wobaConstants = fetch_dataframe(wobaConstantsQuery, query_year)
+        wobaConstants.set_index(['year'], inplace=True)
+        wobaConstants.fillna(value=json.dumps(None), inplace=True)
+        woba_result_dict = json.loads(wobaConstants.to_json(orient='index'))
+        
+        woba_key = 'woba'
+        for keys, value in woba_result_dict.items():
+            year = keys
+            if year not in output_dict:
+                output_dict[year] = {}
+            if woba_key not in output_dict[year]:
+                output_dict[year][woba_key] = {}
+            output_dict[year][woba_key] = {
+                'woba': value['woba'],
+                'woba-scale': value['woba_scale'],
+                'woba-bb': value['woba_bb'],
+                'woba-hbp': value['woba_hbp'],
+                'woba-single': value['woba_single'],
+                'woba-double': value['woba_double'],
+                'woba-triple': value['woba_triple'],
+                'woba-homerun': value['woba_home_run'],
+                }
 
         return output_dict

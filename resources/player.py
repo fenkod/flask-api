@@ -96,7 +96,8 @@ class Player(Resource):
             or query_type == 'reliefpitcherpoolrankingslookup' 
             or query_type == 'reliefpitchercustomrankings'
             or query_type == 'reliefpitcherpitchpoolrankingslookup'
-            or query_type == 'reliefpitcherpitchcustomrankings'):
+            or query_type == 'reliefpitcherpitchcustomrankings'
+            or query_type == 'hitterpoolrankingslookup'):
             query = self.get_query('default', player_id)
 
             raw = fetch_dataframe(query,query_var)
@@ -295,13 +296,15 @@ class Player(Resource):
                 return (
                     f'SELECT year::text AS "year", '
                         f'g::int,'
+                        f'gs::int,'
                         f'runs::int, '
                         f'rbi::int, '
                         f'sb::int, '
                         f'cs::int, '
                         f'teams '
                     f'FROM mv_hitter_career_stats '
-                    f'WHERE hittermlbamid = %s '
+                    f'INNER JOIN players on players.player_id = mv_hitter_career_stats.hitter_id '
+                    f'WHERE players.mlb_player_id = %s '
                     f'ORDER BY year ASC;'
                 )
 
@@ -520,146 +523,205 @@ class Player(Resource):
             else:
                 return (
                     f'SELECT games.mlb_game_id AS "gameid",'
-                        f'games.game_date AS "game-date",'
-                        f'games.year_played as "year",'
-                        f'games.game_type as "game-type",'
-                        f'hitter_team.abbreviation as team,'
-                        f'hitter_team.team_id::int AS "team-id",'
-                        f'opponent_team.abbreviation as opponent,'
-                        f'opponent_team.team_id::int AS "opponent-team-id",'
-                        f'case when hitter_team.team_id = games.home_team_id then \'HOME\' else \'AWAY\' end as park,'
-                        f'case when games.status = \'closed\' then (case when hitter_team.team_id = games.winning_team_id then \'Win\' else \'Loss\' end) else null end AS "team-result",'
-                        f'(case when hitter_team.team_id = games.home_team_id then games.home_team_runs else games.away_team_runs end)::int AS "runs-scored",'
-                        f'(case when hitter_team.team_id = games.home_team_id then games.away_team_runs else games.home_team_runs end)::int AS "opponent-runs-scored",'
-                        f'hitting_game_log.runs::int AS "runs",'
-                        f'hitting_game_log."start"::int  as "gs",'
-                        f'hitting_game_log.rbi::int as "rbi",'
-                        f'hitting_game_log.sb::int as "sb",'
-                        f'hitting_game_log.cs::int as "cs",'
-                        f'hitting_game_log.ap::int as "pa",'
-                        f'hitting_game_log.ab::int as "ab",'
-                        f'hitting_game_log.lob::int as "lob",'
-                        f'\'FF\'::pitch_type as pitchtype,'
-                        f'\'R\'::player_side AS "split-RL",'
-                        f'null::numeric AS "velo_avg",'
-                        f'null::numeric AS strikeout_pct,'
-                        f'null::numeric AS bb_pct,'
-                        f'null::numeric AS usage_pct,'
-                        f'null::numeric AS "batting_avg",' 
-                        f'null::numeric AS o_swing_pct,'
-                        f'null::numeric as z_swing_pct,'
-                        f'null::numeric AS zone_pct,'
-                        f'null::numeric AS swinging_strike_pct,'
-                        f'null::numeric AS called_strike_pct,'
-                        f'null::numeric AS csw_pct,'
-                        f'null::numeric AS cswf_pct,'
-                        f'null::numeric AS plus_pct,'
-                        f'null::numeric AS foul_pct,'
-                        f'null::numeric AS contact_pct,'
-                        f'null::numeric AS o_contact_pct,'
-                        f'null::numeric AS z_contact_pct,'
-                        f'null::numeric AS swing_pct,'
-                        f'null::numeric AS strike_pct,'
-                        f'null::numeric AS early_called_strike_pct,'
-                        f'null::numeric AS late_o_swing_pct,'
-                        f'null::numeric AS f_strike_pct,'
-                        f'null::numeric AS true_f_strike_pct,'
-                        f'null::numeric AS groundball_pct,'
-                        f'null::numeric AS linedrive_pct,'
-                        f'null::numeric AS flyball_pct,'
-                        f'null::numeric AS hr_flyball_pct,'
-                        f'null::numeric AS groundball_flyball_pct,'
-                        f'null::numeric AS infield_flyball_pct,'
-                        f'null::numeric AS weak_pct,'
-                        f'null::numeric AS medium_pct,'
-                        f'null::numeric AS hard_pct,'
-                        f'null::numeric AS center_pct,'
-                        f'null::numeric AS pull_pct,'
-                        f'null::numeric AS opposite_field_pct,'
-                        f'null::numeric AS babip_pct,'
-                        f'null::numeric AS bacon_pct,'
-                        f'null::numeric AS armside_pct,'
-                        f'null::numeric AS gloveside_pct,'
-                        f'null::numeric AS "v_mid_pct",'
-                        f'null::numeric AS "h_mid_pct",'
-                        f'null::numeric AS high_pct,'
-                        f'null::numeric AS low_pct,'
-                        f'null::numeric AS heart_pct,'
-                        f'null::numeric AS early_pct,'
-                        f'null::numeric AS behind_pct,'
-                        f'null::numeric AS late_pct,'
-                        f'null::numeric AS non_bip_strike_pct,'
-                        f'null::numeric AS early_bip_pct,'
-                        f'null::int AS "pitch-count",'
-                        f'null::int AS "hits",'
-                        f'null::int AS "bb",'
-                        f'null::int AS "1b",' 
-                        f'null::int AS "2b",' 
-                        f'null::int AS "3b",' 
-                        f'null::int AS "hr",' 
-                        f'null::int AS "k",'
-                        f'null::int AS "strikes",' 
-                        f'null::int AS "balls",' 
-                        f'null::int AS "foul",' 
-                        f'null::int AS "ibb",' 
-                        f'null::int AS "hbp",' 
-                        f'null::int as "flyball",'
-                        f'null::int as "whiff",'
-                        f'null::int as "zone",'
-                        f'null::int astotal_velo,'
-                        f'null::int as "pitches-clocked",'
-                        f'null::int as "armside",'
-                        f'null::int as "gloveside",'
-                        f'null::int as "inside",'
-                        f'null::int as "outside",'
-                        f'null::int as "h-mid",'
-                        f'null::int as "high",'
-                        f'null::int as "mid",'
-                        f'null::int as "low",'
-                        f'null::int as "heart",'
-                        f'null::int as "early",'
-                        f'null::int as "late",'
-                        f'null::int as "behind",'
-                        f'null::int as "non-bip-strike",'
-                        f'null::int as "batted-ball-event",'
-                        f'null::int as "early-bip",'
-                        f'null::int as "fastball",'
-                        f'null::int as "secondary",'
-                        f'null::int as "early-secondary",'
-                        f'null::int as "late-secondary",'
-                        f'null::int as "called-strike",'
-                        f'null::int as "early-called-strike",'
-                        f'null::int as "putaway",'
-                        f'null::int as "swings",'
-                        f'null::int as "contact",'
-                        f'null::int as "first-pitch-swings",'
-                        f'null::int "first-pitch-strikes",'
-                        f'null::int as "true-first-pitch-strikes",'
-                        f'null::int as "plus-pitch",'
-                        f'null::int as "z-swing",'
-                        f'null::int as "z-contact",'
-                        f'null::int as "o-swing",'
-                        f'null::int as "o-contact",'
-                        f'null::int as "early-o-swing",'
-                        f'null::int as "early-o-contact",'
-                        f'null::int as "late-o-swing",'
-                        f'null::int as "late-o-contact",'
-                        f'null::int as "pulled-bip",'
-                        f'null::int as "opp-bip",'
-                        f'null::int as "line-drive",'
-                        f'null::int as "if-flyball",'
-                        f'null::int as "groundball",'
-                        f'null::int as "weak-bip",'
-                        f'null::int "medium-bip",'
-                        f'null::int as "hard-bip",'
-                        f'null::numeric AS "ops" '
-                    f'from hitting_game_log '
-                    f'left join teams as hitter_team on hitter_team.team_id = hitting_game_log.team_id '
-                    f'left join games on games.game_id = hitting_game_log.game_id '
-                    f'left join teams as opponent_team on opponent_team.team_id = (case when games.home_team_id = hitting_game_log.team_id then games.away_team_id else games.home_team_id end) '
-                    f'left join players on players.player_id = hitting_game_log.player_id '
-                    f'where players.mlb_player_id = %s ' #and game_played >= current_date - interval \'400 day\'
-                    f'order by game_date desc;'
+                            f'game_played AS "game-date",'
+                            f'team,'
+                            f'hitterteam.mlb_team_id::int AS "team-id",'
+                            f'opponent,'
+                            f'opponentteam.mlb_team_id::int AS "opponent-team-id",'
+                            f'park,'
+                            f'team_result AS "team-result",'
+                            f'runs_scored::int AS "runs-scored",'
+                            f'opponent_runs_scored::int AS "opponent-runs-scored",'
+                            f'gs::int,'
+                            f'g::int,'
+                            f'sb::int,'
+                            f'cs::int,'
+                            f'rbi::int,'
+                            f'runs::int,'
+                            f'lob::int,'
+                            f'pitchtype,'
+                            f'opponent_handedness AS "split-RL",'
+                            f'avg_velocity AS "velo_avg",'
+                            f'strikeout_pct,'
+                            f'bb_pct,'
+                            f'usage_pct,'
+                            f'batting_average AS "batting_avg",' 
+                            f'o_swing_pct,'
+                            f'z_swing_pct,'
+                            f'zone_pct,'
+                            f'swinging_strike_pct,'
+                            f'called_strike_pct,'
+                            f'csw_pct,'
+                            f'cswf_pct,'
+                            f'plus_pct,'
+                            f'foul_pct,'
+                            f'contact_pct,'
+                            f'o_contact_pct,'
+                            f'z_contact_pct,'
+                            f'swing_pct,'
+                            f'strike_pct,'
+                            f'early_called_strike_pct,'
+                            f'late_o_swing_pct,'
+                            f'f_strike_pct,'
+                            f'true_f_strike_pct,'
+                            f'groundball_pct,'
+                            f'linedrive_pct,'
+                            f'flyball_pct,'
+                            f'hr_flyball_pct,'
+                            f'groundball_flyball_pct,'
+                            f'infield_flyball_pct,'
+                            f'weak_pct,'
+                            f'medium_pct,'
+                            f'hard_pct,'
+                            f'center_pct,'
+                            f'pull_pct,'
+                            f'opposite_field_pct,'
+                            f'babip_pct,'
+                            f'bacon_pct,'
+                            f'armside_pct,'
+                            f'gloveside_pct,'
+                            f'vertical_middle_location_pct AS "v_mid_pct",'
+                            f'horizonal_middle_location_pct AS "h_mid_pct",'
+                            f'high_pct,'
+                            f'low_pct,'
+                            f'heart_pct,'
+                            f'early_pct,'
+                            f'behind_pct,'
+                            f'late_pct,'
+                            f'non_bip_strike_pct,'
+                            f'early_bip_pct,'
+                            f'num_pitches::int AS "pitch-count",'
+                            f'num_hit::int AS "hits",'
+                            f'num_bb::int AS "bb",'
+                            f'num_1b::int AS "1b",' 
+                            f'num_2b::int AS "2b",' 
+                            f'num_3b::int AS "3b",' 
+                            f'num_hr::int AS "hr",' 
+                            f'num_k::int AS "k",'
+                            f'num_pa::int AS "pa",'
+                            f'num_strikes::int AS "strikes",' 
+                            f'num_balls::int AS "balls",' 
+                            f'num_foul::int AS "foul",' 
+                            f'num_ibb::int AS "ibb",'
+                            f'num_hbp::int AS "hbp",' 
+                            f'num_wp::int AS "wp",'
+                            f'num_flyball::int as "flyball",'
+                            f'num_whiff::int as "whiff",'
+                            f'num_zone::int as "zone",'
+                            f'total_velo,'
+                            f'num_velo::int as "pitches-clocked",'
+                            f'num_armside::int as "armside",'
+                            f'num_gloveside::int as "gloveside",'
+                            f'num_inside::int as "inside",'
+                            f'num_outside::int as "outside",'
+                            f'num_horizontal_middle::int as "h-mid",'
+                            f'num_high::int as "high",'
+                            f'num_middle::int as "mid",'
+                            f'num_low::int as "low",'
+                            f'num_heart::int as "heart",'
+                            f'num_early::int as "early",'
+                            f'num_late::int as "late",'
+                            f'num_behind::int as "behind",'
+                            f'num_non_bip_strike::int as "non-bip-strike",'
+                            f'num_batted_ball_event::int as "batted-ball-event",'
+                            f'num_early_bip::int as "early-bip",'
+                            f'num_fastball::int as "fastball",'
+                            f'num_secondary::int as "secondary",'
+                            f'num_early_secondary::int as "early-secondary",'
+                            f'num_late_secondary::int as "late-secondary",'
+                            f'num_called_strike::int as "called-strike",'
+                            f'num_early_called_strike::int as "early-called-strike",'
+                            f'num_put_away::int as "putaway",'
+                            f'num_swing::int as "swings",'
+                            f'num_contact::int as "contact",'
+                            f'num_first_pitch_swing::int as "first-pitch-swings",'
+                            f'num_first_pitch_strike::int "first-pitch-strikes",'
+                            f'num_true_first_pitch_strike::int as "true-first-pitch-strikes",'
+                            f'num_plus_pitch::int as "plus-pitch",'
+                            f'num_z_swing::int as "z-swing",'
+                            f'num_z_contact::int as "z-contact",'
+                            f'num_o_swing::int as "o-swing",'
+                            f'num_o_contact::int as "o-contact",'
+                            f'num_early_o_swing as "early-o-swing",'
+                            f'num_early_o_contact as "early-o-contact",'
+                            f'num_late_o_swing::int as "late-o-swing",'
+                            f'num_late_o_contact::int as "late-o-contact",'
+                            f'num_pulled_bip::int as "pulled-bip",'
+                            f'num_opposite_bip::int as "opp-bip",'
+                            f'num_line_drive::int as "line-drive",'
+                            f'num_if_fly_ball::int as "if-flyball",'
+                            f'num_ground_ball::int as "groundball",'
+                            f'num_weak_bip::int as "weak-bip",'
+                            f'num_medium_bip::int "medium-bip",'
+                            f'num_hard_bip::int as "hard-bip",'
+                            f'num_ab::int as "ab",'
+                            f'games.year_played as "year",'
+                            f'games."game_type" as "game-type",'
+                            f'num_topped::int as "top-bip",'
+                            f'num_under::int as "under-bip",'
+                            f'num_flare_or_burner::int as "flare-burner-bip",'
+                            f'num_solid::int as "solid-bip",'
+                            f'num_barrel::int as "barrel-bip",'
+                            f'num_sweet_spot::int as "sweet-spot-bip",'
+                            f'num_launch_speed::int as "total-exit-velo",'
+                            f'num_launch_angle::int as "total-launch-angle",'
+                            f'num_ideal::int as "ideal-bip",'
+                            f'num_x_movement::int as "total-x-movement",'
+                            f'num_y_movement::int as "total-y-movement",'
+                            f'num_x_release::int as "total-x-release",'
+                            f'num_y_release::int as "total-y-release",'
+                            f'num_pitch_extension::int as "total-pitch-extension",'
+                            f'num_spin_rate::int as "total-spin-rate",'
+                            f'spin_rate_counter::int as "spin-rates-tracked",'
+                            f'topped_pct as "top-pct",'
+                            f'under_pct as "under-pct",'
+                            f'flare_or_burner_pct as "flare-burner-pct",'
+                            f'solid_pct as "solid-pct",'
+                            f'barrel_pct as "barrel-pct",'
+                            f'sweet_spot_pct as "sweet-spot-pct",'
+                            f'average_launch_speed as "exit-velo-avg",'
+                            f'average_launch_angle as "launch-angle-avg",'
+                            f'ideal_bbe_pct as "ideal-bbe-pct",'
+                            f'ideal_pa_pct as "ideal-pa-pct",'
+                            f'avg_x_movement as "x-movement-avg",'
+                            f'avg_y_movement as "y-movement-avg",'
+                            f'avg_x_release as "x-release-avg",'
+                            f'avg_y_release as "y-release-avg",'
+                            f'avg_pitch_extension as "pitch-extension-avg",'
+                            f'avg_spin_rate as "spin-rate-avg",'
+                            f'inside_pct as "inside-pct",'
+                            f'outside_pct as "outside-pct",'
+                            f'fastball_pct as "fastball-pct",'
+                            f'secondary_pct as "secondary-pct",'
+                            f'early_secondary_pct as "early-secondary-pct",'
+                            f'late_secondary_pct as "late-secondary-pct",'
+                            f'put_away_pct as "put-away-pct",'
+                            f'whiff_pct as "whiff-pct",'
+                            f'slug_pct as "slug-pct",'
+                            f'on_base_pct as "on-base-pct",'
+                            f'ops_pct as "ops-pct",'
+                            f'woba_pct as "woba-pct",'
+                            f'x_avg as "x-avg",'
+                            f'x_slug_pct as "x-slug-pct",'
+                            f'x_babip as "x-babip-pct",'
+                            f'x_woba as "x-woba-pct",'
+                            f'x_wobacon as "x-wobacon-pct",'
+                            f'num_center_bip as "center-bip",'
+                            f'num_outs as "bip-outs",'
+                            f'num_fly_ball_launch_speed as "total-flyball-exit-velo",'
+                            f'average_fly_ball_launch_speed as "flyball-exit-velo-avg",'
+                            f'num_xbh as xbh,'
+                            f'max_launch_speed as "max-exit-velo",'
+                            f'batting_order_position as "batting-order-position"'
+                        f'FROM mv_hitter_game_logs '
+                        f'inner join players on players.player_id = mv_hitter_game_logs.hitter_id '
+                        f'inner join games on games.game_id = mv_hitter_game_logs.game_id '
+                        f'inner join teams as hitterteam on hitterteam.team_id = mv_hitter_game_logs.hitter_team_id '
+                        f'inner join teams as opponentteam on opponentteam.team_id = mv_hitter_game_logs.opponent_team_id '
+                        f'WHERE players.mlb_player_id = %s '
+                        f'ORDER BY mv_hitter_game_logs.year_played DESC, mv_hitter_game_logs.month_played DESC, mv_hitter_game_logs.game_played DESC;'
+
+                    #and game_played >= current_date - interval \'400 day\'
                 )
 
         def locationlogs():
@@ -692,23 +754,30 @@ class Player(Resource):
                 )
             else:
                 return (
-                    f'SELECT DISTINCT ghuid AS "gameid",'
-                        f'pitchtype,'
-                        f'pitcherside AS "split-RL",'
-                        f'pitch_locations, '
-                        f'num_pitches AS "pitch-count", '
-                        f'usage_pct, '
-                        f'whiff, '
-                        f'called_strike, '
-                        f'csw_pct, '
-                        f'zone_pct, '
-                        f'zone_swing_pct, '
-                        f'swinging_strike_pct, '
-                        f'o_swing_pct, '
-                        f'avg_velocity '
+                    f'SELECT DISTINCT games.mlb_game_id AS "gameid",'
+                            f'pitchtype, '
+                            f'pitcherside AS "split-RL", '
+                            f'pitch_locations, '
+                            f'num_pitches AS "pitch-count", '
+                            f'usage_pct, '
+                            f'whiff, '
+                            f'called_strike, '
+                            f'csw_pct, '
+                            f'zone_pct, '
+                            f'zone_swing_pct, '
+                            f'swinging_strike_pct, '
+                            f'o_swing_pct, '
+                            f'avg_velocity,'
+                            f'bbe as "batted-ball-event",'
+                            f'outs,'
+                            f'avg_x_movement as "x-movement-avg",'
+                            f'avg_y_movement as "y-movement-avg",'
+                            f'avg_spin_rate as "spin-rate-avg" '
                     f'FROM mv_hitter_game_log_pitches '
-                    f"WHERE hittermlbamid = %s "
-                    f'ORDER BY ghuid;'
+                    f'inner join players on players.player_id = mv_hitter_game_log_pitches.hitter_id '
+                    f'inner join games on games.game_id = mv_hitter_game_log_pitches.game_id '
+                    f'WHERE players.mlb_player_id = %s '
+                    f'ORDER BY games.mlb_game_id;'
                 )
 
         def locations():
@@ -875,80 +944,135 @@ class Player(Resource):
                 )
             else:
                 return (
-                    f'SELECT year_played AS "year",' 
-                        f'opponent_handedness AS "split-RL",'
-                        f'home_away AS "split-HA",'
-                        f'avg_velocity AS "velo_avg",'
-                        f'k_pct,'
-                        f'bb_pct,'
-                        f'batting_average AS "batting_avg",'
-                        f'o_swing_pct,'
-                        f'zone_pct,'
-                        f'swinging_strike_pct,'
-                        f'called_strike_pct,'
-                        f'csw_pct,'
-                        f'cswf_pct,'
-                        f'plus_pct,'
-                        f'foul_pct,'
-                        f'contact_pct,'
-                        f'o_contact_pct,'
-                        f'z_contact_pct,'
-                        f'swing_pct,'
-                        f'strike_pct,'
-                        f'early_called_strike_pct,'
-                        f'late_o_swing_pct,'
-                        f'f_strike_pct,'
-                        f'true_f_strike_pct,'
-                        f'groundball_pct,'
-                        f'linedrive_pct,'
-                        f'flyball_pct,'
-                        f'hr_flyball_pct,'
-                        f'groundball_flyball_pct,'
-                        f'infield_flyball_pct,'
-                        f'weak_pct,'
-                        f'medium_pct,'
-                        f'hard_pct,'
-                        f'center_pct,'
-                        f'pull_pct,'
-                        f'opposite_field_pct,'
-                        f'babip_pct,'
-                        f'bacon_pct,'
-                        f'armside_pct,'
-                        f'gloveside_pct,'
-                        f'vertical_middle_location_pct AS "v_mid_pct",'
-                        f'horizonal_middle_location_pct AS "h_mid_pct",'
-                        f'high_pct,'
-                        f'low_pct,'
-                        f'heart_pct,'
-                        f'early_pct,'
-                        f'behind_pct,'
-                        f'late_pct,'
-                        f'non_bip_strike_pct,'
-                        f'early_bip_pct,'
-                        f'onbase_pct,'
-                        f'ops_pct,'
-                        f'null::int AS "wob_avg",'
-                        f'early_o_contact_pct,'
-                        f'late_o_contact_pct,'
-                        f'first_pitch_swing_pct,'
-                        f'num_pitches AS "pitch-count",'
-                        f'num_hits AS "hits",' 
-                        f'num_bb AS "bb",' 
-                        f'num_1b AS "1b",' 
-                        f'num_2b AS "2b",' 
-                        f'num_3b AS "3b",' 
-                        f'num_hr AS "hr",'
-                        f'num_k AS "k",'
-                        f'num_pa AS "pa",'
-                        f'num_strike AS "strikes",' 
-                        f'num_ball AS "balls",' 
-                        f'null::int AS "foul",' 
-                        f'null::int AS "ibb",' 
-                        f'null::int AS "hbp",'
-                        f'num_rbi AS "rbi" '
-                    f'FROM mv_hitter_page_stats '
-                    f"WHERE hittermlbamid = %s "
-                    f'ORDER BY year_played, opponent_handedness, home_away; '
+                    f'SELECT 	pitchtype,'
+                                f'year_played::text AS "year",' 
+                                f'opponent_handedness AS "split-RL",'
+                                f'home_away AS "split-HA",'
+                                f'avg_velocity AS "velo_avg",'
+                                f'k_pct,'
+                                f'bb_pct,'
+                                f'batting_average AS "batting_avg",' 
+                                f'o_swing_pct,'
+                                f'zone_pct,'
+                                f'swinging_strike_pct,'
+                                f'called_strike_pct,'
+                                f'csw_pct,'
+                                f'cswf_pct,'
+                                f'plus_pct,'
+                                f'foul_pct,'
+                                f'contact_pct,'
+                                f'o_contact_pct,'
+                                f'z_contact_pct,'
+                                f'swing_pct,'
+                                f'strike_pct,'
+                                f'early_called_strike_pct,'
+                                f'late_o_swing_pct,'
+                                f'f_strike_pct,'
+                                f'true_f_strike_pct,'
+                                f'groundball_pct,'
+                                f'linedrive_pct,'
+                                f'flyball_pct,'
+                                f'hr_flyball_pct,'
+                                f'groundball_flyball_pct,'
+                                f'infield_flyball_pct,'
+                                f'weak_pct,'
+                                f'medium_pct,'
+                                f'hard_pct,'
+                                f'center_pct,'
+                                f'pull_pct,'
+                                f'opposite_field_pct,'
+                                f'babip_pct,'
+                                f'bacon_pct,'
+                                f'armside_pct,'
+                                f'gloveside_pct,'
+                                f'vertical_middle_location_pct AS "v_mid_pct",'
+                                f'horizonal_middle_location_pct AS "h_mid_pct",'
+                                f'high_pct,'
+                                f'low_pct,'
+                                f'heart_pct,'
+                                f'early_pct,'
+                                f'behind_pct,'
+                                f'late_pct,'
+                                f'non_bip_strike_pct,'
+                                f'early_bip_pct,'
+                                f'num_pitches::int AS "pitch-count",' 
+                                f'num_hits::int AS "hits",' 
+                                f'num_bb::int AS "bb",' 
+                                f'num_1b::int AS "1b",' 
+                                f'num_2b::int AS "2b",'
+                                f'num_3b::int AS "3b",' 
+                                f'num_hr::int AS "hr",' 
+                                f'num_k::int AS "k",'
+                                f'num_pa::int AS "pa",'
+                                f'num_strike::int AS "strikes",' 
+                                f'num_ball::int AS "balls",' 
+                                f'num_foul::int AS "foul",' 
+                                f'num_ibb::int AS "ibb",' 
+                                f'num_hbp::int AS "hbp",' 
+                                f'num_wp::int AS "wp",'
+                                f'num_fastball AS "fastball",'
+                                f'num_secondary AS "secondary",'
+                                f'num_inside AS "inside",'
+                                f'num_outside AS "outside",'
+                                f'num_early_secondary as "early-secondary",'
+                                f'num_late_secondary as "late-secondary",'
+                                f'num_put_away as "putaway",'
+                                f'num_topped::int as "top-bip",'
+                                f'num_under::int as "under-bip",'
+                                f'num_flare_or_burner::int as "flare-burner-bip",'
+                                f'num_solid::int as "solid-bip",'
+                                f'num_barrel::int as "barrel-bip",'
+                                f'num_sweet_spot::int as "sweet-spot-bip",'
+                                f'num_launch_speed::int as "total-exit-velo",'
+                                f'num_launch_angle::int as "total-launch-angle",'
+                                f'num_ideal::int as "ideal-bip",'
+                                f'num_x_movement::int as "total-x-movement",'
+                                f'num_y_movement::int as "total-y-movement",'
+                                f'num_x_release::int as "total-x-release",'
+                                f'num_y_release::int as "total-y-release",'
+                                f'num_pitch_extension::int as "total-pitch-extension",'
+                                f'num_spin_rate::int as "total-spin-rate",'
+                                f'spin_rate_counter::int as "spin-rates-tracked",'
+                                f'topped_pct as "top-pct",'
+                                f'under_pct as "under-pct",'
+                                f'flare_or_burner_pct as "flare-burner-pct",'
+                                f'solid_pct as "solid-pct",'
+                                f'barrel_pct as "barrel-pct",'
+                                f'sweet_spot_pct as "sweet-spot-pct",'
+                                f'average_launch_speed as "exit-velo-avg",'
+                                f'average_launch_angle as "launch-angle-avg",'
+                                f'ideal_bbe_pct as "ideal-bbe-pct",'
+                                f'ideal_pa_pct as "ideal-pa-pct",'
+                                f'avg_x_movement as "x-movement-avg",'
+                                f'avg_y_movement as "y-movement-avg",'
+                                f'avg_x_release as "x-release-avg",'
+                                f'avg_y_release as "y-release-avg",'
+                                f'avg_pitch_extension as "pitch-extension-avg",'
+                                f'avg_spin_rate as "spin-rate-avg",'
+                                f'inside_pct as "inside-pct",'
+                                f'outside_pct as "outside-pct",'
+                                f'fastball_pct as "fastball-pct",'
+                                f'secondary_pct as "secondary-pct",'
+                                f'early_secondary_pct as "early-secondary-pct",'
+                                f'late_secondary_pct as "late-secondary-pct",'
+                                f'put_away_pct as "put-away-pct",'
+                                f'whiff_pct as "whiff-pct",'
+                                f'slug_pct as "slug-pct",'
+                                f'on_base_pct as "on-base-pct",'
+                                f'ops_pct as "ops-pct",'
+                                f'woba_pct as "woba-pct",'
+                                f'x_avg as "x-avg",'
+                                f'x_slug_pct as "x-slug-pct",'
+                                f'x_babip as "x-babip-pct",'
+                                f'x_woba as "x-woba-pct",'
+                                f'x_wobacon as "x-wobacon-pct",'
+                                f'average_fly_ball_launch_speed as "flyball-exit-velo-avg",'
+                                f'num_xbh as "xbh",'
+                                f'max_launch_speed as "max-exit-velo" '
+                        f'FROM mv_hitter_page_stats '
+                        f'inner join players on players.player_id = mv_hitter_page_stats.hitter_id '
+                        f'WHERE players.mlb_player_id = %s '
+                        f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
                 )
 
         def startingpitcherpoolrankingslookup():
@@ -1360,7 +1484,12 @@ class Player(Resource):
                                 f'yearly_averages.league_hard_pct_percentage as "league-hard-pct-percentile",'
                                 f'yearly_averages.league_groundball_pct_percentage as "league-groundball-pct-percentile",'
                                 f'yearly_averages.league_x_era_percentage as "league-x-era-percentile",'
-                                f'yearly_averages.league_x_woba_percentage as "league-x-woba-percentile" '
+                                f'yearly_averages.league_x_woba_percentage as "league-x-woba-percentile",'
+                                f'g.sv as "sv",'
+                                f'g.sv_percentile as "sv-percentile",'
+                                f'g.sv_rank as "sv-rank",'
+                                f'yearly_averages.sv as "league-sv",'
+                                f'yearly_averages.league_sv_percentage as "league-sv-percentile" '
                         f'from '
                         f'( '
                             f'SELECT f.year_played,'
@@ -1400,7 +1529,10 @@ class Player(Resource):
                                 f'rank() OVER (PARTITION BY f.year_played ORDER BY f.x_era) AS x_era_rank,'
                                 f'f.x_woba,'
                                 f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.x_woba DESC) AS x_woba_percentile,'
-                                f'rank() OVER (PARTITION BY f.year_played ORDER BY f.x_woba) AS x_woba_rank '
+                                f'rank() OVER (PARTITION BY f.year_played ORDER BY f.x_woba) AS x_woba_rank,'
+                                f'f.sv,'
+                                f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.sv) AS sv_percentile,'
+                                f'rank() OVER (PARTITION BY f.year_played ORDER BY f.sv DESC) AS sv_rank '
                             f'from ' 
                             f' ('
                                 f'select 	year_played, '
@@ -1625,6 +1757,17 @@ class Player(Resource):
                         f'inner join lateral (select * from mv_relief_pitcher_pitch_averages where mv_relief_pitcher_pitch_averages.year_played = g.year_played and mv_relief_pitcher_pitch_averages.pitchtype = g.pitchtype) yearly_averages on true '
                         f'where g.qualified_rank = 0 ')
 
+        def hitterpoolrankingslookup():
+            return (f'select 	mv_hitter_career_stats."year"::int as "year",'
+                               f' mv_hitter_pool.hitter_rank as qualified_rank '
+                        f'from players '
+                        f'inner join mv_hitter_career_stats on mv_hitter_career_stats.hitter_id = players.player_id '
+                        f'left join mv_hitter_pool on mv_hitter_pool.year_played = mv_hitter_career_stats."year" and mv_hitter_pool.hitter_id = mv_hitter_career_stats.hitter_id '
+                        f'where mv_hitter_career_stats."year" != \'ALL\' '
+                        f'and mv_hitter_career_stats.g > 0 '
+                        f'and players.mlb_player_id = %s ')
+
+
         queries = {
             "abilities": abilities,
             "bio": bio,
@@ -1643,6 +1786,7 @@ class Player(Resource):
             "reliefpitchercustomrankings": reliefpitchercustomrankings,
             "reliefpitcherpitchpoolrankingslookup": reliefpitcherpitchpoolrankingslookup,
             "reliefpitcherpitchcustomrankings": reliefpitcherpitchcustomrankings,
+            "hitterpoolrankingslookup": hitterpoolrankingslookup
         }
 
         return queries.get(query_type, default)()
@@ -1673,7 +1817,7 @@ class Player(Resource):
             if (self.is_pitcher):
                 formatted_results = data.set_index(['pitchtype','year','split-RL','split-HA'])
             else:
-                formatted_results = data.set_index(['year','split-RL','split-HA'])
+                formatted_results = data.set_index(['pitchtype', 'year','split-RL','split-HA'])
 
             return formatted_results
 
@@ -1828,6 +1972,7 @@ class Player(Resource):
                             'year': value['year'],
                             'game-type': value['game-type'],
                             'gs': value['gs'], 
+                            'g': value['g'], 
                             'rbi':value['rbi'],
                             'r': value['runs'],
                             'sb': value['sb'],
@@ -1841,13 +1986,15 @@ class Player(Resource):
                             'team-result': value['team-result'],
                             'runs-scored': value['runs-scored'],
                             'opponent-runs-scored': value['opponent-runs-scored'],
-                            'lob': value['lob']
+                            'lob': value['lob'],
+                            'batting-order-position': value['batting-order-position']
                         }, 'pitches':{}}
                     
                     # Delete keys from value dict
                     del value['year']
                     del value['game-type']
                     del value['gs']
+                    del value['g']
                     del value['rbi']
                     del value['sb']
                     del value['cs']
@@ -1861,7 +2008,8 @@ class Player(Resource):
                     del value['team-result']
                     del value['runs-scored']
                     del value['opponent-runs-scored']
-
+                    del value['batting-order-position']
+                    del value['lob']
                     pitch_key = key[1].upper()
 
                     if pitch_key not in output_dict['logs'][gameid_key]['pitches']:
@@ -1925,27 +2073,50 @@ class Player(Resource):
                         output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
                 
                     ha_split_key = key[3].upper() if (key[3] == 'All') else key[3]
-                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
+                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value       
             else:
                 # Sort our DataFrame so we have a prettier JSON format for the API
-                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'years':{}} }
+                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
 
                 # Make sure our index keys exist in our dict structure then push on our data values
                 for keys, value in result_dict.items():
                     # json coversion returns tuple string
                     key = eval(keys)
+                    pitch_key = key[0].upper()
 
-                    year_key = key[0]
-                    stats = { 'total': self.career_stats[year_key], 'splits':{} }
-                    if year_key not in output_dict[query_type]['years']:
-                        output_dict[query_type]['years'][year_key] = stats
+                    if pitch_key not in output_dict[query_type]['pitches']:
+                        output_dict[query_type]['pitches'][pitch_key] = {'years':{}}
+
+                    year_key = key[1]
+                    stats = { 'total': self.career_stats[year_key], 'splits':{} } if (pitch_key == 'ALL') else { 'splits':{} }
+                    if year_key not in output_dict[query_type]['pitches'][pitch_key]['years']:
+                        output_dict[query_type]['pitches'][pitch_key]['years'][year_key] = stats
                     
-                    rl_split_key = key[1].upper()
-                    if rl_split_key not in output_dict[query_type]['years'][year_key]['splits']:
-                        output_dict[query_type]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
+                    rl_split_key = key[2].upper()
+                    if rl_split_key not in output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits']:
+                        output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
                 
-                    ha_split_key = key[2]
-                    output_dict[query_type]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
+                    ha_split_key = key[3].upper() if (key[3] == 'All') else key[3]
+                    output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value     
+                # Sort our DataFrame so we have a prettier JSON format for the API
+                #output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'years':{}} }
+
+                # Make sure our index keys exist in our dict structure then push on our data values
+                #for keys, value in result_dict.items():
+                    # json coversion returns tuple string
+                    #key = eval(keys)
+
+                    #year_key = key[0]
+                    #stats = { 'total': self.career_stats[year_key], 'splits':{} }
+                    #if year_key not in output_dict[query_type]['years']:
+                        #output_dict[query_type]['years'][year_key] = stats
+                    
+                    #rl_split_key = key[1].upper()
+                    #if rl_split_key not in output_dict[query_type]['years'][year_key]['splits']:
+                        #output_dict[query_type]['years'][year_key]['splits'][rl_split_key] = {'park':{}}
+                
+                    #ha_split_key = key[2]
+                    #output_dict[query_type]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value
             
             return output_dict
 
@@ -2025,6 +2196,15 @@ class Player(Resource):
                 if not str(year) in records:    
                     records[str(year)] = {}
                 records[str(year)]['RP'] = rp_year_model
+
+        # Lookup if hitter is ranked
+        hitterRankingsLookupQuery = self.get_query('hitterpoolrankingslookup', player_id)
+        hitterRankingsLookup = fetch_dataframe(hitterRankingsLookupQuery,player_id)
+        
+        # Only do RP calculations if there is RP data
+        #if(not hitterRankingsLookup.empty):
+            # Hitter Pitcher Rankings Data
+            # TODO
 
         return json.loads(json.dumps(records))
 
@@ -2173,6 +2353,15 @@ class Player(Resource):
         x_woba_model['league-avwobage-stat-value'] = float(year_data['league-x-woba'])
         x_woba_model['league-avwobage-stat-percentile'] = float(year_data['league-x-woba-percentile'])
         year_model['x-woba-pct'] = x_woba_model
+
+        if 'sv' in year_data:
+            sv_model = {}
+            sv_model['player-stat-value'] = int(year_data['sv'])
+            sv_model['player-stat-rank'] = int(year_data['sv-rank'])
+            sv_model['player-stat-percentile'] = float(year_data['sv-percentile'])
+            sv_model['league-average-stat-value'] = int(year_data['league-sv'])
+            sv_model['league-average-stat-percentile'] = float(year_data['league-sv-percentile'])
+            year_model['sv'] = sv_model
 
         matching_year_pitches = pitch_data[pitch_data.year == year]
         pitches_model = {}
