@@ -746,62 +746,6 @@ class Player(Resource):
                             f'avg_x_movement as "x-movement-avg",'
                             f'avg_y_movement as "y-movement-avg",'
                             f'avg_spin_rate as "spin-rate-avg" '
-                        f'FROM mv_pitcher_game_log_pitches '
-                        f'inner join players on players.player_id = mv_pitcher_game_log_pitches.pitcher_id '
-                        f'inner join games on games.game_id = mv_pitcher_game_log_pitches.game_id '
-                        f'WHERE players.mlb_player_id = %s '
-                        f'ORDER BY games.mlb_game_id;'
-                )
-            else:
-                return (
-                    f'SELECT DISTINCT games.mlb_game_id AS "gameid",'
-                            f'pitchtype, '
-                            f'pitcherside AS "split-RL", '
-                            f'pitch_locations, '
-                            f'num_pitches AS "pitch-count", '
-                            f'usage_pct, '
-                            f'whiff, '
-                            f'called_strike, '
-                            f'csw_pct, '
-                            f'zone_pct, '
-                            f'zone_swing_pct, '
-                            f'swinging_strike_pct, '
-                            f'o_swing_pct, '
-                            f'avg_velocity,'
-                            f'bbe as "batted-ball-event",'
-                            f'outs,'
-                            f'avg_x_movement as "x-movement-avg",'
-                            f'avg_y_movement as "y-movement-avg",'
-                            f'avg_spin_rate as "spin-rate-avg" '
-                    f'FROM mv_hitter_game_log_pitches '
-                    f'inner join players on players.player_id = mv_hitter_game_log_pitches.hitter_id '
-                    f'inner join games on games.game_id = mv_hitter_game_log_pitches.game_id '
-                    f'WHERE players.mlb_player_id = %s '
-                    f'ORDER BY games.mlb_game_id;'
-                )
-
-        def locationlogsadvanced():
-            if (self.is_pitcher):
-                return (
-                    f'SELECT DISTINCT games.mlb_game_id AS "gameid", ' 
-                            f'pitchtype, '
-                            f'hitterside AS "split-RL", '
-                            f'pitch_locations, '
-                            f'num_pitches AS "pitch-count", '
-                            f'usage_pct, '
-                            f'whiff, '
-                            f'called_strike, '
-                            f'csw_pct, '
-                            f'zone_pct, '
-                            f'zone_swing_pct, '
-                            f'swinging_strike_pct, '
-                            f'o_swing_pct, '
-                            f'avg_velocity,'
-                            f'bbe as "batted-ball-event",'
-                            f'outs,'
-                            f'avg_x_movement as "x-movement-avg",'
-                            f'avg_y_movement as "y-movement-avg",'
-                            f'avg_spin_rate as "spin-rate-avg" '
                         f'FROM mv_pitcher_game_log_pitches_advanced '
                         f'inner join players on players.player_id = mv_pitcher_game_log_pitches_advanced.pitcher_id '
                         f'inner join games on games.game_id = mv_pitcher_game_log_pitches_advanced.game_id '
@@ -1990,7 +1934,6 @@ class Player(Resource):
             "career": career,
             "gamelogs": gamelogs,
             "locationlogs": locationlogs,
-            "locationlogsadvanced": locationlogsadvanced,
             "locations": locations,
             "positions": positions,
             "repertoire": stats,
@@ -2027,11 +1970,6 @@ class Player(Resource):
             
             return formatted_results
 
-            
-        def locationlogsadvanced():
-            formatted_results = data.set_index(['gameid','pitchtype','split-RL'])
-            
-            return formatted_results
         
         def gamelogs():
             formatted_data = data.set_index(['gameid','pitchtype','split-RL'])
@@ -2049,7 +1987,6 @@ class Player(Resource):
             "career": career,
             "gamelogs": gamelogs,
             "locationlogs": locationlogs,
-            "locationlogsadvanced": locationlogsadvanced,
             "locations": stats,
             "repertoire": stats,
             "stats": stats
@@ -2269,29 +2206,6 @@ class Player(Resource):
             
             return output_dict
 
-        def locationlogsadvanced():
-            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'logs': {} }
-            results.fillna(value=0, inplace=True)
-            result_dict = json.loads(results.to_json(orient='index'))
-            
-            for keys, value in result_dict.items():
-                # json coversion returns tuple string
-                key = eval(keys)
-                gameid_key = key[0]
-                if gameid_key not in output_dict['logs']:
-                    output_dict['logs'][gameid_key] = {'pitches':{}}
-
-                pitch_key = key[1].upper()
-
-                if pitch_key not in output_dict['logs'][gameid_key]['pitches']:
-                    output_dict['logs'][gameid_key]['pitches'][pitch_key] = {'splits':{}}
-                
-                rl_split_key = key[2].upper()
-                if rl_split_key not in output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits']:
-                    output_dict['logs'][gameid_key]['pitches'][pitch_key]['splits'][rl_split_key] = value
-            
-            return output_dict
-
         def stats():
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
             results.fillna(value=json.dumps(None), inplace=True)
@@ -2373,7 +2287,6 @@ class Player(Resource):
             "career": career,
             "gamelogs": gamelogs,
             "locationlogs": locationlogs,
-            "locationlogsadvanced": locationlogsadvanced,
             "locations": stats,
             "stats": stats,
             "repertoire": stats
