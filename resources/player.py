@@ -1767,6 +1767,165 @@ class Player(Resource):
                         f'and mv_hitter_career_stats.g > 0 '
                         f'and players.mlb_player_id = %s ')
 
+        def hittercustomrankings():
+            return (f'select 	g.year_played::int as "year",'
+                                f'g.qualified_rank as "qualified-rank",'
+                                f'g.runs as "runs",'
+                                f'g.runs_percentile as "runs-percentile",'
+                                f'g.runs_rank as "runs-rank",'
+                                f'g.hr as "hr",'
+                                f'g.hr_percentile as "hr-percentile",'
+                                f'g.hr_rank as "hr-rank",'
+                                f'g.rbi as "rbi",'
+                                f'g.rbi_percentile as "rbi-percentile",'
+                                f'g.rbi_rank as "rbi-rank",'
+                                f'g.sb as "sb",'
+                                f'g.sb_percentile as "sb-percentile",'
+                                f'g.sb_rank as "sb-rank",'
+                                f'g.batting_average as "batting-average",'
+                                f'g.batting_average_percentile as "batting-average-percentile",'
+                                f'g.batting_average_rank as "batting-average-rank",'
+                                f'g.on_base_pct as "on-base-pct",'
+                                f'g.on_base_pct_percentile as "on-base-pct-percentile",'
+                                f'g.on_base_pct_rank as "on-base-pct-rank",'
+                                f'g.slug_pct as "slug-pct",'
+                                f'g.slug_pct_percentile as "slug-pct-percentile",'
+                                f'g.slug_pct_rank as "slug-pct-rank",'
+                                f'g.k_pct as "k-pct",'
+                                f'g.k_pct_percentile as "k-pct-percentile",'
+                                f'g.k_pct_rank as "k-pct-rank",'
+                                f'g.bb_pct as "bb-pct",'
+                                f'g.bb_pct_percentile as "bb-pct-percentile",'
+                                f'g.bb_pct_rank as "bb-pct-rank",'
+                                f'g.ideal_pa_pct as "ideal-pa-pct",'
+                                f'g.ideal_pa_pct_percentile as "ideal-pa-pct-percentile",'
+                                f'g.ideal_pa_pct_rank as "ideal-pa-pct-rank",'
+                                f'g.hard_pct as "hard-pct",'
+                                f'g.hard_pct_percentile as "hard-pct-percentile",'
+                                f'g.hard_pct_rank as "hard-pct-rank",'
+                                f'g.x_avg as "x-avg",'
+                                f'g.x_avg_percentile as "x-avg-percentile",'
+                                f'g.x_avg_rank as "x-avg-rank",'
+                                f'g.x_woba as "x-woba",'
+                                f'g.x_woba_percentile as "x-woba-percentile",'
+                                f'g.x_woba_rank as "x-woba-rank",'
+                                f'yearly_averages.runs as "league-runs",'
+                                f'yearly_averages.num_hr as "league-hr",'
+                                f'yearly_averages.rbi as "league-rbi",'
+                                f'yearly_averages.sb as "league-sb",'
+                                f'yearly_averages.batting_average as "league-batting-average",'
+                                f'yearly_averages.on_base_pct as "league-on-base-pct",'
+                                f'yearly_averages.slug_pct as "league-slug-pct",'
+                                f'yearly_averages.k_pct as "league-k-pct",'
+                                f'yearly_averages.bb_pct as "league-bb-pct",'
+                                f'yearly_averages.ideal_pa_pct as "league-ideal-pa-pct",'
+                                f'yearly_averages.hard_pct as "league-hard-pct",'
+                                f'yearly_averages.x_avg as "league-x-avg",'
+                                f'yearly_averages.x_woba as "league-x-woba",'
+                                f'yearly_averages.league_runs_percentage as "league-runs-percentile",'
+                                f'yearly_averages.league_num_hr_percentage as "league-hr-percentile",'
+                                f'yearly_averages.league_rbi_percentage as "league-rbi-percentile",'
+                                f'yearly_averages.league_sb_percentage as "league-sb-percentile",'
+                                f'yearly_averages.league_batting_average_percentage as "league-batting-average-percentile",'
+                                f'yearly_averages.league_on_base_pct_percentage as "league-on-base-pct-percentile",'
+                                f'yearly_averages.league_slug_pct_percentage as "league-slug-pct-percentile",'
+                                f'yearly_averages.league_k_pct_percentage as "league-k-pct-percentile",'
+                                f'yearly_averages.league_bb_pct_percentage as "league-bb-pct-percentile",'
+                                f'yearly_averages.league_ideal_pa_pct_percentage as "league-ideal-pa-pct-percentile",'
+                                f'yearly_averages.league_hard_pct_percentage as "league-hard-pct-percentile",'
+                                f'yearly_averages.league_x_avg_percentage as "league-x-avg-percentile",'
+                                f'yearly_averages.league_x_woba_percentage as "league-x-woba-percentile" '
+                                f'from '
+                                f'( '
+                                    f'SELECT f.year_played,'
+                                        f'f.hitter_rank AS qualified_rank,'
+                                        f'f.runs,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.runs) AS runs_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.runs DESC) AS runs_rank,'
+                                        f'f.num_hr as hr,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.num_hr) AS hr_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.num_hr DESC) AS hr_rank,'
+                                        f'f.rbi,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.rbi) AS rbi_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.num_hr DESC) AS rbi_rank,'
+                                        f'f.sb,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.sb) AS sb_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.sb DESC) AS sb_rank,'
+                                        f'f.batting_average,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.batting_average) AS batting_average_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.batting_average DESC) AS batting_average_rank,'
+                                        f'f.on_base_pct,'
+                                        f' 100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.on_base_pct) AS on_base_pct_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.on_base_pct DESC) AS on_base_pct_rank,'
+                                        f'f.slug_pct,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.slug_pct) AS slug_pct_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.slug_pct DESC) AS slug_pct_rank,'
+                                        f'f.k_pct,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.k_pct desc) AS k_pct_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.k_pct) AS k_pct_rank,'
+                                        f'f.bb_pct,'                                
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.bb_pct) AS bb_pct_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.bb_pct DESC) AS bb_pct_rank,'
+                                        f'f.ideal_pa_pct,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.ideal_pa_pct) AS ideal_pa_pct_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.ideal_pa_pct DESC) AS ideal_pa_pct_rank,'
+                                        f'f.hard_pct,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.hard_pct) AS hard_pct_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.hard_pct DESC) as hard_pct_rank,'
+                                        f'f.x_avg,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.x_avg) AS x_avg_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.x_avg DESC) AS x_avg_rank,'
+                                        f'f.x_woba,'
+                                        f'100::double precision * percent_rank() OVER (PARTITION BY f.year_played ORDER BY f.x_woba) AS x_woba_percentile,'
+                                        f'rank() OVER (PARTITION BY f.year_played ORDER BY f.x_woba DESC) AS x_woba_rank '
+                                    f'from '
+                                    f'( '
+                                        f'select 	year_played,'
+                                                f'runs,'
+                                                f'num_hr,'
+                                                f'rbi,'
+                                                f'sb,'
+                                                f'batting_average,'
+                                                f'on_base_pct,'
+                                                f'slug_pct,'
+                                                f'k_pct,'
+                                                f'bb_pct,'
+                                                f'ideal_pa_pct,'
+                                                f'hard_pct,'
+                                                f'x_avg,'
+                                                f'x_woba,'
+                                                f'hitter_rank '
+                                                f'from mv_hitter_pool '
+                                                f'inner join players on mv_hitter_pool.hitter_id = players.player_id '
+                                                f'where players.mlb_player_id != %s '
+                                        f'union '
+                                        f'select 	year_played,'
+                                                f'runs,'
+                                                f'num_hr,'
+                                                f'rbi,'
+                                                f'sb,'
+                                                f'batting_average,'
+                                                f'on_base_pct,'
+                                                f'slug_pct,'
+                                                f'k_pct,'
+                                                f'bb_pct,'
+                                                f'ideal_pa_pct,'
+                                                f'hard_pct,'
+                                                f'x_avg,'
+                                                f'x_woba,'
+                                                f'null as pitcher_rank  '
+                                        f'from mv_hitter_page_stats '
+                                        f'JOIN mv_hitter_career_stats ON mv_hitter_career_stats.hitter_id = mv_hitter_page_stats.hitter_id AND mv_hitter_page_stats.year_played = mv_hitter_career_stats.year '
+                                        f'inner join players on mv_hitter_page_stats.hitter_id = players.player_id '
+                                        f'WHERE mv_hitter_page_stats.pitchtype = \'ALL\'::text  '
+                                        f'AND mv_hitter_page_stats.opponent_handedness = \'ALL\'::text '
+                                        f'AND mv_hitter_page_stats.home_away = \'ALL\'::text '
+                                        f'AND mv_hitter_page_stats.year_played <> \'ALL\'::text '
+                                        f'and players.mlb_player_id = %s '
+                                    f') f '
+                                f') g '
+                                f'inner join lateral (select * from mv_hitter_averages where mv_hitter_averages.year_played::text = g.year_played) yearly_averages on true '
+                                f'where g.qualified_rank is null ')
 
         queries = {
             "abilities": abilities,
@@ -1786,7 +1945,8 @@ class Player(Resource):
             "reliefpitchercustomrankings": reliefpitchercustomrankings,
             "reliefpitcherpitchpoolrankingslookup": reliefpitcherpitchpoolrankingslookup,
             "reliefpitcherpitchcustomrankings": reliefpitcherpitchcustomrankings,
-            "hitterpoolrankingslookup": hitterpoolrankingslookup
+            "hitterpoolrankingslookup": hitterpoolrankingslookup,
+            "hittercustomrankings": hittercustomrankings
         }
 
         return queries.get(query_type, default)()
@@ -2202,9 +2362,22 @@ class Player(Resource):
         hitterRankingsLookup = fetch_dataframe(hitterRankingsLookupQuery,player_id)
         
         # Only do RP calculations if there is RP data
-        #if(not hitterRankingsLookup.empty):
+        if(not hitterRankingsLookup.empty):
             # Hitter Pitcher Rankings Data
-            # TODO
+            hitterRankingsQuery = self.get_query('hittercustomrankings', player_id)
+            hitterRankings = fetch_dataframe(hitterRankingsQuery, [player_id, player_id])
+
+            hitter_rankings_df = self.build_hitter_rank_dataframe(hitterRankingsLookup, hitterRankings)
+
+            # Create a row for each year
+            hitterYearGroupings = hitter_rankings_df.groupby('year', sort=False)
+            for year, yearValues in hitterYearGroupings:
+                year_data = yearValues.iloc[0]
+                hitter_year_model = self.build_hitter_year_model(year_data)
+                
+                if not str(year) in records:    
+                    records[str(year)] = {}
+                records[str(year)]['H'] = hitter_year_model
 
         return json.loads(json.dumps(records))
 
@@ -2224,7 +2397,7 @@ class Player(Resource):
                 continue
             year_rankings = matchingdata.head(1)
 
-            year_rankings['is_qualified'] = bool(qualified_rank is not None)
+            year_rankings['is_qualified'] = not pd.isnull(qualified_rank) and not pd.isna(qualified_rank)
 
             rankings_df = rankings_df.append(year_rankings,ignore_index=True)
 
@@ -2451,5 +2624,139 @@ class Player(Resource):
         return year_model
 
 
+    def build_hitter_rank_dataframe(self, seasonRankingLookupData, seasonRankingData):
+        rankings_df = pd.DataFrame()
+        for index, row in seasonRankingLookupData.iterrows():
+            year = row['year']
+            
+            # Yearly Total Rankings
+            year_rankings = {}
+
+            qualified_rank = row['qualified_rank']
+            matchingdata = seasonRankingData[seasonRankingData.year == year]
+            # If there are zero or multiple matching records, do not attempt
+            if len(matchingdata) != 1:
+                continue
+            year_rankings = matchingdata.head(1)
+
+            year_rankings['is_qualified'] = not pd.isnull(qualified_rank) and not pd.isna(qualified_rank)
+
+            rankings_df = rankings_df.append(year_rankings,ignore_index=True)                
+
+        rankings_df.fillna(value=0, inplace=True)
+
+        return rankings_df
     
+        # Build rank model for this year and position
+    def build_hitter_year_model(self, year_data):
+        year_model = {}
+
+        year_model = {}
+        year_model['is-qualified'] = bool(year_data['is_qualified'])
+
+        runs_model = {}
+        runs_model['player-stat-value'] = int(year_data['runs'])
+        runs_model['player-stat-rank'] = int(year_data['runs-rank'])
+        runs_model['player-stat-percentile'] = float(year_data['runs-percentile'])
+        runs_model['league-average-stat-value'] = int(year_data['league-runs'])
+        runs_model['league-average-stat-percentile'] = float(year_data['league-runs-percentile'])
+        year_model['runs'] = runs_model
+
+        hr_model = {}
+        hr_model['player-stat-value'] = float(year_data['hr'])
+        hr_model['player-stat-rank'] = int(year_data['hr-rank'])
+        hr_model['player-stat-percentile'] = float(year_data['hr-percentile'])
+        hr_model['league-average-stat-value'] = int(year_data['league-hr'])
+        hr_model['league-average-stat-percentile'] = float(year_data['league-hr-percentile'])
+        year_model['hr'] = hr_model
+
+        rbi_model = {}
+        rbi_model['player-stat-value'] = float(year_data['rbi'])
+        rbi_model['player-stat-rank'] = int(year_data['rbi-rank'])
+        rbi_model['player-stat-percentile'] = float(year_data['rbi-percentile'])
+        rbi_model['league-average-stat-value'] = float(year_data['league-rbi'])
+        rbi_model['league-average-stat-percentile'] = float(year_data['league-rbi-percentile'])
+        year_model['rbi'] = rbi_model
+
+        sb_model = {}
+        sb_model['player-stat-value'] = float(year_data['sb'])
+        sb_model['player-stat-rank'] = int(year_data['sb-rank'])
+        sb_model['player-stat-percentile'] = float(year_data['sb-percentile'])
+        sb_model['league-average-stat-value'] = float(year_data['league-sb'])
+        sb_model['league-average-stat-percentile'] = float(year_data['league-sb-percentile'])
+        year_model['sb'] = sb_model
+
+        batting_average_model = {}
+        batting_average_model['player-stat-value'] = float(year_data['batting-average'])
+        batting_average_model['player-stat-rank'] = int(year_data['batting-average-rank'])
+        batting_average_model['player-stat-percentile'] = float(year_data['batting-average-percentile'])
+        batting_average_model['league-average-stat-value'] = float(year_data['league-batting-average'])
+        batting_average_model['league-average-stat-percentile'] = float(year_data['league-batting-average-percentile'])
+        year_model['batting_avg'] = batting_average_model
+
+        obp_model = {}
+        obp_model['player-stat-value'] = float(year_data['on-base-pct'])
+        obp_model['player-stat-rank'] = int(year_data['on-base-pct-rank'])
+        obp_model['player-stat-percentile'] = float(year_data['on-base-pct-percentile'])
+        obp_model['league-average-stat-value'] = float(year_data['league-on-base-pct'])
+        obp_model['league-average-stat-percentile'] = float(year_data['league-on-base-pct-percentile'])
+        year_model['on-base-pct'] = obp_model
+
+        slug_model = {}
+        slug_model['player-stat-value'] = float(year_data['slug-pct'])
+        slug_model['player-stat-rank'] = int(year_data['slug-pct-rank'])
+        slug_model['player-stat-percentile'] = float(year_data['slug-pct-percentile'])
+        slug_model['league-average-stat-value'] = float(year_data['league-slug-pct'])
+        slug_model['league-average-stat-percentile'] = float(year_data['league-slug-pct-percentile'])
+        year_model['slug-pct'] = slug_model
+
+        k_pct_model = {}
+        k_pct_model['player-stat-value'] = float(year_data['k-pct'])
+        k_pct_model['player-stat-rank'] = int(year_data['k-pct-rank'])
+        k_pct_model['player-stat-percentile'] = float(year_data['k-pct-percentile'])
+        k_pct_model['league-average-stat-value'] = float(year_data['league-k-pct'])
+        k_pct_model['league-average-stat-percentile'] = float(year_data['league-k-pct-percentile'])
+        year_model['k_pct'] = k_pct_model
+
+        bb_pct_model = {}
+        bb_pct_model['player-stat-value'] = float(year_data['bb-pct'])
+        bb_pct_model['player-stat-rank'] = int(year_data['bb-pct-rank'])
+        bb_pct_model['player-stat-percentile'] = float(year_data['bb-pct-percentile'])
+        bb_pct_model['league-average-stat-value'] = float(year_data['league-bb-pct'])
+        bb_pct_model['league-average-stat-percentile'] = float(year_data['league-bb-pct-percentile'])
+        year_model['bb_pct'] = bb_pct_model
+
+        ideal_pa_pct_model = {}
+        ideal_pa_pct_model['player-stat-value'] = float(year_data['ideal-pa-pct'])
+        ideal_pa_pct_model['player-stat-rank'] = int(year_data['ideal-pa-pct-rank'])
+        ideal_pa_pct_model['player-stat-percentile'] = float(year_data['ideal-pa-pct-percentile'])
+        ideal_pa_pct_model['league-average-stat-value'] = float(year_data['league-ideal-pa-pct'])
+        ideal_pa_pct_model['league-average-stat-percentile'] = float(year_data['league-ideal-pa-pct-percentile'])
+        year_model['ideal-pa-pct'] = ideal_pa_pct_model
+
+        hard_pct_model = {}
+        hard_pct_model['player-stat-value'] = float(year_data['hard-pct'])
+        hard_pct_model['player-stat-rank'] = int(year_data['hard-pct-rank'])
+        hard_pct_model['player-stat-percentile'] = float(year_data['hard-pct-percentile'])
+        hard_pct_model['league-average-stat-value'] = float(year_data['league-hard-pct'])
+        hard_pct_model['league-average-stat-percentile'] = float(year_data['league-hard-pct-percentile'])
+        year_model['hard_pct'] = hard_pct_model
+
+        x_avg_model = {}
+        x_avg_model['player-stat-value'] = float(year_data['x-avg'])
+        x_avg_model['player-stat-rank'] = int(year_data['x-avg-rank'])
+        x_avg_model['player-stat-percentile'] = float(year_data['x-avg-percentile'])
+        x_avg_model['league-average-stat-value'] = float(year_data['league-x-avg'])
+        x_avg_model['league-average-stat-percentile'] = float(year_data['league-x-avg-percentile'])
+        year_model['x-avg'] = x_avg_model
+
+        x_woba_model = {}
+        x_woba_model['player-stat-value'] = float(year_data['x-woba'])
+        x_woba_model['player-stat-rank'] = int(year_data['x-woba-rank'])
+        x_woba_model['player-stat-percentile'] = float(year_data['x-woba-percentile'])
+        x_woba_model['league-avwobage-stat-value'] = float(year_data['league-x-woba'])
+        x_woba_model['league-avwobage-stat-percentile'] = float(year_data['league-x-woba-percentile'])
+        year_model['x-woba-pct'] = x_woba_model
+
+        return year_model
    
