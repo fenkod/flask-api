@@ -60,10 +60,11 @@ class Player(Resource):
             # Using Cache for JSON Results
             cache_key_player_id = player_id
             cache_key_resource_type = self.__class__.__name__
+            cache_key_version = 'v3'
             if (player_id == 'NA'):
                 cache_key_player_id = 'all'
 
-            cache_key = f'{cache_key_resource_type}-{query_type}-{cache_key_player_id}'
+            cache_key = f'{cache_key_resource_type}-{cache_key_version}-{query_type}-{cache_key_player_id}'
             result = current_app.cache.get(cache_key)
             if (result is None):
                 result = self.fetch_data(query_type, player_id)
@@ -77,7 +78,7 @@ class Player(Resource):
         if (type(player_id) is int):
             query_var = player_id
 
-        raw = fetch_dataframe(query,query_var)
+        raw = fetch_dataframe(query,query_var, True)
         results = self.format_results(query_type, raw)
         output = self.get_json(query_type,player_id,results)
 
