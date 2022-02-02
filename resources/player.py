@@ -1765,7 +1765,7 @@ class Player(Resource):
                         f'inner join mv_hitter_career_stats on mv_hitter_career_stats.hitter_id = players.player_id '
                         f'left join mv_hitter_pool on mv_hitter_pool.year_played = mv_hitter_career_stats."year" and mv_hitter_pool.hitter_id = mv_hitter_career_stats.hitter_id '
                         f'where mv_hitter_career_stats."year" != \'ALL\' '
-                        f'and mv_hitter_career_stats.g > 0 '
+                        f'and mv_hitter_career_stats.pa > 0 '
                         f'and players.mlb_player_id = %s ')
 
         def hittercustomrankings():
