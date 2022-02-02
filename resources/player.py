@@ -712,7 +712,14 @@ class Player(Resource):
                             f'average_fly_ball_launch_speed as "flyball-exit-velo-avg",'
                             f'num_xbh as xbh,'
                             f'max_launch_speed as "max-exit-velo",'
-                            f'batting_order_position as "batting-order-position"'
+                            f'batting_order_position as "batting-order-position",'
+                            f'num_sacrifice_fly as "sac-fly",'
+                            f'num_sacrifice_hit as "sac-hit",'
+                            f'num_xhit as "xhits",'
+                            f'num_xsingle as "x1b",'
+                            f'num_xdouble as "x2b",'
+                            f'num_xtriple as "x3b",'
+                            f'num_xhomerun as "xhr" '
                         f'FROM mv_hitter_game_logs '
                         f'inner join players on players.player_id = mv_hitter_game_logs.hitter_id '
                         f'inner join games on games.game_id = mv_hitter_game_logs.game_id '
@@ -1765,7 +1772,7 @@ class Player(Resource):
                         f'inner join mv_hitter_career_stats on mv_hitter_career_stats.hitter_id = players.player_id '
                         f'left join mv_hitter_pool on mv_hitter_pool.year_played = mv_hitter_career_stats."year" and mv_hitter_pool.hitter_id = mv_hitter_career_stats.hitter_id '
                         f'where mv_hitter_career_stats."year" != \'ALL\' '
-                        f'and mv_hitter_career_stats.g > 0 '
+                        f'and mv_hitter_career_stats.pa > 0 '
                         f'and players.mlb_player_id = %s ')
 
         def hittercustomrankings():
