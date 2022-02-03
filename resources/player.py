@@ -803,7 +803,8 @@ class Player(Resource):
                     f'home_away AS "split-HA",'
                     f'pitch_locations '
                 f'FROM player_page_repertoire '
-                f"WHERE pitchermlbamid = %s "
+                f'inner join players on players.player_id = player_page_repertoire.pitcher_id '
+                f"WHERE players.mlb_player_id = %s "
                 f"AND pitchtype <> 'All' AND year_played <> 'All' "
                 f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
             )
