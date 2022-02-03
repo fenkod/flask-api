@@ -221,7 +221,7 @@ def pitch_aggregation_subquery_generator(handedness, opponent_handedness, league
     table_select = ''
 
     table_year = ''
-    table = 'from pl_leaderboard_v2_daily sub\n'
+    table = 'from pl_leaderboard_daily sub\n'
     if (arbitrary_start != 'NA' and arbitrary_end != 'NA') and \
             (parser.parse(arbitrary_start).year == parser.parse(arbitrary_end).year):
         table_year = parser.parse(arbitrary_start).year
@@ -507,7 +507,7 @@ def create_search_query(leaderboard, handedness, opponent_handedness, league, di
     print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     table_year = ''
-    table = 'from pl_leaderboard_v2_daily base\n'
+    table = 'from pl_leaderboard_daily base\n'
     if (arbitrary_start != 'NA' and arbitrary_end != 'NA') and \
             (parser.parse(arbitrary_start).year == parser.parse(arbitrary_end).year):
         table_year = parser.parse(arbitrary_start).year
@@ -579,7 +579,7 @@ def create_search_query_2_1(leaderboard, tab, handedness, opponent_handedness, l
     print("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     logging.debug("Generating SQL at {time}".format(time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
     table_year = ''
-    table = 'from pl_leaderboard_v2_daily base\n'
+    table = 'from pl_leaderboard_daily base\n'
     if (arbitrary_start != 'NA' and arbitrary_end != 'NA') and \
             (parser.parse(arbitrary_start).year == parser.parse(arbitrary_end).year):
         table_year = parser.parse(arbitrary_start).year

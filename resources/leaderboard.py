@@ -1,5 +1,7 @@
-from flask import current_app
+from signal import raise_signal
+from flask import current_app, Flask, request
 from flask_restful import Resource
+from errorhandler.errorhandler import InvalidUsage
 from helpers import fetch_dataframe, get_team_info, weightedonbasepercentage, var_dump
 from cache import cache_timeout, cache_invalidate_hour
 from datetime import date, datetime
@@ -13,7 +15,9 @@ import json as json
 class Leaderboard(Resource):
     teams = get_team_info()
     valid_teams = list(teams.keys())
+    valid_years = ['2021']
     current_date = date.today()
+    woba_list = ['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice_fly', 'num_1b', 'num_2b', 'num_3b', 'num_hr']
     leaderboard_kwargs = {
         "handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
         "opponent_handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
@@ -28,7 +32,8 @@ class Leaderboard(Resource):
         "arbitrary_end": fields.Str(required=False, missing="NA") #ISO date format
     }
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+
         self.current_date = date.today()
         self.current_year = self.current_date.year
         self.query_date = None
@@ -54,59 +59,72 @@ class Leaderboard(Resource):
         
         # These are the columns for each leaderboard and tab.
         # [key][tab][col]
+        # for 2022 pl7, we need:
         self.tab_display_fields = {
             "pitch": {
-                "advanced": ['avg_velocity', 'barrel_pct', 'plus_pct', 'num_pitches'],
-                "approach": ['armside_pct','horizonal_middle_location_pct', 'gloveside_pct', 'high_pct',
-                            'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'early_pct','behind_pct', 'late_pct',
-                            'zone_pct', 'non_bip_strike_pct', 'early_bip_pct', 'num_pitches'],
+                "overview": ['avg_velocity', 'usage_pct', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct',
+                            'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'num_pitches', 'strike_pct',
+                            'plus_pct','groundball_pct', 'flyball_pct', 'woba', 'babip_pct', 'hr_flyball_pct', 'x_avg', 'x_woba',
+                            'hard_pct', 'avg_spin_rate'],
+                "statcast": [],
+                "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
+                                'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'babip_pct', 'bacon_pct', 'num_pitches'],
+                "batted_ball_2": [],
                 "plate_discipline": ['o_swing_pct', 'zone_pct', 'swinging_strike_pct', 'called_strike_pct', 'csw_pct',
                                     'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'num_pitches',
                                     'early_called_strike_pct', 'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct'],
-                "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
-                                'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'babip_pct', 'bacon_pct', 'num_pitches'],
-                "overview": ['avg_velocity', 'usage_pct', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct',
-                            'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'num_pitches', 'plus_pct'],
-                "standard": ['num_pitches', 'num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb',
-                            'batting_average']
+                "approach": ['armside_pct','horizonal_middle_location_pct', 'gloveside_pct', 'high_pct',
+                            'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'early_pct','behind_pct', 'late_pct',
+                            'zone_pct', 'non_bip_strike_pct', 'early_bip_pct', 'num_pitches'],                
+                "standard": ['num_pitches', 'num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_b,b',
+                            'batting_average'],
+                # "advanced": ['avg_velocity', 'barrel_pct', 'plus_pct', 'num_pitches'],
             },
             "pitcher": {
-                "advanced": ['avg_velocity', 'barrel_pct', 'foul_pct', 'plus_pct', 'num_ip'],
-                "approach": ['armside_pct', 'horizonal_middle_location_pct', 'gloveside_pct', 'high_pct',
-                            'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'fastball_pct', 'num_ip',
-                            'early_secondary_pct', 'late_secondary_pct', 'zone_pct', 'non_bip_strike_pct', 'early_bip_pct'],
-                "plate_discipline": ['o_swing_pct', 'zone_pct', 'swinging_strike_pct', 'called_strike_pct', 'csw_pct',
-                                    'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'early_called_strike_pct',
-                                    'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct', 'num_ip'],
+                "overview": ['num_ip', 'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
+                            'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct'],
+                "statcast": [],
                 "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
                                 'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'babip_pct',
                                 'bacon_pct', 'num_ip'],
-                "overview": ['num_ip', 'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
-                            'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct'],
+                "batted_ball_2": [],
+                "plate_discipline": ['o_swing_pct', 'zone_pct', 'swinging_strike_pct', 'called_strike_pct', 'csw_pct',
+                                    'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'early_called_strike_pct',
+                                    'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct', 'num_ip'],
+                "approach": ['armside_pct', 'horizonal_middle_location_pct', 'gloveside_pct', 'high_pct',
+                            'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'fastball_pct', 'num_ip',
+                            'early_secondary_pct', 'late_secondary_pct', 'zone_pct', 'non_bip_strike_pct', 'early_bip_pct'],
                 "standard": ['num_pitches', 'num_hit', 'num_ip', 'era', 'num_hr', 'num_k', 'num_bb'],
+                # "advanced": ['avg_velocity', 'barrel_pct', 'foul_pct', 'plus_pct', 'num_ip'],
             },
             "hitter": {
-                "advanced": ['foul_pct', 'plus_pct', 'first_pitch_swing_pct', 'early_o_contact_pct',
-                            'late_o_contact_pct', 'num_pa'],
+                "overview": ['num_pa', 'num_hr', 'batting_average', 'on_base_pct', 'babip_pct', 'hr_flyball_pct',
+                            'swinging_strike_pct', 'woba', 'strikeout_pct', 'walk_pct', 'num_sb', 'num_cs'],
+                "standard": ['num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb', 'num_sb', 'num_cs'],
+                "statcast":[],
+                 "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
+                                'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct',
+                                'babip_pct', 'bacon_pct', 'num_pa'],
+                "batted_ball_2": [],
+                "plate_discipline": ['o_swing_pct', 'zone_pct', 'swinging_strike_pct', 'called_strike_pct', 'csw_pct',
+                                    'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'early_called_strike_pct',
+                                    'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct', 'num_pa'],
                 "approach": ['inside_pct', 'horizonal_middle_location_pct', 'outside_pct', 'high_pct',
                             'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'fastball_pct',
                             'early_secondary_pct', 'late_secondary_pct', 'zone_pct', 'non_bip_strike_pct',
                             'early_bip_pct', 'num_pa'],
-                "plate_discipline": ['o_swing_pct', 'zone_pct', 'swinging_strike_pct', 'called_strike_pct', 'csw_pct',
-                                    'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'early_called_strike_pct',
-                                    'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct', 'num_pa'],
-                "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
-                                'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct',
-                                'babip_pct', 'bacon_pct', 'num_pa'],
-                "overview": ['num_pa', 'num_hr', 'batting_average', 'on_base_pct', 'babip_pct', 'hr_flyball_pct',
-                            'swinging_strike_pct', 'woba', 'strikeout_pct', 'walk_pct', 'num_sb', 'num_cs'],
-                "standard": ['num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb', 'num_sb', 'num_cs']
+                # "advanced": ['foul_pct', 'plus_pct', 'first_pitch_swing_pct', 'early_o_contact_pct',
+                #             'late_o_contact_pct', 'num_pa'],
+                
             }
         }
 
         # These are our aggregate field lookups that we use to dynamically generate the SQL stmt
         # [col][agg sql]
         self.aggregate_fields = {
+            "woba": "round((max(woba_bb) * sum(num_bb - num_ibb) + max(woba_hbp) * sum(num_hbp) + max(woba_single) * sum(num_1b) + max(woba_double) * sum(num_2b) + max(woba_triple) * sum(num_3b) + max(woba_home_run) * sum(num_hr)) / NULLIF(sum(num_ab) + sum(num_bb) - sum(num_ibb) + sum(num_sacrifice_fly) + sum(num_hbp), 0), 4)",
+            "x_woba": "round((max(woba_bb) * sum(num_bb - num_ibb) + max(woba_hbp) * sum(num_hbp) + max(woba_single) * sum(num_xsingle) + max(woba_double) * sum(num_xdouble) + max(woba_triple) * sum(num_xtriple) + max(woba_home_run) * sum(num_xhomerun)) / NULLIF(sum(num_ab) + sum(num_bb) - sum(num_ibb) + sum(num_sacrifice_fly) + sum(num_hbp), 0), 4)",
+            "x_avg": "ROUND(SUM(num_xhit) / NULLIF(SUM(num_ab), 0), 3)",
             "num_pitches": "SUM(base.num_pitches)",
             "avg_velocity": "ROUND(SUM(total_velo) / NULLIF(SUM(num_velo), 0), 1)",
             "barrel_pct": "ROUND(100 * (SUM(num_barrel) / NULLIF(SUM(num_batted_ball_event), 0)), 1)",
@@ -118,7 +136,7 @@ class Leaderboard(Resource):
             "avg_launch_speed": "ROUND((SUM(total_launch_speed) / NULLIF(SUM(num_launch_speed), 0))::DECIMAL, 1)",
             "avg_launch_angle": "ROUND((SUM(total_launch_angle) / NULLIF(SUM(num_launch_angle), 0))::DECIMAL, 1)",
             "avg_release_extension": "ROUND((SUM(total_release_extension) / NULLIF(SUM(num_release_extension), 0))::DECIMAL, 1)",
-            "avg_spin_rate": "ROUND((SUM(total_spin_rate) / NULLIF(SUM(num_spin_rate), 0))::DECIMAL, 1)",
+            "avg_spin_rate": "round(sum(num_spin_rate) / NULLIF(sum(spin_rate_counter), 0)::DECIMAL, 1)",
             "avg_x_movement": "ROUND((SUM(total_x_movement) / NULLIF(SUM(num_x_movement), 0))::DECIMAL, 1)",
             "avg_z_movement": "ROUND((SUM(total_z_movement) / NULLIF(SUM(num_z_movement), 0))::DECIMAL, 1)",
             "armside_pct": "ROUND(100 * (SUM(num_armside) / NULLIF(SUM(base.num_pitches), 0)), 1)",
@@ -155,6 +173,7 @@ class Leaderboard(Resource):
             "swinging_strike_pct": "ROUND(100 * (SUM(num_whiff) / NULLIF(SUM(base.num_pitches), 0)), 1)",
             "called_strike_pct": "ROUND(100 * (SUM(num_called_strike) / NULLIF(SUM(base.num_pitches), 0)), 1)",
             "csw_pct": "ROUND(100 * (SUM(num_called_strike_plus_whiff) / NULLIF(SUM(base.num_pitches), 0)), 1)",
+            "strike_pct": "ROUND(100 * (SUM(num_strikes) / NULLIF(SUM(base.num_pitches), 0)), 1)",
             "early_called_strike_pct": "ROUND(100 * (SUM(num_early_called_strike) / NULLIF(SUM(num_early), 0)), 1)",
             "late_o_swing_pct": "ROUND(100 * (SUM(num_late_o_swing) / NULLIF(SUM(num_late), 0)), 1)",
             "f_strike_pct": "ROUND(100 * (SUM(num_first_pitch_strike) / NULLIF(SUM(num_pa), 0)), 1)",
@@ -228,6 +247,8 @@ class Leaderboard(Resource):
             "num_ibb": "SUM(num_ibb)",
             "num_hbp": "SUM(num_hbp)",
             "num_sacrifice": "SUM(num_sacrifice)",
+            "num_sacrifice_fly": "SUM(num_sacrifice_fly)",
+            "num_sacrifice_hit": "SUM(num_sacrifice_hit)",
             "num_k": "SUM(num_k)",
             "num_hit": "SUM(num_hit)",
             "num_runs": "SUM(num_runs)",
@@ -257,10 +278,30 @@ class Leaderboard(Resource):
     @parser.error_handler
     def handle_request_parsing_error(err, req, schema, error_status_code, error_headers):
         abort(error_status_code, errors=err.messages)
-
+        
     # Validate our query args
+    # @use_kwargs(leaderboard_kwargs)
+    # def get(self, leaderboard='pitcher',tab='standard', handedness='NA', opponent_handedness='NA', league='NA', division='NA', team='NA', home_away='NA', year='NA', month='NA', half='NA', arbitrary_start='NA', arbitrary_end='NA'):
+    
     @use_kwargs(leaderboard_kwargs)
-    def get(self, query_type='pitch', tab='overview', **kwargs):
+    def get(self, **kwargs):
+        
+        kwargs = {
+            'leaderboard': request.args.get('leaderboard', 'pitch'),
+            'tab': request.args.get('tab', 'overview'), 
+            'handedness': request.args.get('handedness', 'NA'), 
+            'opponent_handedness': request.args.get('opponent_handedness', 'NA'), 
+            'league': request.args.get('league', 'NA'), 
+            'division': request.args.get('division', 'NA'), 
+            'team': request.args.get('team', 'NA'), 
+            'home_away': request.args.get('home_away', 'NA'),  
+            'year': request.args.get('year', 'NA'), 
+            'month': request.args.get('month', 'NA'), 
+            'half': request.args.get('half', 'NA'), 
+            'arbitrary_start': request.args.get('arbitrary_start', 'NA'), 
+            'arbitrary_end': request.args.get('arbitrary_end', 'NA'), 
+        }
+
         start_year = None
         end_year = None
 
@@ -275,10 +316,10 @@ class Leaderboard(Resource):
         if ( start_year and end_year and start_year == end_year ):
             self.query_year = start_year
         elif kwargs['year'] != 'NA':
-            self.query_year = kwargs['year']
+            self.query_year =kwargs['year']
 
         # Tab specific formats
-        self.tab = tab
+        self.tab = kwargs['tab']
         # Set woba on overview tab
         if (self.tab == 'overview'):
             if (self.query_year):
@@ -292,7 +333,7 @@ class Leaderboard(Resource):
                 else:
                     self.woba_year = end_year
 
-        return self.fetch_result(query_type, **kwargs)
+        return self.fetch_result(kwargs.get('leaderboard'), **kwargs)
                     
     
     def fetch_result(self, query_type, **query_args):
@@ -332,7 +373,7 @@ class Leaderboard(Resource):
         # Refactored in v3 as resource class functions.
 
         # Get our base colums and labels
-        self.cols = self.get_cols(query_type, **query_args)
+        self.cols = self.get_cols(**query_args)
         self.stmt = 'SELECT'
         for label, sql in self.cols.items():
             self.stmt = f"{self.stmt} {sql} AS {label},"
@@ -343,8 +384,8 @@ class Leaderboard(Resource):
         # Add table to select from
         table = self.get_table()
         self.stmt = f"{self.stmt} FROM {table} base"
-        conditions = self.get_conditions(query_type, **query_args)
-        groups = self.get_groups(query_type, **query_args)
+        conditions = self.get_conditions(**query_args)
+        groups = self.get_groups(**query_args)
 
         def default():
             return f"SELECT 'query not defined' AS error, '{query_type}' AS query;"
@@ -415,9 +456,6 @@ class Leaderboard(Resource):
             return data
 
         def hitter():
-            if (self.tab == 'overview'):
-                data['woba'] = data.apply(lambda row: round(weightedonbasepercentage(self.woba_year, row['num_ab'], row['num_bb'], row['num_ibb'], row['num_hbp'], row['num_sacrifice'], row['num_1b'],row['num_2b'], row['num_3b'], row['num_hr']), 3), axis=1)
-                data.drop(['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b'], axis=1, inplace=True)
             return data
 
         formatting = {
@@ -466,12 +504,12 @@ class Leaderboard(Resource):
 
         return json_data.get(query_type, default)()
 
-    def build_cursor_execute_list(self, leaderboard, **kwargs):
+    def build_cursor_execute_list(self, lb, **kwargs):
         cursor_list = list()
         args = [kwargs['year'], kwargs['month'], kwargs['half'], kwargs['arbitrary_start'], kwargs['arbitrary_end'], kwargs['handedness'], kwargs['opponent_handedness'], kwargs['league'], kwargs['division'], kwargs['team'], kwargs['home_away']]
         join_args = [kwargs['year'], kwargs['month'], kwargs['half'], kwargs['arbitrary_start'], kwargs['arbitrary_end'], kwargs['home_away']]
 
-        if leaderboard in ['pitch', 'pitcher']:
+        if lb in ['pitch', 'pitcher']:
             for arg in join_args:
                 if arg != 'NA':
                     cursor_list.append(arg)
@@ -482,10 +520,11 @@ class Leaderboard(Resource):
 
         return cursor_list
 
-    def get_cols(self, leaderboard, **kwargs):
+    def get_cols(self, **kwargs):
+
+        leaderboard = kwargs.get('leaderboard')
 
         def pitcher():
-            woba_list = ['num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_ab']
 
             fields = {
                 'player_id': 'pitchermlbamid',
@@ -500,11 +539,11 @@ class Leaderboard(Resource):
                 'num_starts': 'COALESCE(start.num_starts, 0)'
             }
             for colname in self.tab_display_fields[leaderboard][self.tab]:
-                if colname == 'woba':
-                    for woba_variable in woba_list:
-                        fields[woba_variable] = self.aggregate_fields[woba_variable]
-                else:
-                    fields[colname] = self.aggregate_fields[colname]
+                # if colname == 'woba':
+                #     for woba_variable in self.woba_list:
+                #         fields[woba_variable] = self.aggregate_fields[woba_variable]
+                # else:
+                fields[colname] = self.aggregate_fields[colname]
 
                 for filter, fieldname in self.filter_fields.items():
                     if kwargs[filter] == 'NA' and fieldname in fields:
@@ -513,8 +552,7 @@ class Leaderboard(Resource):
             return fields
         
         def pitch():
-            woba_list = ['num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b', 'num_hr',
-                        'num_out', 'num_hit']
+            
             fields = {
                 'player_id': 'pitchermlbamid',
                 'player_name': 'pitchername',
@@ -529,11 +567,11 @@ class Leaderboard(Resource):
             }
 
             for colname in self.tab_display_fields[leaderboard][self.tab]:
-                if colname == 'woba':
-                    for woba_variable in woba_list:
-                        fields[woba_variable] = self.aggregate_fields[woba_variable]
-                else:
-                    fields[colname] = self.aggregate_fields[colname]
+                # if colname == 'woba':
+                #     for woba_variable in self.woba_list:
+                #         fields[woba_variable] = self.aggregate_fields[woba_variable]
+                # else:
+                fields[colname] = self.aggregate_fields[colname]
 
                 for filter, fieldname in self.filter_fields.items():
                     if kwargs[filter] == 'NA' and fieldname in fields:
@@ -542,7 +580,6 @@ class Leaderboard(Resource):
             return fields
 
         def hitter():
-            woba_list = ['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice', 'num_1b', 'num_2b', 'num_3b']
 
             fields = {
                 'player_id': 'hittermlbamid',
@@ -557,11 +594,11 @@ class Leaderboard(Resource):
             }
 
             for colname in self.tab_display_fields[leaderboard][self.tab]:
-                if colname == 'woba':
-                    for woba_variable in woba_list:
-                        fields[woba_variable] = self.aggregate_fields[woba_variable]
-                else:
-                    fields[colname] = self.aggregate_fields[colname]
+                # if colname == 'woba':
+                #     for woba_variable in self.woba_list:
+                #         fields[woba_variable] = self.aggregate_fields[woba_variable]
+                # else:
+                fields[colname] = self.aggregate_fields[colname]
 
                 for filter, fieldname in self.filter_fields.items():
                     if kwargs[filter] == 'NA' and fieldname in fields:
@@ -579,14 +616,19 @@ class Leaderboard(Resource):
     
     def get_table(self):
         # TODO: UPDATE View and remove version from name
-        table = 'pl_leaderboard_v2_daily'
+        table = 'pl_leaderboard_daily'
+
 
         if (self.query_year):
-            table = f'{table}_{self.query_year}'
+            if(self.query_year in self.valid_years):
+                table = f'{table}_{self.query_year}'
+            else:
+                raise InvalidUsage(status_code=404, message = f"Invalid year filtering: {self.query_year}", payload = {"valid_years": self.valid_years})
+                
 
         return table
 
-    def get_conditions(self, leaderboard, **kwargs):
+    def get_conditions(self, **kwargs):
         # global date filters
         stmts = {}
 
@@ -611,7 +653,7 @@ class Leaderboard(Resource):
 
         return stmts
 
-    def get_groups(self, leaderboard, **kwargs):
+    def get_groups(self, **kwargs):
         groupby = []
         # Iterate though our filters. Leaderboard specific cols have been included via the `get_cols()` method
         # Add the corresponding cols to the WHERE conditions
@@ -647,9 +689,9 @@ class Leaderboard(Resource):
             "hitter": hitter
         }
 
-        return groups.get(leaderboard, pitcher)()
+        return groups.get(kwargs.get('leaderboard'), pitcher)()
 
-    def get_joins(self, leaderboard, **kwargs):
+    def get_joins(self, lb, **kwargs):
         def default():
             return None
 
@@ -657,37 +699,43 @@ class Leaderboard(Resource):
             stmt = self.get_joins('pitcher',**kwargs)
             table = self.get_table()
 
-            stmt = f"{stmt} JOIN ( SELECT pitchermlbamid AS player_id, SUM(num_pitches) AS num_pitches FROM {table} sub WHERE"
+            stmt = f"{stmt} JOIN ( SELECT pitchermlbamid AS player_id, SUM(num_pitches) AS num_pitches FROM {table} sub"
             groupby = ''
 
-            conditions = self.get_conditions(leaderboard, **kwargs)
-            for col, val in conditions.items():
-                if (col in self.syntax_filters):
-                    stmt = f"{stmt} {col} {val} AND"
-                else:
-                    stmt = f"{stmt} {col} = '{val}' AND"
-                    
-                groupby = f"{groupby}, {col}"
+            conditions = self.get_conditions(**kwargs)
+            if conditions:
+                stmt = f"{stmt} WHERE"
+                for col, val in conditions.items():
+                    if (col in self.syntax_filters):
+                        stmt = f"{stmt} {col} {val} AND"
+                    else:
+                        stmt = f"{stmt} {col} = '{val}' AND"
+                        
+                    groupby = f"{groupby}, {col}"
 
-            stmt = stmt[:-3]
+
+                stmt = stmt[:-3]
+
             stmt = f'{stmt} GROUP BY pitchermlbamid{groupby} ) AS pldp ON pldp.player_id = base.pitchermlbamid'
 
             return stmt
         
         def pitcher():
-            stmt = f"LEFT OUTER JOIN ( SELECT pitchermlbamid AS player_id, SUM(sum) AS num_starts FROM pl_leaderboard_starts WHERE"
+            stmt = f"LEFT OUTER JOIN ( SELECT pitchermlbamid AS player_id, SUM(sum) AS num_starts FROM pl_leaderboard_starts"
             groupby = ''
 
-            conditions = self.get_conditions(leaderboard, **kwargs)
-            for col, val in conditions.items():
-                if (col in self.syntax_filters):
-                    stmt = f"{stmt} {col} {val} AND"
-                else:
-                    stmt = f"{stmt} {col} = '{val}' AND"
-                    
-                groupby = f"{groupby}, {col}"
+            conditions = self.get_conditions(**kwargs)
+            if conditions:
+                stmt = f"{stmt} WHERE"
+                for col, val in conditions.items():
+                    if (col in self.syntax_filters):
+                        stmt = f"{stmt} {col} {val} AND"
+                    else:
+                        stmt = f"{stmt} {col} = '{val}' AND"
+                        
+                    groupby = f"{groupby}, {col}"
+                stmt = stmt[:-3]
 
-            stmt = stmt[:-3]
             stmt = f'{stmt} GROUP BY pitchermlbamid{groupby} ) AS start ON start.player_id = base.pitchermlbamid'
             
             return stmt
@@ -697,4 +745,4 @@ class Leaderboard(Resource):
             "pitcher": pitcher
         }
 
-        return joins.get(leaderboard, default)()
+        return joins.get(lb, default)()
