@@ -92,7 +92,7 @@ class Leaderboard(Resource):
                             'saves', 'holds', 'cg', 'qs', 'sho', 'num_hbp', 'num_wp', 'num_runs','num_hit',
                             'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_ibb', 'num_bb', 'num_k', 'num_earned_runs'],
                 "statcast": ['strikeout_pct', 'walk_pct', 'batting_average', 'slug_pct', 'on_base_pct', 'woba', 'babip_pct', 'bacon_pct',
-                            'x_avg', 'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'x_era', 'ev', 'la'],
+                            'x_avg', 'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'x_era', 'average_launch_speed', 'average_launch_angle', 'ops_pct'],
                 "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
                                 'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'bacon_pct', 'num_pitches', 'foul_pct',
                                 'hr_flyball_pct', 'center_pct', 'topped_pct', 'under_pct', 'flare_or_burner_pct', 'solid_pct', 'sweet_spot_pct'],
@@ -104,8 +104,7 @@ class Leaderboard(Resource):
                                     'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct', 'num_ip'],
                 "approach": ['armside_pct','horizonal_middle_location_pct', 'gloveside_pct', 'high_pct',
                             'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'inside_pct', 'outside_pct', 'early_pct','behind_pct', 'late_pct',
-                            'zone_pct', 'non_bip_strike_pct', 'early_bip_pct', 'put_away_pct', 'num_pitches'],                
-                # "advanced": ['avg_velocity', 'barrel_pct', 'foul_pct', 'plus_pct', 'num_ip'],
+                            'zone_pct', 'non_bip_strike_pct', 'early_bip_pct', 'put_away_pct', 'num_pitches']                
             },
             "hitter": {
                 "overview": ['num_pa', 'num_hr', 'num_runs', 'num_rbi',  'batting_average', 'on_base_pct', 'babip_pct', 'hr_flyball_pct',
@@ -115,20 +114,18 @@ class Leaderboard(Resource):
                             'num_sb', 'num_cs', 'batting_average', 'on_base_pct', 'woba', 'num_hard_bip', 'num_barrel','num_hbp'],
                 # including num_cs and num_sb because the group_by required them. We could also check to see if tab = statcat and just not include those as needed (probably better)
                 "statcast":['strikeout_pct', 'walk_pct', 'batting_average', 'slug_pct' , 'on_base_pct', 'woba', 'babip_pct', 'bacon_pct', 'x_avg', 
-                            'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'max_ev', 'ev', 'fb_ev', 'la'], 
+                            'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'max_launch_speed', 'average_launch_speed', 'average_fly_ball_launch_speed', 'average_launch_angle', 'ops_pct'], 
                 "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'pull_pct', 'opposite_field_pct',
                                 'babip_pct', 'bacon_pct', 'num_pa','center_pct', 'foul_pct'],
-                "batted_ball_2": ['weak_pct','topped_pct', 'under_pct', 'fi_and_b_pct', 'solid_pct', 'barrel_pct', 'hard_pct', 'ss_pct','icr_pct', 'ipa_pct', 'max_ev', 'ev', 'fb_ev', 'la'],
+                "batted_ball_2": ['weak_pct','topped_pct', 'under_pct', 'flare_or_burner_pct', 'solid_pct', 'barrel_pct', 'hard_pct',
+                             'sweet_spot_pct','ideal_bbe_pct', 'ideal_pa_pct', 'max_launch_speed', 'average_launch_speed', 'average_fly_ball_launch_speed', 'average_launch_angle'],
                 "plate_discipline": ['o_swing_pct', 'zone_pct', 'swinging_strike_pct', 'called_strike_pct', 'csw_pct',
                                     'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'early_called_strike_pct', 'strike_pct', 
                                     'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct', 'num_pa', 'plus_pct'],
                 "approach": ['inside_pct', 'horizonal_middle_location_pct', 'outside_pct', 'high_pct',
                             'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'fastball_pct',
                             'early_secondary_pct', 'late_secondary_pct', 'zone_pct', 'non_bip_strike_pct',
-                            'early_bip_pct', 'num_pa', 'early_pct', 'behind_pct', 'late_pct'],
-                            # does late_pct = 2strike%?
-                # "advanced": ['foul_pct', 'plus_pct', 'first_pitch_swing_pct', 'early_o_contact_pct',
-                #             'late_o_contact_pct', 'num_pa'],
+                            'early_bip_pct', 'num_pa', 'early_pct', 'behind_pct', 'late_pct']
                 
             }
         }
@@ -136,14 +133,7 @@ class Leaderboard(Resource):
         # These are our aggregate field lookups that we use to dynamically generate the SQL stmt
         # [col][agg sql]
         self.aggregate_fields = {
-            "icr_pct": 0,
-            "ipa_pct": 0,
-            "ss_pct": 0,
-            "fi_and_b_pct": 0,
-            "la": 0,
-            "fb_ev": 0,
-            "max_ev": 0,
-            "ev": 0,
+            # This section is game stats and cannot be queried directly from the pl_leaderboard_daily view
             "num_rbi": 0,
             "num_earned_runs": 0,
             "sho": 0,
@@ -159,7 +149,14 @@ class Leaderboard(Resource):
             "fip": 0,
             "losses": 0,
             "wins": 0,
-            "x_slug_pct": 0,
+            "num_sb": 0,
+            "num_cs": 0,
+            "era": "ROUND(COALESCE(SUM(num_runs::numeric), 0::bigint)::numeric / NULLIF(SUM(num_outs::numeric) / 3.0, 0::numeric) * 9.0, 2)",
+            "x_era": 0,
+            # Columns broken up by pitch
+            "ops_pct": "ROUND((SUM(num_hit) + SUM(num_bb) + SUM(num_hbp)) / NULLIF((SUM(num_ab) + SUM(num_bb) + SUM(num_sacrifice) + SUM(num_hbp)), 0), 3) + round((sum(num_1b) + 2::numeric * sum(num_2b) + 3::numeric * sum(num_3b) + 4::numeric * sum(num_hr)) / NULLIF(sum(num_ab), 0::numeric), 3)",
+            "max_launch_speed": "round(max(max_launch_speed), 1)",
+            "x_slug_pct": "round((sum(num_xsingle) + 2::numeric * sum(num_xdouble) + 3::numeric * sum(num_xtriple) + 4::numeric * sum(num_xhomerun)) / NULLIF(sum(num_ab), 0::numeric), 3)",
             "slug_pct": "round((sum(num_1b) + 2::numeric * sum(num_2b) + 3::numeric * sum(num_3b) + 4::numeric * sum(num_hr)) / NULLIF(sum(num_ab), 0::numeric), 3)",
             "num_strikes": "SUM(num_strikes)",
             "num_balls": "SUM(num_balls)",
@@ -224,7 +221,7 @@ class Leaderboard(Resource):
             "infield_flyball_pct": "ROUND(100 * (SUM(num_if_fly_ball) / NULLIF(SUM(num_batted_ball_event), 0)), 1)",
             "weak_pct": "ROUND(100 * (SUM(num_weak_bip) / NULLIF(SUM(num_batted_ball_event), 0)), 1)",
             "medium_pct": "ROUND(100 * (SUM(num_medium_bip) / NULLIF(SUM(num_batted_ball_event), 0)), 1)",
-            "hard_pct": "ROUND(100 * (SUM(num_hard_bip) / NULLIF(SUM(num_batted_ball_event), 0)), 1)",
+            "hard_pct": "ROUND(100 * (SUM(num_hard_bip) / NULLIF(SUM(num_pa), 0)), 1)",
             "pull_pct": "ROUND(100 * (SUM(num_pulled_bip) / NULLIF(SUM(num_batted_ball_event), 0)), 1)",
             "center_pct": "ROUND(100 * (SUM(num_center_bip) / NULLIF(SUM(num_batted_ball_event), 0)), 1)",
             "opposite_field_pct": "ROUND(100 * (SUM(num_opposite_bip) / NULLIF(SUM(num_batted_ball_event), 0)), 1)",
@@ -333,10 +330,6 @@ class Leaderboard(Resource):
             "fastball_pct": "ROUND(100 * (SUM(num_fastball) / NULLIF(SUM(base.num_pitches), 0)), 1)",
             "early_secondary_pct": "ROUND(100 * (SUM(num_early_secondary) / NULLIF(SUM(num_early), 0)), 1)",
             "late_secondary_pct": "ROUND(100 * (SUM(num_late_secondary) / NULLIF(SUM(num_late), 0)), 1)",
-            "num_sb": 0,
-            "num_cs": 0,
-            "era": "ROUND(COALESCE(SUM(num_runs::numeric), 0::bigint)::numeric / NULLIF(SUM(num_outs::numeric) / 3.0, 0::numeric) * 9.0, 2)",
-            "x_era": 0
         }
 
     # Error handler is necessary for webargs and flask-restful to work together
