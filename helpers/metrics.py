@@ -471,13 +471,20 @@ def onbasepercentage(num_hit, num_bb, num_hbp, num_at_bat, num_sac_fly):
 def weightedonbasepercentage(year, num_ab, num_bb, num_ibb, num_hbp, num_sf, num_1b, num_2b, num_3b, num_hr):
     year = str(year)
     const = {
-        "2020": {
+        "2021": {
             "wBB": 0.692,
-            "wHBP": 0.723,
-            "w1B": 0.882,
-            "w2B": 1.250,
-            "w3B": 1.582,
-            "wHR": 2.030},
+            "wHBP": 0.722,
+            "w1B": 0.879,
+            "w2B": 1.242,
+            "w3B": 1.568,
+            "wHR": 2.007},
+        "2020": {
+            "wBB": 0.699,
+            "wHBP": 0.728,
+            "w1B": 0.883,
+            "w2B": 1.238,
+            "w3B": 1.558,
+            "wHR": 1.979},
         "2019": {
             "wBB": 0.690,
             "wHBP": 0.719,
