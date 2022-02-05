@@ -760,9 +760,9 @@ class Player(Resource):
                             f'avg_x_movement as "x-movement-avg",'
                             f'avg_y_movement as "y-movement-avg",'
                             f'avg_spin_rate as "spin-rate-avg" '
-                        f'FROM mv_pitcher_game_log_pitches_advanced '
-                        f'inner join players on players.player_id = mv_pitcher_game_log_pitches_advanced.pitcher_id '
-                        f'inner join games on games.game_id = mv_pitcher_game_log_pitches_advanced.game_id '
+                        f'FROM mv_pitcher_game_log_pitches '
+                        f'inner join players on players.player_id = mv_pitcher_game_log_pitches.pitcher_id '
+                        f'inner join games on games.game_id = mv_pitcher_game_log_pitches.game_id '
                         f'WHERE players.mlb_player_id = %s '
                         f'ORDER BY games.mlb_game_id;'
                 )
