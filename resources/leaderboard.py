@@ -8,6 +8,7 @@ from datetime import date, datetime
 from webargs import fields, validate
 from webargs.flaskparser import use_kwargs, parser, abort
 import json as json
+from marshmallow import Schema, fields
 
 ##
 # This is the flask_restful Resource Class for the Leaderboard API.
@@ -19,13 +20,15 @@ class Leaderboard(Resource):
     current_date = date.today()
     woba_list = ['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice_fly', 'num_1b', 'num_2b', 'num_3b', 'num_hr']
     leaderboard_kwargs = {
+        "leaderboard" : fields.Str(required=False, missing="overview", validate=validate.OneOf(["pitcher", "pitch", "hitter"])),
+        "tab" : fields.Str(required=False, missing="overview", validate=validate.OneOf(["overview", "standard", "statcast", "batted_ball", "batted_ball_2", "approach"])),
         "handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
         "opponent_handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
         "league": fields.Str(required=False, missing="NA", validate=validate.OneOf(["AL","NL","NA"])),
         "division": fields.Str(required=False, missing="NA", validate=validate.OneOf(["East","Central","West","NA"])),
-        "team": fields.Str(required=False, missing="NA", validate=validate.OneOf(valid_teams)),
+        "team": fields.Str(required=False, missing="NA", validate=validate.OneOf(valid_teams + ['NA'])),
         "home_away": fields.Str(required=False, missing="NA", validate=validate.OneOf(["Home","Away","NA"])),
-        "year": fields.Str(required=False, missing=current_date.year),
+        "year": fields.Str(required=False, missing='2021'),
         "month": fields.Str(required=False, missing="NA", validate=validate.OneOf(["1","2","3","4","5","6","7","8","9","10","11","12","NA"])),
         "half": fields.Str(required=False, missing="NA", validate=validate.OneOf(["First","Second","NA"])),
         "arbitrary_start": fields.Str(required=False, missing="NA"), #ISO date format
@@ -51,7 +54,7 @@ class Leaderboard(Resource):
             'league': 'player_league',
             'home_away': 'player_home_away',
             'division': 'player_division', 
-            'team': 'player_team'
+            'team': 'player_team_abb'
         }
 
         # Filter conditions assume the `=` operator unless specified as a syntax value in this list
@@ -337,28 +340,10 @@ class Leaderboard(Resource):
     def handle_request_parsing_error(err, req, schema, error_status_code, error_headers):
         abort(error_status_code, errors=err.messages)
         
-    # Validate our query args
-    # @use_kwargs(leaderboard_kwargs)
-    # def get(self, leaderboard='pitcher',tab='standard', handedness='NA', opponent_handedness='NA', league='NA', division='NA', team='NA', home_away='NA', year='NA', month='NA', half='NA', arbitrary_start='NA', arbitrary_end='NA'):
-    
     @use_kwargs(leaderboard_kwargs)
     def get(self, **kwargs):
-        
-        kwargs = {
-            'leaderboard': request.args.get('leaderboard', 'pitch'),
-            'tab': request.args.get('tab', 'overview'), 
-            'handedness': request.args.get('handedness', 'NA'), 
-            'opponent_handedness': request.args.get('opponent_handedness', 'NA'), 
-            'league': request.args.get('league', 'NA'), 
-            'division': request.args.get('division', 'NA'), 
-            'team': request.args.get('team', 'NA'), 
-            'home_away': request.args.get('home_away', 'NA'),  
-            'year': request.args.get('year', 'NA'), 
-            'month': request.args.get('month', 'NA'), 
-            'half': request.args.get('half', 'NA'), 
-            'arbitrary_start': request.args.get('arbitrary_start', 'NA'), 
-            'arbitrary_end': request.args.get('arbitrary_end', 'NA'), 
-        }
+
+        print(kwargs)
 
         start_year = None
         end_year = None
@@ -466,6 +451,15 @@ class Leaderboard(Resource):
             # Make a sub query for a join
             join_sql = self.get_joins(query_type, **query_args)
             self.stmt = f'{self.stmt} {join_sql}'
+
+            self.stmt = f"{self.stmt} WHERE"
+            for col, val in conditions.items():
+                if (col in self.syntax_filters):
+                    self.stmt = f'{self.stmt} {col} {val} AND'
+                else:
+                    self.stmt = f"{self.stmt} {col} = '{val}' AND"
+
+            self.stmt = self.stmt[:-3]
 
             self.stmt = f'{self.stmt} GROUP BY'
 
@@ -596,13 +590,18 @@ class Leaderboard(Resource):
                 'player_home_away': 'pitcher_home_away',
                 'num_starts': 'COALESCE(start.num_starts, 0)'
             }
+
+            # pitcher_filter_fields = self.filter_fields.copy()
+            # pitcher_filter_fields.pop('handedness')
+            # pitcher_filter_fields.pop('opponent_handedness')
+
             for colname in self.tab_display_fields[leaderboard][self.tab]:
                 # if colname == 'woba':
                 #     for woba_variable in self.woba_list:
                 #         fields[woba_variable] = self.aggregate_fields[woba_variable]
                 # else:
                 fields[colname] = self.aggregate_fields[colname]
-
+                
                 for filter, fieldname in self.filter_fields.items():
                     if kwargs[filter] == 'NA' and fieldname in fields:
                         del fields[fieldname]
@@ -769,6 +768,7 @@ class Leaderboard(Resource):
             groupby = ''
 
             conditions = self.get_conditions(**kwargs)
+            
             if conditions:
                 stmt = f"{stmt} WHERE"
                 for col, val in conditions.items():
@@ -787,10 +787,17 @@ class Leaderboard(Resource):
             return stmt
         
         def pitcher():
-            stmt = f"LEFT OUTER JOIN ( SELECT pitchermlbamid AS player_id, SUM(sum) AS num_starts FROM pl_leaderboard_starts"
+            # stmt = f"LEFT OUTER JOIN ( SELECT pitchermlbamid AS player_id, SUM(sum) AS num_starts FROM pl_leaderboard_starts"
+            stmt = f"INNER JOIN ( SELECT pitchermlbamid AS player_id, SUM(sum) AS num_starts FROM pl_leaderboard_starts"
             groupby = ''
-
+            
             conditions = self.get_conditions(**kwargs)
+
+            #get ride of hitterside and pitcherside from the inner join; probably not really necessary in the pitcher tab 
+            if conditions.get('hitterside'):
+                conditions.pop('hitterside')
+            if conditions.get('pitcherside'):
+                conditions.pop('pitcherside')                
             if conditions:
                 stmt = f"{stmt} WHERE"
                 for col, val in conditions.items():
