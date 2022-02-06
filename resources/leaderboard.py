@@ -110,8 +110,8 @@ class Leaderboard(Resource):
                             'zone_pct', 'non_bip_strike_pct', 'early_bip_pct', 'put_away_pct', 'num_pitches']                
             },
             "hitter": {
-                "overview": ['num_pa', 'num_hr', 'num_runs', 'num_rbi',  'batting_average', 'on_base_pct', 'babip_pct', 'hr_flyball_pct',
-                            'swinging_strike_pct', 'woba', 'strikeout_pct', 'walk_pct', 'num_sb', 'num_cs', 'slug_pct', 'x_avg', 'x_woba', 
+                "overview": ['num_games_played', 'num_runs_scored', 'num_rbi', 'num_sb', 'num_cs', 'num_pa', 'num_hr', 'num_runs', 'num_rbi',  'batting_average', 'on_base_pct', 'babip_pct', 'hr_flyball_pct',
+                            'swinging_strike_pct', 'woba', 'strikeout_pct', 'walk_pct',  'slug_pct', 'x_avg', 'x_woba', 
                             'flyball_pct','groundball_pct', 'ideal_pa_pct', 'hard_pct', 'barrel_pct', 'csw_pct'],
                 "standard": ['num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb', 
                             'num_sb', 'num_cs', 'batting_average', 'on_base_pct', 'woba', 'num_hard_bip', 'num_barrel','num_hbp'],
@@ -137,7 +137,6 @@ class Leaderboard(Resource):
         # [col][agg sql]
         self.aggregate_fields = {
             # This section is game stats and cannot be queried directly from the pl_leaderboard_daily view
-            "num_rbi": 0,
             "num_earned_runs": 0,
             "sho": 0,
             "cg": 0,
@@ -152,10 +151,14 @@ class Leaderboard(Resource):
             "fip": 0,
             "losses": 0,
             "wins": 0,
-            "num_sb": 0,
-            "num_cs": 0,
             "era": "ROUND(COALESCE(SUM(num_runs::numeric), 0::bigint)::numeric / NULLIF(SUM(num_outs::numeric) / 3.0, 0::numeric) * 9.0, 2)",
             "x_era": 0,
+            # columns for hitter overview that is not at a pitch level
+            "num_games_played": "totals.games",
+            "num_rbi": "totals.rbi",
+            "num_runs_scored": "totals.runs",
+            "num_sb": "totals.sb",
+            "num_cs": "totals.cs",
             # Columns broken up by pitch
             "ops_pct": "ROUND((SUM(num_hit) + SUM(num_bb) + SUM(num_hbp)) / NULLIF((SUM(num_ab) + SUM(num_bb) + SUM(num_sacrifice) + SUM(num_hbp)), 0), 3) + round((sum(num_1b) + 2::numeric * sum(num_2b) + 3::numeric * sum(num_3b) + 4::numeric * sum(num_hr)) / NULLIF(sum(num_ab), 0::numeric), 3)",
             "max_launch_speed": "round(max(max_launch_speed), 1)",
@@ -480,6 +483,9 @@ class Leaderboard(Resource):
             return self.stmt
         
         def hitter():
+
+            join_sql = self.get_joins(query_type, **query_args)
+            self.stmt = f'{self.stmt} {join_sql}'
             
             if conditions:
                 self.stmt = f"{self.stmt} WHERE"
@@ -742,12 +748,18 @@ class Leaderboard(Resource):
         def hitter():
 
             groupby_fields = ["hittermlbamid", "hittername", "hitterteam", "hitterteam_abb"]
-            
+
             include_sb_cs = ["overview", "standard"]
             # SB and CS are game totals are are not aggregated by hitter/pitcher interaction and must be grouped
-            if kwargs.get('leaderboard') in include_sb_cs:
+            if kwargs.get('tab') in include_sb_cs:
                 groupby_fields.append("num_sb")
-                groupby_fields.append("num_cs")           
+                groupby_fields.append("num_cs")    
+
+            include_games_runs_rbi = ["overview"]
+            if kwargs.get('tab') in include_games_runs_rbi:
+                groupby_fields.append("num_games_played")
+                groupby_fields.append("num_runs_scored")
+                groupby_fields.append("num_rbi")
 
             # groupby_fields = ["hittermlbamid", "hittername", "hitterteam", "hitterteam_abb"]
             for field in groupby_fields:
@@ -831,10 +843,37 @@ class Leaderboard(Resource):
             stmt = f'{stmt} GROUP BY pitchermlbamid{groupby} ) AS start ON start.player_id = base.pitchermlbamid'
             
             return stmt
+
+        def hitter():
+            stmt = f"LEFT OUTER JOIN ( SELECT mhcs.hitter_mlb_id, sum(mhcs.g) as games, sum(mhcs.rbi) as rbi, sum(mhcs.cs) as cs, sum(mhcs.sb) as sb, sum(mhcs.runs) as runs, mhcs.year FROM mv_hitter_career_stats mhcs"
+            groupby = ''
+                       
+
+            if(kwargs.get('year')):
+                 conditions = {'year': kwargs.get('year')}
+
+            #get ride of hitterside and pitcherside from the inner join; probably not really necessary in the pitcher tab 
+           
+            if conditions:
+                stmt = f"{stmt} WHERE"
+                for col, val in conditions.items():
+                    if (col in self.syntax_filters):
+                        stmt = f"{stmt} {col} {val} AND"
+                    else:
+                        stmt = f"{stmt} {col} = '{val}' AND"
+                        
+                    groupby = f"{groupby}, {col}"
+                stmt = stmt[:-3]
+
+            stmt = f'{stmt} GROUP BY hitter_mlb_id{groupby} ) AS totals ON totals.hitter_mlb_id = base.hittermlbamid'
+            
+            return stmt
+ 
  
         joins = {
             "pitch": pitch,
-            "pitcher": pitcher
+            "pitcher": pitcher,
+            "hitter": hitter
         }
 
         return joins.get(lb, default)()
