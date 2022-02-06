@@ -343,8 +343,6 @@ class Leaderboard(Resource):
     @use_kwargs(leaderboard_kwargs)
     def get(self, **kwargs):
 
-        print(kwargs)
-
         start_year = None
         end_year = None
 
