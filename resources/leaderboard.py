@@ -602,10 +602,6 @@ class Leaderboard(Resource):
                 'num_starts': 'COALESCE(start.num_starts, 0)'
             }
 
-            # pitcher_filter_fields = self.filter_fields.copy()
-            # pitcher_filter_fields.pop('handedness')
-            # pitcher_filter_fields.pop('opponent_handedness')
-
             for colname in self.tab_display_fields[leaderboard][self.tab]:
                 # if colname == 'woba':
                 #     for woba_variable in self.woba_list:
@@ -782,7 +778,12 @@ class Leaderboard(Resource):
             if conditions.get('hitterside'):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
-                conditions.pop('pitcherside')                
+                conditions.pop('pitcherside')    
+            if conditions.get('pitcherleague'):
+                conditions.pop('pitcherleague')
+            if conditions.get('pitcherdivision'):
+                conditions.pop('pitcherdivision')
+
             if conditions:
                 stmt = f"{stmt} WHERE"
                 for col, val in conditions.items():
@@ -811,7 +812,11 @@ class Leaderboard(Resource):
             if conditions.get('hitterside'):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
-                conditions.pop('pitcherside')                
+                conditions.pop('pitcherside')    
+            if conditions.get('pitcherleague'):
+                conditions.pop('pitcherleague')
+            if conditions.get('pitcherdivision'):
+                conditions.pop('pitcherdivision')            
             if conditions:
                 stmt = f"{stmt} WHERE"
                 for col, val in conditions.items():
