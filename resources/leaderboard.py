@@ -438,6 +438,15 @@ class Leaderboard(Resource):
             join_sql = self.get_joins(query_type, **query_args)
             self.stmt = f'{self.stmt} {join_sql}'
 
+            self.stmt = f"{self.stmt} WHERE"
+            for col, val in conditions.items():
+                if (col in self.syntax_filters):
+                    self.stmt = f'{self.stmt} {col} {val} AND'
+                else:
+                    self.stmt = f"{self.stmt} {col} = '{val}' AND"
+
+            self.stmt = self.stmt[:-3]
+
             self.stmt = f'{self.stmt} GROUP BY'
 
             for col in groups:
@@ -768,7 +777,10 @@ class Leaderboard(Resource):
             groupby = ''
 
             conditions = self.get_conditions(**kwargs)
-            
+            if conditions.get('hitterside'):
+                conditions.pop('hitterside')
+            if conditions.get('pitcherside'):
+                conditions.pop('pitcherside')                
             if conditions:
                 stmt = f"{stmt} WHERE"
                 for col, val in conditions.items():
