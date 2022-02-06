@@ -20,7 +20,7 @@ class Leaderboard(Resource):
     current_date = date.today()
     woba_list = ['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice_fly', 'num_1b', 'num_2b', 'num_3b', 'num_hr']
     leaderboard_kwargs = {
-        "leaderboard" : fields.Str(required=False, missing="overview", validate=validate.OneOf(["pitcher", "pitch", "hitter"])),
+        "leaderboard" : fields.Str(required=False, missing="pitcher", validate=validate.OneOf(["pitcher", "pitch", "hitter"])),
         "tab" : fields.Str(required=False, missing="overview", validate=validate.OneOf(["overview", "standard", "statcast", "batted_ball", "batted_ball_2", "approach"])),
         "handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
         "opponent_handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
