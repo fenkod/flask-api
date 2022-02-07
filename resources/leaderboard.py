@@ -89,9 +89,10 @@ class Leaderboard(Resource):
                             'num_strikes', 'num_balls', 'batting_average', 'slug_pct', 'woba']
             },
             "pitcher": {
-                "overview": [#'games','wins','losses','complete_games','shutouts','quality_starts','saves','holds','pitches',
+                "fancy": [],# 'games', 'num_starts', 'wins','losses','complete_games','shutouts','quality_starts','saves','holds','num_pitches',]
+                "overview": [
                             'num_ip', 'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
-                            'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct', 'wins', 'losses', 'x_era', 'num_hits_per_nine',
+                            'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct', 'x_era', 'num_hits_per_nine',
                             'fip', 'x_fip','x_babip', 'hard_pct', 'groundball_pct','lob_pct', 'swinging_strike_pct', 'csw_pct'],
                 "standard": ['num_pitches', 'num_hit', 'num_ip', 'era', 'num_hr', 'num_k', 'num_bb', 'ipg', 'ppg', 'wins', 'losses',
                             'saves', 'holds', 'cg', 'qs', 'sho', 'num_hbp', 'num_wp', 'num_runs','num_hit',
@@ -138,21 +139,21 @@ class Leaderboard(Resource):
         # These are our aggregate field lookups that we use to dynamically generate the SQL stmt
         # [col][agg sql]
         self.aggregate_fields = {
-            # This section is game stats and cannot be queried directly from the pl_leaderboard_daily view
-            "num_earned_runs": 0,
-            "sho": 0,
-            "cg": 0,
-            "qs": 0,
-            "holds": 0,
-            "saves": 0,
+            "games": "games",
+            "num_starts": "num_starts",
+            "shutouts": "shutouts",
+            "complete_games": "complete_games",
+            "quality_starts": "quality_starts",
+            "holds": "holds",
+            "saves": "saves",
             "ppg": 0,
             "ipg": 0,
             "lob_pct": 0,
             "num_hits_per_nine": 0,
             "x_fip": 0,
             "fip": 0,
-            "losses": 0,
-            "wins": 0,
+            "losses": "losses",
+            "wins": "wins",
             "era": "ROUND(COALESCE(SUM(num_runs::numeric), 0::bigint)::numeric / NULLIF(SUM(num_outs::numeric) / 3.0, 0::numeric) * 9.0, 2)",
             "x_era": 0,
             # columns for hitter overview that is not at a pitch level
@@ -397,12 +398,28 @@ class Leaderboard(Resource):
             cache_key = f'{cache_key_resource_type}-{query_type}-{cache_key_date}'
             result = current_app.cache.get(cache_key)
             if (result is None):
-                result = self.fetch_data(query_type, **query_args)
+
+                if query_args.get('leaderboard') == 'pitcher' and query_args.get('tab') == 'overview':
+                    result = self.handle_pitcher_overview(**query_args)
+                
+                else:
+                    result = self.fetch_data(query_type, **query_args)
                 # Set Cache expiration to 5 mins
                 current_app.cache.set(cache_key, result, 300)
 
         return result
 
+    def handle_pitcher_overview(self, **query_args):
+        # fetch data from daily table: 
+        daily = self.fetch_data('pitcher', **query_args)
+
+
+        # fetch data from mv_pitcher_game_stats_for_leaderboard
+        lb = self.fetch_data('pitcher_overview_leaderboard', **query_args)
+
+        # join that data and return
+        return None
+         
     def fetch_data(self, query_type, **query_args):
         query = self.get_query(query_type, **query_args)
         var_dump(query)
@@ -508,10 +525,15 @@ class Leaderboard(Resource):
 
             return self.stmt
 
+        def pitcher_overview_leaderboard():
+
+            "SELECT pitchermlbamid as player_id, pitcherleague, pitcherdivision, year_played as year, month_played, half_played, pitcher_home_away, gs, g, win, loss, cg, sho, qs, save, hold, pitches, outs FROM mv_pitcher_game_stats_for_leaderboard WHERE year_played = '2021' GROUP BY pitchermlbamid, year_played,pitcherleague, pitcherdivision, month_played,half_played, pitcher_home_away,gs, g, win,loss,cg, sho,qs,save, hold, pitches, outs"
+
         queries = {
             "pitch": pitch,
             "pitcher": pitcher,
-            "hitter": hitter
+            "hitter": hitter,
+            "pitcher_overview_leaderboard": pitcher_overview_leaderboard,
         }
 
         return queries.get(query_type, default)()
@@ -606,8 +628,8 @@ class Leaderboard(Resource):
                 'player_side_against': 'hitterside',
                 'player_league': 'pitcherleague',
                 'player_division': 'pitcherdivision',
-                'player_home_away': 'pitcher_home_away',
-                'num_starts': 'COALESCE(start.num_starts, 0)'
+                'player_home_away': 'pitcher_home_away'
+                # 'num_starts': 'COALESCE(start.num_starts, 0)'
             }
 
             for colname in self.tab_display_fields[leaderboard][self.tab]:
@@ -687,7 +709,8 @@ class Leaderboard(Resource):
         return cols.get(leaderboard, pitcher)()
     
     def get_table(self):
-        # TODO: UPDATE View and remove version from name
+        
+
         table = 'pl_leaderboard_daily'
 
 
@@ -741,7 +764,7 @@ class Leaderboard(Resource):
             return groupby
 
         def pitcher():
-            groupby_fields = ["base.pitchermlbamid", "pitchername", "pitcherteam", "pitcherteam_abb", "start.num_starts"]
+            groupby_fields = ["base.pitchermlbamid", "pitchername", "pitcherteam", "pitcherteam_abb", "num_starts", "pgsfl.games"]
             for field in groupby_fields:
                 groupby.append(field)
 
@@ -783,7 +806,7 @@ class Leaderboard(Resource):
 
         def pitch():
             stmt = self.get_joins('pitcher',**kwargs)
-            table = self.get_table()
+            table = self.get_table(kwargs)
 
             stmt = f"{stmt} JOIN ( SELECT pitchermlbamid AS player_id, SUM(num_pitches) AS num_pitches FROM {table} sub"
             groupby = ''
@@ -812,8 +835,14 @@ class Leaderboard(Resource):
             return stmt
         
         def pitcher():
-            # stmt = f"LEFT OUTER JOIN ( SELECT pitchermlbamid AS player_id, SUM(sum) AS num_starts FROM pl_leaderboard_starts"
-            stmt = f"INNER JOIN ( SELECT pitchermlbamid AS player_id, SUM(sum) AS num_starts FROM pl_leaderboard_starts"
+            stmt = f"LEFT OUTER JOIN ( SELECT pitchermlbamid AS player_id, SUM(sum) AS num_starts FROM pl_leaderboard_starts"
+            # selections = ["pitchermlbamid as player_id", "pitcherleague", "pitcherdivision", "year_played as year",
+            #                 "month_played", "half_played",  "pitcher_home_away", "SUM(gs) as games_started", "SUM(g) as games", "SUM(win) as wins", "SUM(loss) as losses", 
+            #                 "SUM(cg) as complete_games", "SUM(sho) as shutouts", "SUM(qs) as quality_starts", "SUM(save) as saves", "SUM(hold) as holds", "SUM(pitches) as pitches", "SUM(outs) as outs" ]
+            # # "pitchermlbamid" is just hardcoded below
+            # group_by_list = [ "pitcherleague", "pitcherdivision", "year_played", "month_played", "half_played",  "pitcher_home_away"]
+
+            # stmt = f" LEFT OUTER JOIN ( SELECT {', '.join(selections)} FROM mv_pitcher_game_stats_for_leaderboard "
             groupby = ''
             
             conditions = self.get_conditions(**kwargs)
@@ -822,7 +851,7 @@ class Leaderboard(Resource):
             if conditions.get('hitterside'):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
-                conditions.pop('pitcherside')    
+                conditions.pop('pitcherside')
  
             if conditions:
                 stmt = f"{stmt} WHERE"
@@ -833,9 +862,10 @@ class Leaderboard(Resource):
                         stmt = f"{stmt} {col} = '{val}' AND"
                         
                     groupby = f"{groupby}, {col}"
+                    
                 stmt = stmt[:-3]
 
-            stmt = f'{stmt} GROUP BY pitchermlbamid{groupby} ) AS start ON start.player_id = base.pitchermlbamid'
+            stmt = f"{stmt} GROUP BY pitchermlbamid{groupby}) AS start ON start.player_id = base.pitchermlbamid"
             
             return stmt
 
