@@ -89,7 +89,7 @@ class Leaderboard(Resource):
                             'num_strikes', 'num_balls', 'batting_average', 'slug_pct', 'woba']
             },
             "pitcher": {
-                "overview": ['games','wins','losses','complete_games','shutouts','quality_starts','saves','holds','pitches',
+                "overview": [#'games','wins','losses','complete_games','shutouts','quality_starts','saves','holds','pitches',
                             'num_ip', 'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
                             'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct', 'wins', 'losses', 'x_era', 'num_hits_per_nine',
                             'fip', 'x_fip','x_babip', 'hard_pct', 'groundball_pct','lob_pct', 'swinging_strike_pct', 'csw_pct'],
@@ -117,9 +117,9 @@ class Leaderboard(Resource):
                             'flyball_pct','groundball_pct', 'ideal_pa_pct', 'hard_pct', 'barrel_pct', 'csw_pct'],
                 "standard": ['num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb', 
                             'num_sb', 'num_cs', 'batting_average', 'on_base_pct', 'woba', 'num_hard_bip', 'num_barrel','num_hbp'],
-                # including num_cs and num_sb because the group_by required them. We could also check to see if tab = statcat and just not include those as needed (probably better)
                 "statcast":['strikeout_pct', 'walk_pct', 'batting_average', 'slug_pct' , 'on_base_pct', 'woba', 'babip_pct', 'bacon_pct', 'x_avg', 
-                            'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'max_launch_speed', 'average_launch_speed', 'average_fly_ball_launch_speed', 'average_launch_angle', 'ops_pct'], 
+                            'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'max_launch_speed', 'average_launch_speed',
+                            'average_fly_ball_launch_speed', 'average_launch_angle', 'ops_pct'], 
                 "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'pull_pct', 'opposite_field_pct',
                                 'babip_pct', 'bacon_pct', 'num_pa','center_pct', 'foul_pct'],
                 "batted_ball_2": ['weak_pct','topped_pct', 'under_pct', 'flare_or_burner_pct', 'solid_pct', 'barrel_pct', 'hard_pct',
@@ -793,10 +793,6 @@ class Leaderboard(Resource):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
                 conditions.pop('pitcherside')    
-            if conditions.get('pitcherleague'):
-                conditions.pop('pitcherleague')
-            if conditions.get('pitcherdivision'):
-                conditions.pop('pitcherdivision')
 
             if conditions:
                 stmt = f"{stmt} WHERE"
@@ -856,11 +852,7 @@ class Leaderboard(Resource):
             if conditions.get('hitterside'):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
-                conditions.pop('pitcherside')    
-            if conditions.get('hitterleague'):
-                conditions.pop('hitterleague')
-            if conditions.get('hitterdivision'):
-                conditions.pop('hitterdivision')               
+                conditions.pop('pitcherside')
             
             if conditions:
                 stmt = f"{stmt} WHERE"
