@@ -3,7 +3,9 @@ import os
 import psycopg2
 from datetime import datetime
 from helpers import *
+from queries.v2.query import *
 import json as json
+import logging
 
 def build_cursor_execute_list(leaderboard, year, month, half, arbitrary_start, arbitrary_end, handedness,
                               opponent_handedness, league, division, team, home_away, **kwargs):

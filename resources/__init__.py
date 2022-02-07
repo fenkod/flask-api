@@ -1,15 +1,17 @@
-from flask import current_app
+from flask import current_app, request
+import json as json
 
 # Endpoints for current corresponding Resources found in `/resources/`
 def init_resource_endpoints():
     # Import after current app has been setup to use @current_app.cache.cached decorator
     from .player import Player
     from .roundup import Roundup
-    from .leaderboard import Leaderboard
+    # from .leaderboard import Leaderboard
     from .team import Team
     from .standings import Standings
     from .league import League
     from .util import Status, ClearCache
+    from .leaderboard import Leaderboard
 
     # Legacy Instantiators
     from .v1 import init_v1_resource_endpoints
@@ -20,6 +22,12 @@ def init_resource_endpoints():
     init_v1_resource_endpoints()
     init_v2_resource_endpoints()
     init_v3_resource_endpoints()
+
+    # @application.route('/v4/leaderboard', methods = ['GET'])
+    # def get_leaderboard():
+    #     args = request.args
+    #     # Leaderboard.__init__(args)
+    #     return json.dumps(args)
 
     # v4 resource endpoints
     v4_player_routes = [
@@ -41,10 +49,7 @@ def init_resource_endpoints():
         '/v4/roundup'
     ]
     v4_leaderboard_routes = [
-        '/v4/leaderboard/<string:query_type>/<string:tab>/',
-        '/v4/leaderboard/<string:query_type>/<string:tab>',
-        '/v4/leaderboard/<string:query_type>/',
-        '/v4/leaderboard/<string:query_type>',
+        # '/v4/leaderboard/leaderboard=<string:leaderboard>&tab=<string:tab>&handedness=<string:handedness>&opponent_handedness=<string:opponent_handedness>&league=<string:league>&division=<string:division>&team=<string:team>&home_away=<string:home_away>&year=<string:year>&month=<string:month>&half=<string:half>&arbitrary_start=<string:arbitrary_start>&arbitrary_end=<string:arbitrary_end>',
         '/v4/leaderboard/',
         '/v4/leaderboard'
     ]
@@ -88,3 +93,4 @@ def init_resource_endpoints():
     # Utility Endpoints
     current_app.api.add_resource(Status, '/')
     current_app.api.add_resource(ClearCache, '/Clear_Cache')
+    

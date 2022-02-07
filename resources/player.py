@@ -510,7 +510,14 @@ class Player(Resource):
                             f'num_center_bip as "center-bip",'
                             f'mv_pitcher_game_logs.num_outs as "bip-outs",'
                             f'num_fly_ball_launch_speed as "total-flyball-exit-velo",'
-                            f'average_fly_ball_launch_speed as "flyball-exit-velo-avg" '
+                            f'average_fly_ball_launch_speed as "flyball-exit-velo-avg",'
+                            f'num_sacrifice_fly as "sac-fly",'
+                            f'num_sacrifice_hit as "sac-hit",'
+                            f'num_xhit as "xhits",'
+                            f'num_xsingle as "x1b",'
+                            f'num_xdouble as "x2b",'
+                            f'num_xtriple as "x3b",'
+                            f'num_xhomerun as "xhr" '
                         f'FROM mv_pitcher_game_logs '
                         f'inner join players on players.player_id = mv_pitcher_game_logs.pitcher_id '
                         f'inner join games on games.game_id = mv_pitcher_game_logs.game_id '
@@ -712,7 +719,14 @@ class Player(Resource):
                             f'average_fly_ball_launch_speed as "flyball-exit-velo-avg",'
                             f'num_xbh as xbh,'
                             f'max_launch_speed as "max-exit-velo",'
-                            f'batting_order_position as "batting-order-position"'
+                            f'batting_order_position as "batting-order-position",'
+                            f'num_sacrifice_fly as "sac-fly",'
+                            f'num_sacrifice_hit as "sac-hit",'
+                            f'num_xhit as "xhits",'
+                            f'num_xsingle as "x1b",'
+                            f'num_xdouble as "x2b",'
+                            f'num_xtriple as "x3b",'
+                            f'num_xhomerun as "xhr" '
                         f'FROM mv_hitter_game_logs '
                         f'inner join players on players.player_id = mv_hitter_game_logs.hitter_id '
                         f'inner join games on games.game_id = mv_hitter_game_logs.game_id '
@@ -746,9 +760,9 @@ class Player(Resource):
                             f'avg_x_movement as "x-movement-avg",'
                             f'avg_y_movement as "y-movement-avg",'
                             f'avg_spin_rate as "spin-rate-avg" '
-                        f'FROM mv_pitcher_game_log_pitches_advanced '
-                        f'inner join players on players.player_id = mv_pitcher_game_log_pitches_advanced.pitcher_id '
-                        f'inner join games on games.game_id = mv_pitcher_game_log_pitches_advanced.game_id '
+                        f'FROM mv_pitcher_game_log_pitches '
+                        f'inner join players on players.player_id = mv_pitcher_game_log_pitches.pitcher_id '
+                        f'inner join games on games.game_id = mv_pitcher_game_log_pitches.game_id '
                         f'WHERE players.mlb_player_id = %s '
                         f'ORDER BY games.mlb_game_id;'
                 )
@@ -789,7 +803,8 @@ class Player(Resource):
                     f'home_away AS "split-HA",'
                     f'pitch_locations '
                 f'FROM player_page_repertoire '
-                f"WHERE pitchermlbamid = %s "
+                f'inner join players on players.player_id = player_page_repertoire.pitcher_id '
+                f"WHERE players.mlb_player_id = %s "
                 f"AND pitchtype <> 'All' AND year_played <> 'All' "
                 f'ORDER BY pitchtype, year_played, opponent_handedness, home_away;'
             )
@@ -1765,7 +1780,7 @@ class Player(Resource):
                         f'inner join mv_hitter_career_stats on mv_hitter_career_stats.hitter_id = players.player_id '
                         f'left join mv_hitter_pool on mv_hitter_pool.year_played = mv_hitter_career_stats."year" and mv_hitter_pool.hitter_id = mv_hitter_career_stats.hitter_id '
                         f'where mv_hitter_career_stats."year" != \'ALL\' '
-                        f'and mv_hitter_career_stats.g > 0 '
+                        f'and mv_hitter_career_stats.pa > 0 '
                         f'and players.mlb_player_id = %s ')
 
         def hittercustomrankings():
