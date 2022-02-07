@@ -65,7 +65,8 @@ class Leaderboard(Resource):
         # for 2022 pl7, we need:
         self.tab_display_fields = {
             "pitch": {
-                "overview": ['avg_velocity', 'usage_pct', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct',
+                "overview": [
+                            'avg_velocity', 'usage_pct', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct',
                             'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'num_pitches', 'strike_pct',
                             'plus_pct','groundball_pct', 'flyball_pct', 'woba', 'babip_pct', 'hr_flyball_pct', 'x_avg', 'x_woba',
                             'hard_pct', 'avg_spin_rate', 'num_pitches'],
@@ -88,7 +89,8 @@ class Leaderboard(Resource):
                             'num_strikes', 'num_balls', 'batting_average', 'slug_pct', 'woba']
             },
             "pitcher": {
-                "overview": ['num_ip', 'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
+                "overview": [#'games','wins','losses','complete_games','shutouts','quality_starts','saves','holds','pitches',
+                            'num_ip', 'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
                             'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct', 'wins', 'losses', 'x_era', 'num_hits_per_nine',
                             'fip', 'x_fip','x_babip', 'hard_pct', 'groundball_pct','lob_pct', 'swinging_strike_pct', 'csw_pct'],
                 "standard": ['num_pitches', 'num_hit', 'num_ip', 'era', 'num_hr', 'num_k', 'num_bb', 'ipg', 'ppg', 'wins', 'losses',
@@ -115,9 +117,9 @@ class Leaderboard(Resource):
                             'flyball_pct','groundball_pct', 'ideal_pa_pct', 'hard_pct', 'barrel_pct', 'csw_pct'],
                 "standard": ['num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb', 
                             'num_sb', 'num_cs', 'batting_average', 'on_base_pct', 'woba', 'num_hard_bip', 'num_barrel','num_hbp'],
-                # including num_cs and num_sb because the group_by required them. We could also check to see if tab = statcat and just not include those as needed (probably better)
                 "statcast":['strikeout_pct', 'walk_pct', 'batting_average', 'slug_pct' , 'on_base_pct', 'woba', 'babip_pct', 'bacon_pct', 'x_avg', 
-                            'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'max_launch_speed', 'average_launch_speed', 'average_fly_ball_launch_speed', 'average_launch_angle', 'ops_pct'], 
+                            'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'max_launch_speed', 'average_launch_speed',
+                            'average_fly_ball_launch_speed', 'average_launch_angle', 'ops_pct'], 
                 "batted_ball": ['groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'pull_pct', 'opposite_field_pct',
                                 'babip_pct', 'bacon_pct', 'num_pa','center_pct', 'foul_pct'],
                 "batted_ball_2": ['weak_pct','topped_pct', 'under_pct', 'flare_or_burner_pct', 'solid_pct', 'barrel_pct', 'hard_pct',
@@ -491,9 +493,9 @@ class Leaderboard(Resource):
                 self.stmt = f"{self.stmt} WHERE"
                 for col, val in conditions.items():
                     if (col in self.syntax_filters):
-                        self.stmt = f'{self.stmt} {col} {val} AND'
+                        self.stmt = f'{self.stmt} base.{col} {val} AND'
                     else:
-                        self.stmt = f"{self.stmt} {col} = '{val}' AND"
+                        self.stmt = f"{self.stmt} base.{col} = '{val}' AND"
 
                 self.stmt = self.stmt[:-3]
             
@@ -791,10 +793,6 @@ class Leaderboard(Resource):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
                 conditions.pop('pitcherside')    
-            if conditions.get('pitcherleague'):
-                conditions.pop('pitcherleague')
-            if conditions.get('pitcherdivision'):
-                conditions.pop('pitcherdivision')
 
             if conditions:
                 stmt = f"{stmt} WHERE"
@@ -825,10 +823,7 @@ class Leaderboard(Resource):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
                 conditions.pop('pitcherside')    
-            if conditions.get('pitcherleague'):
-                conditions.pop('pitcherleague')
-            if conditions.get('pitcherdivision'):
-                conditions.pop('pitcherdivision')            
+ 
             if conditions:
                 stmt = f"{stmt} WHERE"
                 for col, val in conditions.items():
@@ -845,15 +840,17 @@ class Leaderboard(Resource):
             return stmt
 
         def hitter():
-            stmt = f"LEFT OUTER JOIN ( SELECT mhcs.hitter_mlb_id, sum(mhcs.g) as games, sum(mhcs.rbi) as rbi, sum(mhcs.cs) as cs, sum(mhcs.sb) as sb, sum(mhcs.runs) as runs, mhcs.year FROM mv_hitter_career_stats mhcs"
+            stmt = f"LEFT OUTER JOIN ( SELECT mhgs.hittermlbamid as hitter_id, sum(mhgs.g) as games, sum(mhgs.rbi) as rbi, sum(mhgs.cs) as cs, sum(mhgs.sb) as sb, sum(mhgs.runs) as runs, mhgs.year_played FROM mv_hitter_game_stats mhgs"
             groupby = ''
-                       
-
-            if(kwargs.get('year')):
-                 conditions = {'year': kwargs.get('year')}
 
             #get ride of hitterside and pitcherside from the inner join; probably not really necessary in the pitcher tab 
-           
+            conditions = self.get_conditions(**kwargs)
+
+            if conditions.get('hitterside'):
+                conditions.pop('hitterside')
+            if conditions.get('pitcherside'):
+                conditions.pop('pitcherside')
+            
             if conditions:
                 stmt = f"{stmt} WHERE"
                 for col, val in conditions.items():
@@ -865,7 +862,7 @@ class Leaderboard(Resource):
                     groupby = f"{groupby}, {col}"
                 stmt = stmt[:-3]
 
-            stmt = f'{stmt} GROUP BY hitter_mlb_id{groupby} ) AS totals ON totals.hitter_mlb_id = base.hittermlbamid'
+            stmt = f'{stmt} GROUP BY hitter_id{groupby} ) AS totals ON totals.hitter_id = base.hittermlbamid'
             
             return stmt
  
