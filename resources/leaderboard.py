@@ -823,10 +823,7 @@ class Leaderboard(Resource):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
                 conditions.pop('pitcherside')    
-            if conditions.get('pitcherleague'):
-                conditions.pop('pitcherleague')
-            if conditions.get('pitcherdivision'):
-                conditions.pop('pitcherdivision')            
+ 
             if conditions:
                 stmt = f"{stmt} WHERE"
                 for col, val in conditions.items():
