@@ -1,6 +1,8 @@
 from signal import raise_signal
 from flask import current_app, Flask, request
 from flask_restful import Resource
+import pandas as pd
+from pandas import DataFrame
 from errorhandler.errorhandler import InvalidUsage
 from helpers import fetch_dataframe, get_team_info, weightedonbasepercentage, var_dump
 from cache import cache_timeout, cache_invalidate_hour
@@ -65,8 +67,7 @@ class Leaderboard(Resource):
         # for 2022 pl7, we need:
         self.tab_display_fields = {
             "pitch": {
-                "overview": [
-                            'avg_velocity', 'usage_pct', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct',
+                "overview": ['avg_velocity', 'usage_pct', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct',
                             'called_strike_pct', 'csw_pct', 'put_away_pct', 'batting_average', 'num_pitches', 'strike_pct',
                             'plus_pct','groundball_pct', 'flyball_pct', 'woba', 'babip_pct', 'hr_flyball_pct', 'x_avg', 'x_woba',
                             'hard_pct', 'avg_spin_rate', 'num_pitches'],
@@ -86,10 +87,10 @@ class Leaderboard(Resource):
                             'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'inside_pct', 'outside_pct', 'early_pct','behind_pct', 'late_pct',
                             'zone_pct', 'non_bip_strike_pct', 'early_bip_pct', 'put_away_pct', 'num_pitches'],                
                 "standard": ['num_pitches', 'num_pa', 'num_hit', 'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_k', 'num_bb', 'num_hbp', 'num_wp', 
-                            'num_strikes', 'num_balls', 'batting_average', 'slug_pct', 'woba']
+                            'num_strikes', 'num_balls', 'batting_average', 'slug_pct', 'woba'],
             },
             "pitcher": {
-                "fancy": [],# 'games', 'num_starts', 'wins','losses','complete_games','shutouts','quality_starts','saves','holds','num_pitches',]
+                "games_overview":["num_games", "num_starts", "num_shutouts", "num_complete_games", "num_quality_starts", "num_holds", "num_saves"],
                 "overview": [
                             'num_ip', 'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
                             'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct', 'x_era', 'num_hits_per_nine',
@@ -139,21 +140,21 @@ class Leaderboard(Resource):
         # These are our aggregate field lookups that we use to dynamically generate the SQL stmt
         # [col][agg sql]
         self.aggregate_fields = {
-            "games": "games",
-            "num_starts": "num_starts",
-            "shutouts": "shutouts",
-            "complete_games": "complete_games",
-            "quality_starts": "quality_starts",
-            "holds": "holds",
-            "saves": "saves",
+            "num_games": "sum(g)",
+            "num_starts": "sum(gs)",
+            "num_shutouts": "sum(sho)",
+            "num_complete_games": "sum(cg)",
+            "num_quality_starts": "sum(qs)",
+            "num_holds": "sum(hold)",
+            "num_saves": "sum(save)",
             "ppg": 0,
             "ipg": 0,
             "lob_pct": 0,
             "num_hits_per_nine": 0,
             "x_fip": 0,
             "fip": 0,
-            "losses": "losses",
-            "wins": "wins",
+            "losses": "sum(win)",
+            "wins": "sum(loss)",
             "era": "ROUND(COALESCE(SUM(num_runs::numeric), 0::bigint)::numeric / NULLIF(SUM(num_outs::numeric) / 3.0, 0::numeric) * 9.0, 2)",
             "x_era": 0,
             # columns for hitter overview that is not at a pitch level
@@ -411,11 +412,14 @@ class Leaderboard(Resource):
 
     def handle_pitcher_overview(self, **query_args):
         # fetch data from daily table: 
-        daily = self.fetch_data('pitcher', **query_args)
-
+        daily = self.fetch_data('pitcher', return_dataframe=True, **query_args)
 
         # fetch data from mv_pitcher_game_stats_for_leaderboard
-        lb = self.fetch_data('pitcher_overview_leaderboard', **query_args)
+        query_args['tab'] = 'games_overview'
+        lb = self.fetch_data('pitcher',  return_dataframe=True, **query_args)
+
+        # res = lb.join(daily,on =["player_id","player_team"], how = "outer")
+
 
         # join that data and return
         return None
@@ -425,6 +429,10 @@ class Leaderboard(Resource):
         var_dump(query)
         cursor_list = self.build_cursor_execute_list(query_type, **query_args)
         raw = fetch_dataframe(query, cursor_list)
+
+        #used for when we hit pitcher - overview and need to concat results in python
+        if(query_args.get("return_dataframe")):
+            return raw
         results = self.format_results(query_type, raw)
         output = self.get_json(query_type, results, **query_args)
 
@@ -445,7 +453,8 @@ class Leaderboard(Resource):
         self.stmt = self.stmt[:-1]
 
         # Add table to select from
-        table = self.get_table()
+
+        table = self.get_table(query_args)
         self.stmt = f"{self.stmt} FROM {table} base"
         conditions = self.get_conditions(**query_args)
         groups = self.get_groups(**query_args)
@@ -525,16 +534,38 @@ class Leaderboard(Resource):
 
             return self.stmt
 
-        def pitcher_overview_leaderboard():
+        def pitcher_games_overview():
 
-            "SELECT pitchermlbamid as player_id, pitcherleague, pitcherdivision, year_played as year, month_played, half_played, pitcher_home_away, gs, g, win, loss, cg, sho, qs, save, hold, pitches, outs FROM mv_pitcher_game_stats_for_leaderboard WHERE year_played = '2021' GROUP BY pitchermlbamid, year_played,pitcherleague, pitcherdivision, month_played,half_played, pitcher_home_away,gs, g, win,loss,cg, sho,qs,save, hold, pitches, outs"
+            if conditions:
+                self.stmt = f"{self.stmt} WHERE"
+                for col, val in conditions.items():
+                    if (col in self.syntax_filters):
+                        self.stmt = f'{self.stmt} {col} {val} AND'
+                    else:
+                        self.stmt = f"{self.stmt} {col} = '{val}' AND"
+
+                self.stmt = self.stmt[:-3]
+
+            self.stmt = f'{self.stmt} GROUP BY'
+
+            for col in groups:
+                self.stmt = f'{self.stmt} {col},'
+
+            self.stmt = self.stmt[:-1]
+
+            return self.stmt
+
+            # return "SELECT pitchermlbamid as player_id, pitcherleague, pitcherdivision, year_played as year, month_played, half_played, pitcher_home_away, gs, g, win, loss, cg, sho, qs, save, hold, pitches, outs FROM mv_pitcher_game_stats_for_leaderboard WHERE year_played = '2021' GROUP BY pitchermlbamid, year_played,pitcherleague, pitcherdivision, month_played,half_played, pitcher_home_away,gs, g, win,loss,cg, sho,qs,save, hold, pitches, outs"
 
         queries = {
             "pitch": pitch,
             "pitcher": pitcher,
             "hitter": hitter,
-            "pitcher_overview_leaderboard": pitcher_overview_leaderboard,
+            "pitcher_games_overview": pitcher_games_overview,
         }
+
+        if query_args.get("tab") == "games_overview":
+            return queries.get("pitcher_games_overview")()
 
         return queries.get(query_type, default)()
 
@@ -700,16 +731,44 @@ class Leaderboard(Resource):
             
             return fields
         
+        def pitcher_games_overview():
+
+            fields = {
+                "player_id": "pitchermlbamid",
+                "player_home_away": "pitcher_home_away",
+                "player_division": "pitcherdivision",
+                "player_league": "pitcherleague"
+            }
+
+            for colname in self.tab_display_fields[leaderboard]['games_overview']:
+                # if colname == 'woba':
+                #     for woba_variable in self.woba_list:
+                #         fields[woba_variable] = self.aggregate_fields[woba_variable]
+                # else:
+                fields[colname] = self.aggregate_fields[colname]
+
+                for filter, fieldname in self.filter_fields.items():
+                    if kwargs[filter] == 'NA' and fieldname in fields:
+                        del fields[fieldname]
+
+            return fields
+
         cols = {
             "pitch": pitch,
             "pitcher": pitcher,
-            "hitter": hitter
+            "hitter": hitter,
+            "pitcher_games_overview": pitcher_games_overview
         }
+
+        if(kwargs.get("tab") == "games_overview"):
+            return cols.get("pitcher_games_overview")()
 
         return cols.get(leaderboard, pitcher)()
     
-    def get_table(self):
+    def get_table(self, query_args):
         
+        if(query_args.get("tab") == "games_overview"):
+            return "mv_pitcher_game_stats_for_leaderboard"
 
         table = 'pl_leaderboard_daily'
 
@@ -749,9 +808,11 @@ class Leaderboard(Resource):
         return stmts
 
     def get_groups(self, **kwargs):
+
         groupby = []
         # Iterate though our filters. Leaderboard specific cols have been included via the `get_cols()` method
         # Add the corresponding cols to the WHERE conditions
+        
         for filter, fieldname in self.filter_fields.items():
             if (kwargs[filter] != 'NA'):
                 groupby.append(fieldname)
@@ -764,7 +825,7 @@ class Leaderboard(Resource):
             return groupby
 
         def pitcher():
-            groupby_fields = ["base.pitchermlbamid", "pitchername", "pitcherteam", "pitcherteam_abb", "num_starts", "pgsfl.games"]
+            groupby_fields = ["base.pitchermlbamid", "pitchername", "pitcherteam", "pitcherteam_abb"]
             for field in groupby_fields:
                 groupby.append(field)
 
@@ -791,12 +852,25 @@ class Leaderboard(Resource):
                 groupby.append(field)
 
             return groupby
-        
+
+        def pitcher_games_overview():
+
+            groupby_fields = ["pitchermlbamid", "year_played", "pitcherleague", "pitcherdivision"]
+
+            for field in groupby_fields:
+                groupby.append(field)
+
+            return groupby
+
         groups = {
             "pitch": pitch,
             "pitcher": pitcher,
-            "hitter": hitter
+            "hitter": hitter,
+            "pitcher_games_overview": pitcher_games_overview
         }
+
+        if kwargs.get("tab") == "games_overview":
+            return groups.get("pitcher_games_overview")()
 
         return groups.get(kwargs.get('leaderboard'), pitcher)()
 
