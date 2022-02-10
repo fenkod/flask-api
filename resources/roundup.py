@@ -1,7 +1,15 @@
+import re
 from flask import current_app
 from flask_restful import Resource
+from sqlalchemy import false
 from helpers import fetch_dataframe, date_validate, var_dump
 import json as json
+from datetime import date, datetime
+from webargs import fields, validate
+from webargs.flaskparser import use_kwargs, parser, abort
+import os # For retrieving credentials
+import http.client # For Sport Radar API
+from cache import cache_timeout, cache_invalidate_hour
 
 ##
 # This is the flask_restful Resource Class for the SP Roundup and Batterbox API.
@@ -12,182 +20,159 @@ import json as json
 # @param ${day}: ([0-9]2/[0-9]2/[0-9]4|'latest')
 ##
 class Roundup(Resource):
+    roundup_kwargs = {
+        "type": fields.Str(required=False, missing="pitcher", validate=validate.OneOf(["pitcher","hitter"])),
+        "day": fields.Str(required=False, missing="NA"), #ISO date format
+        "bypass_cache": fields.Str(required=False, missing="NA", validate=validate.OneOf(["true","false"])),
+    }
+    def __init__(self, *args, **kwargs):
+        self.bypass_cache = False
 
-    def __init__(self):
-        self.day = 'latest'
-        self.player_type = 'pitcher'
-        self.bypass_cache = True
-
-    def get(self, player_type='pitcher', day='latest'):
-        if (day != 'latest' and (not date_validate(day))):
-            day = 'latest'
-
-        if ( date_validate(player_type) ):
-            day = player_type
-        
-        if (player_type != 'pitcher' and player_type != 'hitter'):
-            player_type = 'pitcher'
-
-        # Get the latest day
-        if ( day == 'latest' ):
-            # Don't cache the latest day
-            self.bypass_cache = True
-            latest = self.fetch_result('currentday', player_type)
-            day = latest[0]['game_date']
+    @use_kwargs(roundup_kwargs)
+    def get(self, **kwargs):     
+        player_type = kwargs['type']
+        if ( kwargs['day'] != 'NA'):
+            input_date = datetime.strptime(kwargs['day'], '%Y-%m-%d')
+        else:
+            input_date = date.today()
+        if(kwargs['bypass_cache'] != 'NA'):
+            self.bypass_cache = bool(kwargs['bypass_cache'])
             
-        self.day = day
+        # Get the latest day
+        self.day = input_date
         self.player_type = player_type
-        
-        return self.fetch_result(player_type, day)
+
+        return self.fetch_result(player_type, input_date)
 
     
-    def fetch_result(self, player_type, day):
+    def fetch_result(self, player_type, input_date):
 
         # Caching wrapper for fetch_data
-        result = None
+        games = []
+        endpoints = SportRadarEndpoints()
+        if player_type == 'pitcher':
+            year = input_date.strftime('%Y') 
+            month = input_date.strftime('%m')
+            day = input_date.strftime('%d')
 
-        if (current_app.config.get('BYPASS_CACHE') or self.bypass_cache):
-            # Bypassing Caching of JSON Results
-            result = self.fetch_data(player_type, day)
+            # Get daily summary data from Sport Radar
+            daily_summary = endpoints.daily_summary_endpoint(year, month, day)
+            # Get list of games for the day
+            daily_games = daily_summary['league']['games']
+            # Iterrate through games
+            for row in daily_games[:3]:
+                game = row['game']
+                game_id = game['id']
+                home_team = game['home']
+                away_team = game['away']
+                needs_home_data = True
+                needs_away_data = True
+                home_pitcher_cache_key = self.BuildCacheKey(game_id, home_team['id'])
+                away_pitcher_cache_key = self.BuildCacheKey(game_id, home_team['id'])      
+                # If cache is not bypassed, see if both results are available in the cache 
+                if(self.bypass_cache == False):
+                    home_pitcher_cache_result = current_app.cache.get(home_pitcher_cache_key)
+                    if home_pitcher_cache_result is not None:
+                        games.append(home_pitcher_cache_result)
+                        needs_home_data = False
+                    away_pitcher_cache_result = current_app.cache.get(away_pitcher_cache_key)
+                    if away_pitcher_cache_result is not None:
+                        games.append(away_pitcher_cache_result)
+                        needs_away_data = False
+                # If both results are cached, continue to next game
+                if(needs_home_data == False and needs_away_data == False):
+                    continue
+                print(f"Building Game: {away_team['abbr']} @ {home_team['abbr']}")
+                # Gather other basic game information to build a game model
+                scheduled_date = game['scheduled']
+                game_status = game['status']
+
+                game_model = {
+                    'game-date': scheduled_date,
+                    'reference': game['reference']
+                }
+
+                if 'venue' in game:
+                    venue = game['venue']
+                    #del venue['market']
+                    #del venue['capacity']
+                    #del venue['surface']
+                    #del venue['address']
+                    #del venue['zip']
+                    #del venue['country']
+                    #del venue['field_orientation']
+                    #del venue['location']
+                    #game_model['venue'] = venue
+
+                if 'weather' in game:
+                    weather = game['weather']
+                    game_model['weather'] = weather
+                if 'final' in game:
+                    final = game['final']
+                    game_model['final'] = final
+                if 'outcome' in game:
+                    outcome = game['outcome']
+                    #del outcome['type']
+                    #del outcome['hitter']['id']
+                    #del outcome['pitcher']['id']
+                    #del outcome['pitcher']['pitch_speed']
+                    #del outcome['pitcher']['pitch_type']
+                    #del outcome['pitcher']['pitch_zone']
+                    #del outcome['pitcher']['pitch_x']
+                    #del outcome['pitcher']['pitch_y']
+                    game_model['outcome'] = outcome
+
+                # If game is one of these statuses, it has not started. Figure out who the projected
+                # pitchers are/were and return a basic model with game status
+                if(game_status in ('scheduled', 'canceled', 'postponed', 'if-necessary')):
+                    print("")
+                # Game has started. Get details
+                else:
+                    # Gather hit play-by-play endpoint, build model, set cache and return data
+                    play_by_play_data = endpoints.play_by_play_endpoint(game_id)
+                    if(needs_home_data):
+                        home_pitcher_model = self.BuildInProgressGame("HOME", home_team, away_team, game_model, play_by_play_data)
+                        games.append(home_pitcher_model)
+                        current_app.cache.set(home_pitcher_cache_key, home_pitcher_model, cache_timeout(cache_invalidate_hour()))
+                    if(needs_away_data):
+                        away_pitcher_model = self.BuildInProgressGame("AWAY", away_team, home_team, game_model, play_by_play_data)
+                        games.append(away_pitcher_model)
+                        current_app.cache.set(home_pitcher_cache_key, home_pitcher_model, cache_timeout(cache_invalidate_hour()))
+            result = {'date': input_date.strftime("%a %m/%d/%Y"), 'games': games}
+            return result
         else:
-            # Using Cache for JSON Results          
-            cache_key_resource_type = self.__class__.__name__
+            return {}
+    def BuildCacheKey(self, game_id, team_id):
+        cache_key_resource_type = self.__class__.__name__
+        return f'{cache_key_resource_type}-{game_id}-{team_id}'
 
-            cache_key = f'{cache_key_resource_type}-{player_type}-{day}'
-            result = current_app.cache.get(cache_key)
-            if (result is None):
-                result = self.fetch_data(player_type, day)
-                # Set expiration for cache to 5 mins.
-                current_app.cache.set(cache_key, result, 300)
+    def BuildScheduledGame(self, home_away, team, game_model):
+        pitcher_model = {}
 
-        return result
+        return pitcher_model
 
-    def fetch_data(self, player_type, day):
-        query = self.get_query(player_type, day)
+    def BuildInProgressGame(self, home_away, team, opponent, game_model, play_by_play_data):
+        pitcher = team['starting_pitcher']
+        pitcher_model = pitcher
+        
+        game_stats = team['statistics']['pitching']['starters']
 
-        raw = fetch_dataframe(query,day)
-        results = self.format_results(player_type, raw)
-        output = self.get_json(player_type,day,results)
-
-        return output
-
-    def get_query(self, player_type, day):
-        def default():
-            return f"SELECT 'query not defined' AS error, '{player_type}' AS player_type, {day} AS day;"
-
-        def currentday():
-            # Get the latest gameday recorded for roundup.
-            if (day == 'pitcher'):
-                return (
-                    f"select to_char(least(max(game_date), current_date), 'YYYY-MM-DD') as game_date "
-                    f'from statcast_pitchers'
-                )
-            else:
-                return (
-                    f"select to_char(least(max(game_date), current_date), 'YYYY-MM-DD') as game_date "
-                    f"from statcast_hitters"
-                )
-
-        def hitter():
-            return (
-                f'SELECT h.gamepk AS "game_pk",'
-                    f'h.ghuid,'
-                    f'hittermlbamid AS "player_id",'
-                    f'hittername AS "playername",'
-                    f'num_pa AS "pa",'
-                    f'num_ab AS "ab",'
-                    f'num_hit AS "hits",'
-                    f'(num_hit - num_2b - num_3b - num_hr) AS "1b",'
-                    f'num_2b AS "2b",'
-                    f'num_3b AS "3b",'
-                    f'num_hr AS "hr",'
-                    f'num_runs AS "r",'
-                    f'num_rbi AS "rbi",'
-                    f'num_k AS "k",'
-                    f'num_bb AS "bb",'
-                    f'num_ibb AS "ibb",'
-                    f'num_hbp AS "hbp",'
-                    f'num_sb AS "sb",'
-                    f'num_cs AS "cs",'
-                    f'park,'
-                    f'CASE '
-                        f"WHEN park = 'HOME' THEN t_home.abbreviation "
-                        f"WHEN park = 'AWAY' THEN t_away.abbreviation "
-                        f"ELSE 'Unknown' "
-                        f'END AS "team",'
-                    f'CASE '
-                        f"WHEN park = 'HOME' THEN t_away.abbreviation "
-                        f"WHEN park = 'AWAY' THEN t_home.abbreviation "
-                        f'END AS "opponent" '
-                f'FROM statcast_hitters h '
-                f'JOIN statsapi_schedule ss ON h.gamepk = ss.gamepk '
-                f'JOIN teams t_away ON ss.teams_away_team_id = t_away.mlb_id '
-                f'JOIN teams t_home ON ss.teams_home_team_id = t_home.mlb_id '
-                f"WHERE game_date = %s;"
-            )
-
-        def pitcher():
-            return (
-                f'SELECT p.gamepk AS "game_pk",'
-                    f'p.ghuid,'
-                    f'pitchermlbamid AS "player_id",'
-                    f'pitchername AS "playername",'
-                    f'num_ip::numeric(2,1) AS "ip",'
-                    f'num_earned_runs AS "er",'
-                    f'num_hits AS "hits",'
-                    f'num_k AS "k",'
-                    f'num_bb AS "bb",'
-                    f'num_pitches AS "pitch-count",'
-                    f'num_whiff AS "whiff",'
-                    f'csw_pct AS "csw_pct",'
-                    f'park,'
-                    f'CASE '
-                        f"WHEN win = 1 THEN 'W' "
-                        f"WHEN loss = 1 THEN 'L' "
-                        f"ELSE 'ND' "
-                        f'END AS "decision", '
-                    f'CASE '
-                        f"WHEN park = 'HOME' THEN t_home.abbreviation "
-                        f"WHEN park = 'AWAY' THEN t_away.abbreviation "
-                        f"ELSE 'Unknown' "
-                        f'END AS "team", '
-                    f'CASE '
-                        f"WHEN park = 'HOME' THEN t_away.abbreviation "
-                        f"WHEN park = 'AWAY' THEN t_home.abbreviation "
-                        f'END AS "opponent",'
-                    f'line_status '
-                f'FROM statcast_pitchers p '
-                f'JOIN statsapi_schedule ss ON p.gamepk = ss.gamepk '
-                f'JOIN teams t_away ON ss.teams_away_team_id = t_away.mlb_id '
-                f'JOIN teams t_home ON ss.teams_home_team_id = t_home.mlb_id '
-                f"WHERE game_date = %s "
-                f'AND start = 1'
-                f'ORDER BY num_earned_runs ASC;'
-            )
-
-        queries = {
-            "currentday": currentday,
-            "hitter": hitter,
-            "pitcher": pitcher
+        model = {
+            # Legacy Data
+            'player_id': 0,
+            'team': team['abbr'],
+            'playername': f"{pitcher['preferred_name']} {pitcher['last_name']}",
+            'park': home_away,
+            'opponent': opponent['abbr'],
+            'game_pk': game_model['reference'],
+            'stats': game_stats,
+            # New Data
+            'pitcher': pitcher_model,   
+            'game': game_model
         }
-
-        return queries.get(player_type, default)()
-
-    def format_results(self, player_type, data):
-
-        def default():
-            return data
-
-        def roundup():
-            return data
-
-        formatting = {
-            "hitter": roundup,
-            "pitcher": roundup
-        }
-
-        return formatting.get(player_type, default)()
     
+        return model
+
     def get_json(self, player_type, day, results):
         
         def default():
@@ -233,3 +218,87 @@ class Roundup(Resource):
 
         return json_data.get(player_type, default)()
 
+
+class SportRadarEndpoints:
+    def __init__(self):
+       self.access_level = 'tracking'
+       self.version = 'v7'
+       self.file_format = 'json'
+       self.api_key = os.getenv('SPORTRADAR_STATCAST_API_KEY')
+
+    def retrieve_sport_radar_data(self, endpoint):
+        """
+        This function retrieves the daily boxscore information as defined in the 
+        daily boxscore endpoint.
+        
+        inputs
+        endpoint = sport radar endpoint api (string)
+        
+        outputs
+        json of endpoint data
+        """ 
+
+        # Connect to Sport Radar API and retrieve data
+        conn = http.client.HTTPSConnection("api.sportradar.us")   
+        conn.request("GET", endpoint)
+        res = conn.getresponse()
+        data = res.read()
+        data = data.decode("utf-8")
+
+        return data
+
+    def daily_summary_endpoint(self, year=None,month=None,day=None):
+
+        """
+        This function retrieves the daily summary.
+        
+        inputs
+        year, month, day = date of daily summary, default is todays date (string)
+        month and day data must be in 'MM' or 'DD' format, i.e. '05' instead of 5
+        
+        outputs
+        dictionary of endpoint data
+        """ 
+
+        today = date.today()
+
+        if not year:
+            year = today.year
+        if not month:
+            month = today.month
+        if not day:
+            day = today.day
+
+        # Build endpoint
+        endpoint = f'/mlb/{self.access_level}/{self.version}/en/games/{year}/{month}/{day}/summary.{self.file_format}?api_key={self.api_key}'
+
+        # Connect to Sport Radar API and retrieve data
+        data = self.retrieve_sport_radar_data(endpoint)
+        
+        # Convert json data to python dictionary
+        data = json.loads(data) 
+
+        return data
+
+    def play_by_play_endpoint(self, game_id):
+
+        """
+        Detailed real-time information on every pitch and game event.
+
+        inputs
+        game_id = sport radar game id
+
+        outputs
+        dictionary of endpoint data
+        """ 
+
+        # Build endpoint
+        endpoint = f'/mlb/{self.access_level}/{self.version}/en/games/{game_id}/pbp.{self.file_format}?api_key={self.api_key}'
+
+        # Connect to Sport Radar API and retrieve data
+        data = self.retrieve_sport_radar_data(endpoint)
+        
+        # Convert json data to python dictionary
+        data = json.loads(data) 
+
+        return data
