@@ -157,6 +157,29 @@ class Roundup(Resource):
         
         game_stats = team['statistics']['pitching']['starters']
 
+        innings = play_by_play_data['game']['innings']
+    
+        pitches = []
+        for inning in innings:
+            if inning['number'] > 0:
+                for half in inning['halfs']:
+                    h = half['half']
+                    for e in half['events']:
+                        if list(e.keys())[0] == 'at_bat':
+                            atBat = e['at_bat']
+                            if len(atBat['events']) != 0:
+                                l = len(atBat['events'])
+                                for atBatEvent in atBat['events']:
+                                    if "type" in atBatEvent.keys():
+                                        if atBatEvent['type'] == 'pitch':
+                                            if(atBatEvent.get('pitcher').get('id') == pitcher['id']):
+                                                pitch = atBatEvent
+                                                pitch['inning'] = inning['number']
+                                                pitch['inning-half'] = h
+                                                if(atBatEvent.get('flags').get('is_ab_over')):
+                                                    pitch['at-bat-description'] = atBat['description']   
+                                                pitches.append(pitch)                                                                             
+
         model = {
             # Legacy Data
             'player_id': 0,
@@ -168,7 +191,8 @@ class Roundup(Resource):
             'stats': game_stats,
             # New Data
             'pitcher': pitcher_model,   
-            'game': game_model
+            'game': game_model,
+            'pitches': pitches
         }
     
         return model
