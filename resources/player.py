@@ -1084,6 +1084,7 @@ class Player(Resource):
                                 f'x_wobacon as "x-wobacon-pct",'
                                 f'average_fly_ball_launch_speed as "flyball-exit-velo-avg",'
                                 f'num_xbh as "xbh",'
+                                f'round((hard_pct / 100) * num_pa, 0)::int as "hard-bip",'
                                 f'max_launch_speed as "max-exit-velo" '
                         f'FROM mv_hitter_page_stats '
                         f'inner join players on players.player_id = mv_hitter_page_stats.hitter_id '
@@ -2540,8 +2541,8 @@ class Player(Resource):
         x_woba_model['player-stat-value'] = float(year_data['x-woba'])
         x_woba_model['player-stat-rank'] = int(year_data['x-woba-rank'])
         x_woba_model['player-stat-percentile'] = float(year_data['x-woba-percentile'])
-        x_woba_model['league-avwobage-stat-value'] = float(year_data['league-x-woba'])
-        x_woba_model['league-avwobage-stat-percentile'] = float(year_data['league-x-woba-percentile'])
+        x_woba_model['league-average-stat-value'] = float(year_data['league-x-woba'])
+        x_woba_model['league-average-stat-percentile'] = float(year_data['league-x-woba-percentile'])
         year_model['x-woba-pct'] = x_woba_model
 
         if 'sv' in year_data:
@@ -2771,8 +2772,8 @@ class Player(Resource):
         x_woba_model['player-stat-value'] = float(year_data['x-woba'])
         x_woba_model['player-stat-rank'] = int(year_data['x-woba-rank'])
         x_woba_model['player-stat-percentile'] = float(year_data['x-woba-percentile'])
-        x_woba_model['league-avwobage-stat-value'] = float(year_data['league-x-woba'])
-        x_woba_model['league-avwobage-stat-percentile'] = float(year_data['league-x-woba-percentile'])
+        x_woba_model['league-average-stat-value'] = float(year_data['league-x-woba'])
+        x_woba_model['league-average-stat-percentile'] = float(year_data['league-x-woba-percentile'])
         year_model['x-woba-pct'] = x_woba_model
 
         return year_model
