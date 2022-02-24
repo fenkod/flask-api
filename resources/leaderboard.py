@@ -91,27 +91,27 @@ class Leaderboard(Resource):
             },
             "pitcher": {
                 "games_overview":["wins_lb", "losses_lb", "num_games", "num_starts_lb", "sho", "cg", 
-                                "num_quality_starts", "holds", "saves", "num_pitches_lb", "num_ip_lb",
+                                "qs", "holds", "saves", "num_pitches_lb", "num_ip_lb",
                                 "x_era", "fip", "x_fip", "whip_lb","num_hits_per_nine", "lob_pct"],
-                "overview": [
+                "overview": ['num_pitches', 'num_starts',
                             'num_ip', 'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
                             'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct',
                             'x_babip', 'hard_pct', 'groundball_pct', 'swinging_strike_pct', 'csw_pct'],
-                "standard": ['num_starts', 'num_pitches', 'num_hit', 'num_ip', 'era', 'num_hr', 'num_k', 'num_bb', 'ipg', 'ppg', 'wins', 'losses',
-                            'saves', 'holds', 'cg', 'qs', 'sho', 'num_hbp', 'num_wp', 'num_runs','num_hit',
+                "standard": ['num_pitches', 'num_starts', 'num_pitches', 'num_hit', 'num_ip', 'era', 'num_hr', 'num_k', 'num_bb', 'ipg', 'ppg',
+                            'num_hbp', 'num_wp', 'num_runs','num_hit',
                             'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_ibb', 'num_bb', 'num_k', 'num_earned_runs'],
-                "statcast": ['num_ip', 'num_starts', 'strikeout_pct', 'walk_pct', 'batting_average', 'slug_pct', 'on_base_pct', 'woba', 'babip_pct', 'bacon_pct',
+                "statcast": ['num_pitches', 'num_starts', 'strikeout_pct', 'walk_pct', 'batting_average', 'slug_pct', 'on_base_pct', 'woba', 'babip_pct', 'bacon_pct',
                             'x_avg', 'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'x_era', 'average_launch_speed', 'average_launch_angle', 'ops_pct'],
-                "batted_ball": ['num_ip', 'num_starts', 'groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
+                "batted_ball": ['num_pitches', 'num_starts', 'groundball_pct', 'linedrive_pct', 'flyball_pct', 'infield_flyball_pct', 'weak_pct',
                                 'medium_pct', 'hard_pct', 'pull_pct', 'opposite_field_pct', 'bacon_pct', 'num_pitches', 'foul_pct',
                                 'hr_flyball_pct', 'center_pct', 'topped_pct', 'under_pct', 'flare_or_burner_pct', 'solid_pct', 'sweet_spot_pct'],
-                "batted_ball_2": ['num_ip', 'num_starts', 'num_pitches', 'hard_pct', 'barrel_pct', 'ideal_bbe_pct', 'ideal_pa_pct', 'batting_average', 'woba', 
+                "batted_ball_2": ['num_pitches', 'num_starts','num_pitches', 'hard_pct', 'barrel_pct', 'ideal_bbe_pct', 'ideal_pa_pct', 'batting_average', 'woba', 
                             'babip_pct', 'bacon_pct', 'x_avg', 'x_woba', 'x_babip', 'x_wobacon', 'average_launch_speed', 'average_fly_ball_launch_speed',
                             'average_launch_angle'],
-                "plate_discipline": ['num_starts', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct', 'called_strike_pct', 'csw_pct', 'plus_pct',
+                "plate_discipline": ['num_pitches', 'num_starts', 'o_swing_pct', 'zone_pct', 'swinging_strike_pct', 'called_strike_pct', 'csw_pct', 'plus_pct',
                                     'contact_pct', 'z_contact_pct', 'o_contact_pct', 'swing_pct', 'strike_pct', 'early_called_strike_pct',
                                     'late_o_swing_pct', 'f_strike_pct', 'true_f_strike_pct', 'num_ip'],
-                "approach": ['num_ip', 'num_starts', 'armside_pct','horizonal_middle_location_pct', 'gloveside_pct', 'high_pct',
+                "approach": ['num_pitches', 'num_starts', 'armside_pct','horizonal_middle_location_pct', 'gloveside_pct', 'high_pct',
                             'vertical_middle_location_pct', 'low_pct', 'heart_pct', 'inside_pct', 'outside_pct', 'early_pct','behind_pct', 'late_pct',
                             'zone_pct', 'non_bip_strike_pct', 'early_bip_pct', 'put_away_pct', 'num_pitches']                
             },
@@ -411,8 +411,8 @@ class Leaderboard(Resource):
             result = current_app.cache.get(cache_key)
             if (result is None):
 
-                if query_args.get('leaderboard') == 'pitcher' and query_args.get('tab') == 'overview':
-                    result = self.handle_pitcher_overview(**query_args)
+                if query_args.get('leaderboard') == 'pitcher' and (query_args.get('tab') == 'overview' or query_args.get('tab') == "standard"):
+                    result = self.handle_pitcher_overview_standard(**query_args)
                 
                 else:
                     result = self.fetch_data(query_type, **query_args)
@@ -421,7 +421,7 @@ class Leaderboard(Resource):
 
         return result
 
-    def handle_pitcher_overview(self, **query_args):
+    def handle_pitcher_overview_standard(self, **query_args):
         # fetch data from daily table: 
         daily = self.fetch_data('pitcher', return_dataframe=True, **query_args)
 
@@ -429,14 +429,13 @@ class Leaderboard(Resource):
         query_args['tab'] = 'games_overview'
         lb = self.fetch_data('pitcher',  return_dataframe=True, **query_args)
 
-        # res = lb.join(daily,on =["player_id","player_team"], how = "outer")
-        print('daily:')
-        print(daily)
-        print('lb:')
-        print(lb)
         merged_df = pd.merge(daily, lb, how='inner', left_on=['player_id'], right_on =['player_id'])
-        print(merged_df)
-        results = self.format_results("pitcher", merged_df)
+
+        player_team_query = "select t.abbreviation as player_team_abb, t.team_name as player_team, p.mlb_player_id from players p, teams t where p.current_team_id = t.team_id "
+        player_team_df = fetch_dataframe(player_team_query)
+        merged_player_df = pd.merge(merged_df, player_team_df, how = 'left', left_on=['player_id'], right_on = ['mlb_player_id'])
+
+        results = self.format_results("pitcher", merged_player_df)
         output = self.get_json("pitcher", results, **query_args)
         return output
         # join that data and return
@@ -448,10 +447,16 @@ class Leaderboard(Resource):
         cursor_list = self.build_cursor_execute_list(query_type, **query_args)
         raw = fetch_dataframe(query, cursor_list)
 
-        #used for when we hit pitcher - overview and need to concat results in python
+        #used for when we hit pitcher - overview or standard and need to concat results in python
         if(query_args.get("return_dataframe")):
             return raw
-        results = self.format_results(query_type, raw)
+
+        ## same code as just above to tie a player team and player team abb to each player data object
+        player_team_query = "select t.abbreviation as player_team_abb, t.team_name as player_team, p.mlb_player_id from players p, teams t where p.current_team_id = t.team_id "
+        player_team_df = fetch_dataframe(player_team_query)
+        merged_player_df = pd.merge(raw, player_team_df, how = 'left', left_on=['player_id'], right_on = ['mlb_player_id'])
+
+        results = self.format_results(query_type, merged_player_df)
         output = self.get_json(query_type, results, **query_args)
 
         return output
@@ -672,13 +677,13 @@ class Leaderboard(Resource):
                 'player_id': 'pitchermlbamid',
                 'player_name': 'pitchername',
                 # 'player_team': 'pitcherteam',
-                # 'player_team_abb': 'pitcherteam_abb',
+                'player_team_abb': 'pitcherteam_abb',
                 'player_side': 'pitcherside',
                 'player_side_against': 'hitterside',
                 # 'player_league': 'pitcherleague',
                 # 'player_division': 'pitcherdivision',
                 'player_home_away': 'pitcher_home_away',
-                # 'num_starts': 'COALESCE(start.num_starts, 0)'
+                'num_starts': 'COALESCE(start.num_starts, 0)'
             }
 
             for colname in self.tab_display_fields[leaderboard][self.tab]:
@@ -700,7 +705,7 @@ class Leaderboard(Resource):
                 'player_id': 'pitchermlbamid',
                 'player_name': 'pitchername',
                 # 'player_team': 'pitcherteam',
-                # 'player_team_abb': 'pitcherteam_abb',
+                'player_team_abb': 'pitcherteam_abb',
                 'player_side': 'pitcherside',
                 'player_side_against': 'hitterside',
                 # 'player_league': 'pitcherleague',
@@ -728,7 +733,7 @@ class Leaderboard(Resource):
                 'player_id': 'hittermlbamid',
                 'player_name': 'hittername',
                 # 'player_team': 'hitterteam',
-                # 'player_team_abb': 'hitterteam_abb',
+                'player_team_abb': 'hitterteam_abb',
                 'player_side': 'hitterside',
                 'player_side_against': 'pitcherside',
                 # 'player_league': 'hitterleague',
@@ -845,7 +850,7 @@ class Leaderboard(Resource):
 
         def pitcher():
             # groupby_fields = ["base.pitchermlbamid", "pitchername", "pitcherteam", "pitcherteam_abb"]
-            groupby_fields = ["base.pitchermlbamid", "pitchername"]
+            groupby_fields = ["base.pitchermlbamid", "pitchername","start.num_starts"]
             for field in groupby_fields:
                 groupby.append(field)
 
