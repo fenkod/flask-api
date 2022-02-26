@@ -20,6 +20,11 @@ class Leaderboard(Resource):
     valid_teams = list(teams.keys())
     valid_years = ['2021']
     current_date = date.today()
+    pitch_estimator_constants_fields = ["woba","woba_scale","woba_bb","woba_hbp","woba_single","woba_double","woba_triple","woba_home_run","fip_constant"]
+    pitch_estimator_constants = {}
+    mv_league_stats_averages_fields = ["pitch_count", "ip", "era", "whip", "fip_constant", "woba_pct", "x_woba", "hr_flyball_pct"]
+    league_average_constants = {}
+
     woba_list = ['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice_fly', 'num_1b', 'num_2b', 'num_3b', 'num_hr']
     leaderboard_kwargs = {
         "leaderboard" : fields.Str(required=False, missing="pitcher", validate=validate.OneOf(["pitcher", "pitch", "hitter"])),
@@ -90,15 +95,13 @@ class Leaderboard(Resource):
                             'num_strikes', 'num_balls', 'batting_average', 'slug_pct', 'woba'],
             },
             "pitcher": {
-                "games_overview":["wins", "losses", "num_games", "sho", "cg", "num_ip",
-                                "qs", "holds", "saves",
-                                "x_era", "fip", "x_fip", "num_hits_per_nine", "lob_pct"],
-                "overview": ['num_pitches', 'num_starts',
+                "games_overview_standard":["wins", "losses", "num_games", "sho", "cg", "num_ip", "qs", "holds", "saves"],
+                "overview": ['num_pitches', 'num_starts', "fip", "x_fip", "x_era", "num_hits_per_nine", "lob_pct",
                             'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
                             'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct',
                             'x_babip', 'hard_pct', 'groundball_pct', 'swinging_strike_pct', 'csw_pct'],
-                "standard": ['num_pitches', 'num_starts', 'num_pitches', 'num_hit', 'era', 'num_hr', 'num_k', 'num_bb', 'ipg', 'ppg',
-                            'num_hbp', 'num_wp', 'num_runs','num_hit',
+                "standard": ['num_pitches', 'num_starts', 'num_hit', 'era', 'num_hr', 'num_k', 'num_bb',# 'ipg', 'ppg',
+                            'num_hbp', 'num_wp', 'num_runs',
                             'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_ibb', 'num_bb', 'num_k', 'num_earned_runs'],
                 "statcast": ['num_pitches', 'num_starts', 'strikeout_pct', 'walk_pct', 'batting_average', 'slug_pct', 'on_base_pct', 'woba', 'babip_pct', 'bacon_pct',
                             'x_avg', 'x_slug_pct', 'x_woba', 'x_babip', 'x_wobacon', 'x_era', 'average_launch_speed', 'average_launch_angle', 'ops_pct'],
@@ -149,22 +152,22 @@ class Leaderboard(Resource):
             "qs": "sum(qs)",
             "holds": "sum(hold)",
             "saves": "sum(save)",
-            "ppg": 0,
-            "ipg": 0,
-            "lob_pct": 0,
-            "num_hits_per_nine": 0,
-            "x_fip": 0,
-            "fip": 0,
+            # "ppg": 0,
+            # "ipg": "ROUND(NULLIF(SUM(num_outs) / 3, 0), 1) / sum(g)",
+            "lob_pct": "ROUND(COALESCE(SUM(num_hit + num_bb + num_ibb + num_hbp - num_runs)/NULLIF(SUM(num_hit + num_bb + num_ibb + num_hbp - (1.4 * num_hr)),0)),3)",
+            "num_hits_per_nine": "ROUND(COALESCE(9 * SUM(num_hit) / (ROUND(NULLIF(SUM(num_outs) / 3, 0), 1))),2)",
+            "fip": "ROUND(COALESCE((13 * SUM(num_hr) + 3 * SUM(num_bb + num_ibb) - 2 * SUM(num_k) )/(ROUND(NULLIF(SUM(num_outs) / 3, 0), 1)) + _self.pitch_estimator_constants.get('fip_constant')_), 3)",
+            "x_fip": "ROUND((COALESCE(((13 * (SUM(num_fly_ball) * _self.league_average_constants.get('hr_flyball_pct')_/100)) + (3 * SUM(num_bb + num_ibb)) - (2 * SUM(num_k)))/ROUND(NULLIF(SUM(num_outs) / 3, 0), 1)) + _self.pitch_estimator_constants.get('fip_constant')_), 3)",
             # "losses": "sum(num_loss)",
             # "wins": "sum(num_win)",
             # specific to lb - this is from the mv_pitcher_game_stat_for_leaderboard mv
             "losses": "sum(loss)",
             "wins": "sum(win)",
             # "num_pitches_lb": "sum(pitches)",
-            "num_ip": "ROUND(NULLIF(SUM(outs) / 3, 0), 1)",
+            "num_ip": "ROUND(SUM(outs::numeric) / 3, 1)",
             # "whip_lb": "ROUND((SUM(hits) + SUM(bb)) / NULLIF(SUM(outs) / 3, 0), 2)",
             "era": "ROUND(COALESCE(SUM(num_runs::numeric), 0::bigint)::numeric / NULLIF(SUM(num_outs::numeric) / 3.0, 0::numeric) * 9.0, 2)",
-            "x_era": 0,
+            "x_era": "ROUND(COALESCE(_self.league_average_constants.get('era')_ * ( ( round((max(woba_bb) * sum(num_bb - num_ibb) + max(woba_hbp) * sum(num_hbp) + max(woba_single) * sum(num_xsingle) + max(woba_double) * sum(num_xdouble) + max(woba_triple) * sum(num_xtriple) + max(woba_home_run) * sum(num_xhomerun)) / NULLIF(sum(num_ab) + sum(num_bb) - sum(num_ibb) + sum(num_sacrifice_fly) + sum(num_hbp), 0), 4) / _self.league_average_constants.get('x_woba')_ ) ^ 2 )), 3)",
             # columns for hitter overview that is not at a pitch level
             "num_games_played": "totals.games",
             "num_rbi": "totals.rbi",
@@ -172,7 +175,6 @@ class Leaderboard(Resource):
             "num_sb": "totals.sb",
             "num_cs": "totals.cs",
             "num_earned_runs":"COALESCE(SUM(num_runs::numeric), 0)",
-
             "num_starts": "COALESCE(start.num_starts, 0)",
             # Columns broken up by pitch
             "ops_pct": "ROUND((SUM(num_hit) + SUM(num_bb) + SUM(num_hbp)) / NULLIF((SUM(num_ab) + SUM(num_bb) + SUM(num_sacrifice) + SUM(num_hbp)), 0), 3) + round((sum(num_1b) + 2::numeric * sum(num_2b) + 3::numeric * sum(num_3b) + 4::numeric * sum(num_hr)) / NULLIF(sum(num_ab), 0::numeric), 3)",
@@ -392,9 +394,32 @@ class Leaderboard(Resource):
                 else:
                     self.woba_year = end_year
 
+        self.set_constants(self.query_year)  
+        self.replace_constants()
         return self.fetch_result(kwargs.get('leaderboard'), **kwargs)
-                    
-    
+
+    def set_constants(self, year):
+        
+        pec_table = fetch_dataframe(f"select * from pitch_estimator_constants pec where year = {year}")
+        for field in self.pitch_estimator_constants_fields:
+            self.pitch_estimator_constants[field] = str(pec_table[field][0])
+
+        mlsa_table = fetch_dataframe(f'select * from mv_league_stats_averages mlsa where mlsa.year_played = {year} and mlsa."position" = \'ALL\'')
+        for field in self.mv_league_stats_averages_fields:
+            self.league_average_constants[field] = str(mlsa_table[field][0])
+        
+        
+    # this ugly method is used to replace any and all relevant constants that are available and set in the method above. This is a replacement for performing sub-selects
+    def replace_constants(self):
+        
+        self.aggregate_fields['fip'] = self.aggregate_fields['fip'].replace("_self.pitch_estimator_constants.get('fip_constant')_", self.pitch_estimator_constants.get('fip_constant'))
+        
+        self.aggregate_fields['x_era'] = self.aggregate_fields['x_era'].replace("_self.league_average_constants.get('era')_", self.league_average_constants.get('era'))
+        self.aggregate_fields['x_era'] = self.aggregate_fields['x_era'].replace("_self.league_average_constants.get('x_woba')_", self.league_average_constants.get('x_woba'))
+
+        self.aggregate_fields['x_fip'] = self.aggregate_fields['x_fip'].replace("_self.league_average_constants.get('hr_flyball_pct')_", self.league_average_constants.get('hr_flyball_pct'))
+        self.aggregate_fields['x_fip'] = self.aggregate_fields['x_fip'].replace("_self.pitch_estimator_constants.get('fip_constant')_", self.pitch_estimator_constants.get('fip_constant'))
+
     def fetch_result(self, query_type, **query_args):
         # Caching wrapper for fetch_data
         result = None
@@ -426,7 +451,7 @@ class Leaderboard(Resource):
         daily = self.fetch_data('pitcher', return_dataframe=True, **query_args)
 
         # fetch data from mv_pitcher_game_stats_for_leaderboard
-        query_args['tab'] = 'games_overview'
+        query_args['tab'] = 'games_overview_standard'
         lb = self.fetch_data('pitcher',  return_dataframe=True, **query_args)
 
         merged_df = pd.merge(daily, lb, how='inner', left_on=['player_id'], right_on =['player_id'])
@@ -557,7 +582,7 @@ class Leaderboard(Resource):
 
             return self.stmt
 
-        def pitcher_games_overview():
+        def pitcher_games_overview_standard():
 
             if conditions:
                 self.stmt = f"{self.stmt} WHERE"
@@ -584,11 +609,11 @@ class Leaderboard(Resource):
             "pitch": pitch,
             "pitcher": pitcher,
             "hitter": hitter,
-            "pitcher_games_overview": pitcher_games_overview,
+            "pitcher_games_overview_standard": pitcher_games_overview_standard,
         }
 
-        if query_args.get("tab") == "games_overview":
-            return queries.get("pitcher_games_overview")()
+        if query_args.get("tab") == "games_overview_standard":
+            return queries.get("pitcher_games_overview_standard")()
 
         return queries.get(query_type, default)()
 
@@ -754,7 +779,7 @@ class Leaderboard(Resource):
             
             return fields
         
-        def pitcher_games_overview():
+        def pitcher_games_overview_standard():
 
             fields = {
                 "player_id": "pitchermlbamid",
@@ -763,7 +788,7 @@ class Leaderboard(Resource):
                 # "player_league": "pitcherleague"
             }
 
-            for colname in self.tab_display_fields[leaderboard]['games_overview']:
+            for colname in self.tab_display_fields[leaderboard]['games_overview_standard']:
                 # if colname == 'woba':
                 #     for woba_variable in self.woba_list:
                 #         fields[woba_variable] = self.aggregate_fields[woba_variable]
@@ -780,17 +805,17 @@ class Leaderboard(Resource):
             "pitch": pitch,
             "pitcher": pitcher,
             "hitter": hitter,
-            "pitcher_games_overview": pitcher_games_overview
+            "pitcher_games_overview_standard": pitcher_games_overview_standard
         }
 
-        if(kwargs.get("tab") == "games_overview"):
-            return cols.get("pitcher_games_overview")()
+        if(kwargs.get("tab") == "games_overview_standard"):
+            return cols.get("pitcher_games_overview_standard")()
 
         return cols.get(leaderboard, pitcher)()
     
     def get_table(self, query_args):
         
-        if(query_args.get("tab") == "games_overview"):
+        if(query_args.get("tab") == "games_overview_standard"):
             return "mv_pitcher_game_stats_for_leaderboard"
 
         table = 'pl_leaderboard_daily'
@@ -879,7 +904,7 @@ class Leaderboard(Resource):
 
             return groupby
 
-        def pitcher_games_overview():
+        def pitcher_games_overview_standard():
 
             # groupby_fields = ["pitchermlbamid", "year_played", "pitcherleague", "pitcherdivision"]
             groupby_fields = ["pitchermlbamid", "year_played"]
@@ -893,11 +918,11 @@ class Leaderboard(Resource):
             "pitch": pitch,
             "pitcher": pitcher,
             "hitter": hitter,
-            "pitcher_games_overview": pitcher_games_overview
+            "pitcher_games_overview_standard": pitcher_games_overview_standard
         }
 
-        if kwargs.get("tab") == "games_overview":
-            return groups.get("pitcher_games_overview")()
+        if kwargs.get("tab") == "games_overview_standard":
+            return groups.get("pitcher_games_overview_standard")()
 
         return groups.get(kwargs.get('leaderboard'), pitcher)()
 
