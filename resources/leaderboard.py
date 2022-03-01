@@ -96,7 +96,7 @@ class Leaderboard(Resource):
             },
             "pitcher": {
                 "games_overview_standard":["wins", "losses", "num_games", "sho", "cg", "num_ip", "qs", "holds", "saves"],
-                "overview": ['num_pitches', 'num_starts', "fip", "x_fip", "x_era", "num_hits_per_nine", "lob_pct",
+                "overview": ['num_pitches', 'num_starts',"fip", "x_fip", "x_era", "num_hits_per_nine", "lob_pct",
                             'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
                             'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct',
                             'x_babip', 'hard_pct', 'groundball_pct', 'swinging_strike_pct', 'csw_pct'],
@@ -436,11 +436,13 @@ class Leaderboard(Resource):
             result = current_app.cache.get(cache_key)
             if (result is None):
 
-                if query_args.get('leaderboard') == 'pitcher' and (query_args.get('tab') == 'overview' or query_args.get('tab') == "standard"):
-                    result = self.handle_pitcher_overview_standard(**query_args)
+                result = self.handle_pitcher_overview_standard(**query_args)
+                # each and every pitcher endpoint should get all pitcher sum totals
+                # if query_args.get('leaderboard') == 'pitcher' and (query_args.get('tab') == 'overview' or query_args.get('tab') == "standard"):
+                #     result = self.handle_pitcher_overview_standard(**query_args)
                 
-                else:
-                    result = self.fetch_data(query_type, **query_args)
+                # else:
+                #     result = self.fetch_data(query_type, **query_args)
                 # Set Cache expiration to 5 mins
                 current_app.cache.set(cache_key, result, 300)
 
