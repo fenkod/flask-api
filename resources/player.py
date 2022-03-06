@@ -1084,7 +1084,7 @@ class Player(Resource):
                                 f'x_wobacon as "x-wobacon-pct",'
                                 f'average_fly_ball_launch_speed as "flyball-exit-velo-avg",'
                                 f'num_xbh as "xbh",'
-                                f'round((hard_pct / 100) * num_pa, 0)::int as "hard-bip",'
+                                f'num_hard_bip as "hard-bip",'
                                 f'max_launch_speed as "max-exit-velo" '
                         f'FROM mv_hitter_page_stats '
                         f'inner join players on players.player_id = mv_hitter_page_stats.hitter_id '
