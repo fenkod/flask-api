@@ -517,7 +517,11 @@ class Player(Resource):
                             f'num_xsingle as "x1b",'
                             f'num_xdouble as "x2b",'
                             f'num_xtriple as "x3b",'
-                            f'num_xhomerun as "xhr" '
+                            f'num_xhomerun as "xhr",'
+                            f'num_statcast_bbe as "statcast-batted-ball-event",'
+                            f'num_statcast_at_bat as "statcast-ab",'
+                            f'num_statcast_plate_appearance as "statcast-pa",'
+                            f'num_first_pitch as "first-pitch" '
                         f'FROM mv_pitcher_game_logs '
                         f'inner join players on players.player_id = mv_pitcher_game_logs.pitcher_id '
                         f'inner join games on games.game_id = mv_pitcher_game_logs.game_id '
@@ -726,7 +730,11 @@ class Player(Resource):
                             f'num_xsingle as "x1b",'
                             f'num_xdouble as "x2b",'
                             f'num_xtriple as "x3b",'
-                            f'num_xhomerun as "xhr" '
+                            f'num_xhomerun as "xhr",'
+                            f'num_statcast_bbe as "statcast-batted-ball-event",'
+                            f'num_statcast_at_bat as "statcast-ab",'
+                            f'num_statcast_plate_appearance as "statcast-pa",'
+                            f'num_first_pitch as "first-pitch" '
                         f'FROM mv_hitter_game_logs '
                         f'inner join players on players.player_id = mv_hitter_game_logs.hitter_id '
                         f'inner join games on games.game_id = mv_hitter_game_logs.game_id '
@@ -734,8 +742,6 @@ class Player(Resource):
                         f'inner join teams as opponentteam on opponentteam.team_id = mv_hitter_game_logs.opponent_team_id '
                         f'WHERE players.mlb_player_id = %s '
                         f'ORDER BY mv_hitter_game_logs.year_played DESC, mv_hitter_game_logs.month_played DESC, mv_hitter_game_logs.game_played DESC;'
-
-                    #and game_played >= current_date - interval \'400 day\'
                 )
 
         def locationlogs():
@@ -1084,7 +1090,7 @@ class Player(Resource):
                                 f'x_wobacon as "x-wobacon-pct",'
                                 f'average_fly_ball_launch_speed as "flyball-exit-velo-avg",'
                                 f'num_xbh as "xbh",'
-                                f'round((hard_pct / 100) * num_pa, 0)::int as "hard-bip",'
+                                f'num_hard_bip as "hard-bip",'
                                 f'max_launch_speed as "max-exit-velo" '
                         f'FROM mv_hitter_page_stats '
                         f'inner join players on players.player_id = mv_hitter_page_stats.hitter_id '
