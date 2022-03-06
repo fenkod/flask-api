@@ -521,7 +521,7 @@ class League(Resource):
                                         f'x_wobacon as "x-wobacon-pct",'
                                         f'average_flyball_launch_speed as "flyball-exit-velo-avg",'
                                         f'num_xbh as "xbh",'
-                                        f'round((hard_pct / 100) * num_pa, 0)::int as "hard-bip",'
+                                        f'num_hard_bip as "hard-bip",'
                                         f'max_launch_speed as "max-exit-velo" '
                                 f'from mv_hitter_averages ')
             year_select = ''
