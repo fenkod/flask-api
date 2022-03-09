@@ -373,7 +373,8 @@ class Player(Resource):
                             f'infield_flyball_pct,'
                             f'weak_pct,'
                             f'medium_pct,'
-                            f'hard_pct,'
+                            f'0::numeric as hard_pct,'
+                            f'hard_pct as "hard_contact_pct",'
                             f'center_pct,'
                             f'pull_pct,'
                             f'opposite_field_pct,'
@@ -583,7 +584,8 @@ class Player(Resource):
                             f'infield_flyball_pct,'
                             f'weak_pct,'
                             f'medium_pct,'
-                            f'hard_pct,'
+                            f'0::numeric as hard_pct,'
+                            f'hard_pct as "hard_contact_pct",'
                             f'center_pct,'
                             f'pull_pct,'
                             f'opposite_field_pct,'
@@ -869,7 +871,8 @@ class Player(Resource):
                                 f'infield_flyball_pct, '
                                 f'weak_pct, '
                                 f'medium_pct, '
-                                f'hard_pct, '
+                                f'0::numeric as hard_pct,'
+                                f'hard_pct as "hard_contact_pct",'
                                 f'center_pct, '
                                 f'pull_pct, '
                                 f'opposite_field_pct, '
@@ -999,7 +1002,8 @@ class Player(Resource):
                                 f'infield_flyball_pct,'
                                 f'weak_pct,'
                                 f'medium_pct,'
-                                f'hard_pct,'
+                                f'0::numeric as hard_pct,'
+                                f'hard_pct as "hard_contact_pct",'
                                 f'center_pct,'
                                 f'pull_pct,'
                                 f'opposite_field_pct,'
@@ -2527,6 +2531,14 @@ class Player(Resource):
         hard_pct_model['league-average-stat-percentile'] = float(year_data['league-hard-pct-percentile'])
         year_model['hard_pct'] = hard_pct_model
 
+        hard_contact_pct_model = {}
+        hard_contact_pct_model['player-stat-value'] = float(year_data['hard-pct'])
+        hard_contact_pct_model['player-stat-rank'] = int(year_data['hard-pct-rank'])
+        hard_contact_pct_model['player-stat-percentile'] = float(year_data['hard-pct-percentile'])
+        hard_contact_pct_model['league-average-stat-value'] = float(year_data['league-hard-pct'])
+        hard_contact_pct_model['league-average-stat-percentile'] = float(year_data['league-hard-pct-percentile'])
+        year_model['hard_contact_pct'] = hard_contact_pct_model
+
         groundball_pct_model = {}
         groundball_pct_model['player-stat-value'] = float(year_data['groundball-pct'])
         groundball_pct_model['player-stat-rank'] = int(year_data['groundball-pct-rank'])
@@ -2765,6 +2777,14 @@ class Player(Resource):
         hard_pct_model['league-average-stat-value'] = float(year_data['league-hard-pct'])
         hard_pct_model['league-average-stat-percentile'] = float(year_data['league-hard-pct-percentile'])
         year_model['hard_pct'] = hard_pct_model
+
+        hard_contact_pct_model = {}
+        hard_contact_pct_model['player-stat-value'] = float(year_data['hard-pct'])
+        hard_contact_pct_model['player-stat-rank'] = int(year_data['hard-pct-rank'])
+        hard_contact_pct_model['player-stat-percentile'] = float(year_data['hard-pct-percentile'])
+        hard_contact_pct_model['league-average-stat-value'] = float(year_data['league-hard-pct'])
+        hard_contact_pct_model['league-average-stat-percentile'] = float(year_data['league-hard-pct-percentile'])
+        year_model['hard_contact_pct'] = hard_contact_pct_model
 
         x_avg_model = {}
         x_avg_model['player-stat-value'] = float(year_data['x-avg'])
