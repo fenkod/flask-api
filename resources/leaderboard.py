@@ -438,7 +438,7 @@ class Leaderboard(Resource):
 
                 
                 
-                if query_args.get('leaderboard') == 'pitcher' and (query_args.get('tab') == 'overview'):
+                if query_args.get('leaderboard') == 'pitcher' and (query_args.get('tab') == 'overview' or query_args.get('tab') == "standard"):
                     result = self.handle_pitcher_overview_standard(**query_args)
                 
                 else:
