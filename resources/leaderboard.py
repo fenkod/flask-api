@@ -95,12 +95,12 @@ class Leaderboard(Resource):
                             'num_strikes', 'num_balls', 'batting_average', 'slug_pct', 'woba'],
             },
             "pitcher": {
-                "games_overview_standard":["wins", "losses", "num_games", "sho", "cg", "num_ip", "qs", "holds", "saves"],
-                "overview": ['num_pitches', 'num_starts',"fip", "x_fip", "x_era", "num_hits_per_nine", "lob_pct",
-                            'era', 'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
+                "games_overview_standard":["wins", "losses", "num_games", "sho", "cg", "num_ip", "qs", "holds", "saves", "era", "lob_pct"],
+                "overview": ['num_pitches', 'num_starts',"fip", "x_fip", "x_era", "num_hits_per_nine",
+                            'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
                             'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct',
                             'x_babip', 'hard_pct', 'groundball_pct', 'swinging_strike_pct', 'csw_pct'],
-                "standard": ['num_pitches', 'num_starts', 'num_hit', 'era', 'num_hr', 'num_k', 'num_bb',# 'ipg', 'ppg',
+                "standard": ['num_pitches', 'num_starts', 'num_hit', 'num_hr', 'num_k', 'num_bb',# 'ipg', 'ppg',
                             'num_hbp', 'num_wp', 'num_runs',
                             'num_1b', 'num_2b', 'num_3b', 'num_hr', 'num_ibb', 'num_bb', 'num_k', 'num_earned_runs'],
                 "statcast": ['num_pitches', 'num_starts', 'strikeout_pct', 'walk_pct', 'batting_average', 'slug_pct', 'on_base_pct', 'woba', 'babip_pct', 'bacon_pct',
@@ -154,7 +154,7 @@ class Leaderboard(Resource):
             "saves": "sum(save)",
             # "ppg": 0,
             # "ipg": "ROUND(NULLIF(SUM(num_outs) / 3, 0), 1) / sum(g)",
-            "lob_pct": "ROUND(COALESCE(SUM(num_hit + num_bb + num_ibb + num_hbp - num_runs)/NULLIF(SUM(num_hit + num_bb + num_ibb + num_hbp - (1.4 * num_hr)),0)),3)",
+            "lob_pct": "ROUND(COALESCE(SUM(hits + bb + ibb + hbp - runs)/NULLIF(SUM(hits + bb + ibb + hbp - (1.4 * home_run)),0)),3)",
             "num_hits_per_nine": "ROUND(COALESCE(9 * SUM(num_hit) / (ROUND(NULLIF(SUM(num_outs) / 3, 0), 1))),2)",
             "fip": "ROUND(COALESCE((13 * SUM(num_hr) + 3 * SUM(num_bb + num_ibb) - 2 * SUM(num_k) )/(ROUND(NULLIF(SUM(num_outs) / 3, 0), 1)) + _self.pitch_estimator_constants.get('fip_constant')_), 3)",
             "x_fip": "ROUND((COALESCE(((13 * (SUM(num_fly_ball) * _self.league_average_constants.get('hr_flyball_pct')_/100)) + (3 * SUM(num_bb + num_ibb)) - (2 * SUM(num_k)))/ROUND(NULLIF(SUM(num_outs) / 3, 0), 1)) + _self.pitch_estimator_constants.get('fip_constant')_), 3)",
@@ -166,7 +166,7 @@ class Leaderboard(Resource):
             # "num_pitches_lb": "sum(pitches)",
             "num_ip": "ROUND(SUM(outs::numeric) / 3, 1)",
             # "whip_lb": "ROUND((SUM(hits) + SUM(bb)) / NULLIF(SUM(outs) / 3, 0), 2)",
-            "era": "ROUND(COALESCE(SUM(num_runs::numeric), 0::bigint)::numeric / NULLIF(SUM(num_outs::numeric) / 3.0, 0::numeric) * 9.0, 2)",
+            "era": "ROUND(COALESCE(SUM(er::numeric), 0::bigint)::numeric / NULLIF(SUM(outs::numeric) / 3.0, 0::numeric) * 9.0, 2)",
             "x_era": "ROUND(COALESCE(_self.league_average_constants.get('era')_ * ( ( round((max(woba_bb) * sum(num_bb - num_ibb) + max(woba_hbp) * sum(num_hbp) + max(woba_single) * sum(num_xsingle) + max(woba_double) * sum(num_xdouble) + max(woba_triple) * sum(num_xtriple) + max(woba_home_run) * sum(num_xhomerun)) / NULLIF(sum(num_ab) + sum(num_bb) - sum(num_ibb) + sum(num_sacrifice_fly) + sum(num_hbp), 0), 4) / _self.league_average_constants.get('x_woba')_ ) ^ 2 )), 3)",
             # columns for hitter overview that is not at a pitch level
             "num_games_played": "totals.games",
@@ -436,13 +436,13 @@ class Leaderboard(Resource):
             result = current_app.cache.get(cache_key)
             if (result is None):
 
-                result = self.handle_pitcher_overview_standard(**query_args)
-                # each and every pitcher endpoint should get all pitcher sum totals
-                # if query_args.get('leaderboard') == 'pitcher' and (query_args.get('tab') == 'overview' or query_args.get('tab') == "standard"):
-                #     result = self.handle_pitcher_overview_standard(**query_args)
                 
-                # else:
-                #     result = self.fetch_data(query_type, **query_args)
+                
+                if query_args.get('leaderboard') == 'pitcher' and (query_args.get('tab') == 'overview'):
+                    result = self.handle_pitcher_overview_standard(**query_args)
+                
+                else:
+                    result = self.fetch_data(query_type, **query_args)
                 # Set Cache expiration to 5 mins
                 current_app.cache.set(cache_key, result, 300)
 
@@ -464,6 +464,8 @@ class Leaderboard(Resource):
 
         results = self.format_results("pitcher", merged_player_df)
         output = self.get_json("pitcher", results, **query_args)
+
+
         return output
         # join that data and return
         # return None
