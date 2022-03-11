@@ -37,44 +37,42 @@ from webargs.flaskparser import use_kwargs, parser, abort
 # app = Flask(__name__)
 
 class Auction(Resource):
+    #the auction_kwargs is a dictionary of query arguments that we require. the fields.blah is a webargs framework that helps make it easy to ingest query arguments.
     auction_kwargs = {
+        "points": fields.Str(required=False, missing = "p", validate=validate.OneOf(["p", "c"])),
         "league" : fields.Str(required=False, missing="MLB", validate=validate.OneOf(["MLB", "AL", "NL"])),
+        # what should the min and max number of teams be?
+        "teams": fields.Int(required=False, missing=12, validate=validate.Range(min = 4, max = 24)),
+        # what should the min and max budget be?
+        "budget": fields.Int(required=False, missing=260, validate=validate.Range(min= 0, max= 1000000)),
+        # the rest of the paramaters (listed above) can be included below.
+        # for ease on our end, I would probably have each position have it's own kwarg. catcher is listed below
+        # also, we need to know how many of each position we want to be able to handle.
+        "c": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5))
+
+        #the points will be trickier, but i think each pitching & hitting category can also have it's own auction_kwarg attribute and validator.
     }
 
-    def __init__(self):
-        self.league = "MLB"
+    # def __init__(self):
 
-    # def connect_to_postgres(db):
-
-    #     """
-    #     This function connects to database and return connection object
-        
-    #     inputs
-    #     db = postgres database ('pl7','pitcher-list',etc.) (string)
-
-    #     outputs
-    #     none
-    #     """ 
-
-    #     # Connect to PL DB
-    #     # conn = psycopg2.connect(user = "pitcherlist",
-    #     #                         password = "4^xN2M6RxLsu*4J",
-    #     #                         host = "sour-star-fruit.db.elephantsql.com",
-    #     #                         port = "5432",
-    #     #                         database = db)   
-
-    #     return conn
-
+    #     self.league = "MLB"
+    #     self.points = "p",
+    #     self.teams = 12,
+    #     self.budget = 260
 
     # Error handler is necessary for webargs and flask-restful to work together
     @parser.error_handler
     def handle_request_parsing_error(err, req, schema, error_status_code, error_headers):
         abort(error_status_code, errors=err.messages)
     
+    # use kwargs is another helpful annotation that will allow the kwargs param to take on the previously defined dictionary, auction_kwargs
     @use_kwargs(auction_kwargs)
     def get(self, **kwargs):
         
-        print(kwargs)
+        # here's an example of using the kwargs (the query paramaters from the URL) to get a piece of data.
+        #       We can set kwargs.get('points') to a variable if it's being used more than once, or simply call kwargs.get('points') where it's needed below.
+        print(kwargs.get('points'))
+        
         points_URL='https://pitcherlist-api-staging.herokuapp.com/v4/leaderboard/?leaderboard=pitch&pos=1,1,1,1,1,3,0,2,1,1,2,2,5,10&dollars=260&teams=6&mp=20&msp=5&mrp=5&mb=1&split=0.7&points=p|0,1,1,2,3,4,-1,1,1,1,-1,1,1|1,2,5,-5,5,2,1,-1,-1,-2,0,-1,0&lg=MLB'
         cats_URL='https://pitcherlist-api-staging.herokuapp.com/v4/leaderboard/?type=bat&pos=1,1,1,1,1,3,0,2,1,1,2,2,5,10&dollars=260&teams=12&mp=20&msp=5&mrp=5&mb=1&split=0.7&points=c|0,1,2,3,4|0,1,2,3,4&lg=NL'
         parsed_url = urlparse(points_URL)
@@ -127,6 +125,8 @@ class Auction(Resource):
 
         pos_list = parameters['pos'][0].split(',')
 
+        # instead of doing pos_list, we could as the front end team if they could define each postition as it's own query param.
+        # e.g.: {whatever_url}/auction/calculator?league=MLB&c=1&1b=1&2b=3, etc.
         roster_C = int(pos_list[0])
         roster_1B = int(pos_list[1])
         roster_2B = int(pos_list[2])
@@ -147,13 +147,13 @@ class Auction(Resource):
         
         connection = get_connection()
         hitters_sql = "select * from dfs_2022_batters"
-        df_hitters = pd.read_sql_query(hitters_sql,connection)
+        df_hitters = pd.read_sql_query(hitters_sql, connection)
         starters_sql = "select * from dfs_2022_starters"
-        df_starters = pd.read_sql_query(starters_sql,connection)
+        df_starters = pd.read_sql_query(starters_sql, connection)
         relievers_sql = "select * from dfs_2022_relievers"
-        df_relievers = pd.read_sql_query(relievers_sql,connection)
+        df_relievers = pd.read_sql_query(relievers_sql, connection)
         positions_sql = "select * from dfs_player_pos_data"
-        df_positions = pd.read_sql_query(positions_sql,connection)
+        df_positions = pd.read_sql_query(positions_sql, connection)
 
         #df_hitters = pd.read_csv("2022_batters_jan4.csv")
         #df_starters = pd.read_csv("2022_starters_updated_feb21.csv")
