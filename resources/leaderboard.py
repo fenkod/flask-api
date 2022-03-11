@@ -28,7 +28,7 @@ class Leaderboard(Resource):
     woba_list = ['num_ab', 'num_bb', 'num_ibb', 'num_hbp', 'num_sacrifice_fly', 'num_1b', 'num_2b', 'num_3b', 'num_hr']
     leaderboard_kwargs = {
         "leaderboard" : fields.Str(required=False, missing="pitcher", validate=validate.OneOf(["pitcher", "pitch", "hitter"])),
-        "tab" : fields.Str(required=False, missing="overview", validate=validate.OneOf(["overview", "standard", "statcast", "batted_ball", "batted_ball_2", "approach", "plate_discipline"])),
+        "tab" : fields.Str(required=False, missing="overview", validate=validate.OneOf(["overview", "standard", "statcast", "batted_ball", "batted_ball_2", "approach", "plate_discipline","projections"])),
         "handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
         "opponent_handedness": fields.Str(required=False, missing="NA", validate=validate.OneOf(["R","L","NA"])),
         "league": fields.Str(required=False, missing="NA", validate=validate.OneOf(["AL","NL","NA"])),
@@ -365,8 +365,70 @@ class Leaderboard(Resource):
     def handle_request_parsing_error(err, req, schema, error_status_code, error_headers):
         abort(error_status_code, errors=err.messages)
         
+    def get_lb_projections(self, kwargs):
+        pitcher_fill_in_data = [{
+                "rank": 1,
+                "player_id": 656550,
+                "player_name": "Rob Erskine",
+                "player_team": "Philadelphia Phillies",
+                "player_team_abbr": "PHI",
+                "num_games": 35,
+                "num_starts": 35,
+                "num_ip": 250.2,
+                "wins": 20,
+                "losses": 3,
+                "qs": 25, 
+                "saves": 0,
+                "holds": 0,
+                "era": 2.44,
+                "whip": 1.6,
+                "num_hit": 112, 
+                "hrs": 22, 
+                "strikeout_pct": 30.332,
+                "walk_pct": 4.8,
+                "strikeouts": 340,
+                "walks": 65,
+            }]
+        hitter_fill_in_data = [
+            {
+                "rank": 1,
+                "player_id": 656550,
+                "player_name": "Rob Erskine",
+                "player_team": "Philadelphia Phillies",
+                "player_team_abbr": "PHI",
+                "num_games": 35,
+                "num_pa": 92.0,
+                "num_hit": 17.0,
+                "num_1b": 12.0,
+                "num_2b": 0.0,
+                "num_3b": 0.0,
+                "num_hr": 5.0,
+                "num_run": 60,
+                "num_rbi": 141,
+                "num_stolen_base": 15,
+                "num_k": 13.0,
+                "num_bb": 2.0,
+                "on_base_pct": 0.456,
+                "batting_average": 0.332,
+                "called_strike_pct": 19.7,
+                "on_base_plus_slugging": 0.544,
+                "slugging": 0.598 
+            }]
+        
+        lb_type = kwargs.get('leaderboard')
+        print(lb_type)
+        if(lb_type == "pitcher"):
+            return pitcher_fill_in_data
+        elif(lb_type == "hitter"):
+            return hitter_fill_in_data
+
+
     @use_kwargs(leaderboard_kwargs)
-    def get(self, **kwargs):
+    def get(self, **kwargs):    
+
+        # if we're getting projection data, just return projections immediately
+        if kwargs.get('tab') == 'projections':
+            return self.get_lb_projections(kwargs)
 
         start_year = None
         end_year = None
