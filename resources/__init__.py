@@ -12,6 +12,7 @@ def init_resource_endpoints():
     from .league import League
     from .util import Status, ClearCache
     from .leaderboard import Leaderboard
+    from .auction import Auction
 
     # Legacy Instantiators
     from .v1 import init_v1_resource_endpoints
@@ -83,13 +84,19 @@ def init_resource_endpoints():
         '/v4/league'
     ]
 
+    v4_auction_routes = [
+        '/v4/auction/calculator/',
+    ]
+
+    # v4 resource endpoints
     current_app.api.add_resource(Player, *v4_player_routes, endpoint='player')
     current_app.api.add_resource(Roundup, *v4_roundup_routes, endpoint='roundup')
     current_app.api.add_resource(Leaderboard, *v4_leaderboard_routes, endpoint='leaderboard')
     current_app.api.add_resource(Standings, *v4_standings_routes, endpoint='standings')
     current_app.api.add_resource(Team, *v4_team_routes, endpoint='team')
     current_app.api.add_resource(League, *v4_league_routes, endpoint='league')
-
+    current_app.api.add_resource(Auction, *v4_auction_routes, endpoint = 'auction')
+    
     # Utility Endpoints
     current_app.api.add_resource(Status, '/')
     current_app.api.add_resource(ClearCache, '/Clear_Cache')

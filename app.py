@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify
 from flask_restful import Resource, Api
 from cache import init_cache
 from resources import init_resource_endpoints
-from calculator import init_auction_calculator
 from config import base_config
 import json as json
 from errorhandler.errorhandler import InvalidUsage
@@ -20,7 +19,6 @@ with application.app_context():
     init_api()
     init_cache()
     init_resource_endpoints()
-    # init_auction_calculator()
 
     @application.errorhandler(InvalidUsage)
     def handle_invalid_usage(error):

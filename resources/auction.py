@@ -2,11 +2,13 @@ import pandas as pd
 import numpy as np
 from urllib.parse import urlparse, parse_qs
 import psycopg2, os
+from helpers import *
 from flask import current_app
 from flask_restful import Resource
 import json as json
 from webargs import fields, validate
 from webargs.flaskparser import use_kwargs, parser, abort
+
 
 #pd.set_option('display.max_columns', None)
 #pd.set_option('display.max_rows', None)
@@ -35,33 +37,33 @@ from webargs.flaskparser import use_kwargs, parser, abort
 # app = Flask(__name__)
 
 class Auction(Resource):
-    auction_calc_kwargs = {
-        "league" : fields.Str(required=False, missing="MLB", validate=validate.OneOf(["MLBN", "AL", "NL"])),
+    auction_kwargs = {
+        "league" : fields.Str(required=False, missing="MLB", validate=validate.OneOf(["MLB", "AL", "NL"])),
     }
 
     def __init__(self):
         self.league = "MLB"
 
-    def connect_to_postgres(db):
+    # def connect_to_postgres(db):
 
-        """
-        This function connects to database and return connection object
+    #     """
+    #     This function connects to database and return connection object
         
-        inputs
-        db = postgres database ('pl7','pitcher-list',etc.) (string)
+    #     inputs
+    #     db = postgres database ('pl7','pitcher-list',etc.) (string)
 
-        outputs
-        none
-        """ 
+    #     outputs
+    #     none
+    #     """ 
 
-        # Connect to PL DB
-        conn = psycopg2.connect(user = "pitcherlist",
-                                password = "4^xN2M6RxLsu*4J",
-                                host = "sour-star-fruit.db.elephantsql.com",
-                                port = "5432",
-                                database = db)   
+    #     # Connect to PL DB
+    #     # conn = psycopg2.connect(user = "pitcherlist",
+    #     #                         password = "4^xN2M6RxLsu*4J",
+    #     #                         host = "sour-star-fruit.db.elephantsql.com",
+    #     #                         port = "5432",
+    #     #                         database = db)   
 
-        return conn
+    #     return conn
 
 
     # Error handler is necessary for webargs and flask-restful to work together
@@ -69,7 +71,7 @@ class Auction(Resource):
     def handle_request_parsing_error(err, req, schema, error_status_code, error_headers):
         abort(error_status_code, errors=err.messages)
     
-    @use_kwargs(auction_calc_kwargs)
+    @use_kwargs(auction_kwargs)
     def get(self, **kwargs):
         
         print(kwargs)
@@ -142,8 +144,8 @@ class Auction(Resource):
 
         ## read in the projection files
         ## these could be updated throughout the offseason as players move teams or change situations
-
-        connection = connect_to_postgres('pl7')
+        
+        connection = get_connection()
         hitters_sql = "select * from dfs_2022_batters"
         df_hitters = pd.read_sql_query(hitters_sql,connection)
         starters_sql = "select * from dfs_2022_starters"
