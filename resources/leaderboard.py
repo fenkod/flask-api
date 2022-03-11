@@ -95,8 +95,8 @@ class Leaderboard(Resource):
                             'num_strikes', 'num_balls', 'batting_average', 'slug_pct', 'woba'],
             },
             "pitcher": {
-                "games_overview_standard":["wins", "losses", "num_games", "sho", "cg", "num_ip", "qs", "holds", "saves", "era", "lob_pct"],
-                "overview": ['num_pitches', 'num_starts',"fip", "x_fip", "x_era", "num_hits_per_nine",
+                "games_overview_standard":["wins", "losses", "num_games", "sho", "cg", "num_ip", "qs", "holds", "saves", "era", "lob_pct", "fip", "x_fip"],
+                "overview": ['num_pitches', 'num_starts', "x_era", "num_hits_per_nine",
                             'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
                             'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct',
                             'x_babip', 'hard_pct', 'groundball_pct', 'swinging_strike_pct', 'csw_pct'],
@@ -156,8 +156,9 @@ class Leaderboard(Resource):
             # "ipg": "ROUND(NULLIF(SUM(num_outs) / 3, 0), 1) / sum(g)",
             "lob_pct": "ROUND(COALESCE(SUM(hits + bb + ibb + hbp - runs)/NULLIF(SUM(hits + bb + ibb + hbp - (1.4 * home_run)),0)),3)",
             "num_hits_per_nine": "ROUND(COALESCE(9 * SUM(num_hit) / (ROUND(NULLIF(SUM(num_outs) / 3, 0), 1))),2)",
-            "fip": "ROUND(COALESCE((13 * SUM(num_hr) + 3 * SUM(num_bb + num_ibb) - 2 * SUM(num_k) )/(ROUND(NULLIF(SUM(num_outs) / 3, 0), 1)) + _self.pitch_estimator_constants.get('fip_constant')_), 3)",
-            "x_fip": "ROUND((COALESCE(((13 * (SUM(num_fly_ball) * _self.league_average_constants.get('hr_flyball_pct')_/100)) + (3 * SUM(num_bb + num_ibb)) - (2 * SUM(num_k)))/ROUND(NULLIF(SUM(num_outs) / 3, 0), 1)) + _self.pitch_estimator_constants.get('fip_constant')_), 3)",
+            "fip": "ROUND(COALESCE((13 * SUM(home_run) + 3 * SUM(bb + ibb) - 2 * SUM(strikeouts) )/(ROUND(NULLIF(SUM(outs) / 3, 0), 1)) + MAX(fip_constant)), 3)",
+            # hr_flyball_pct is a league average/constant from the averages table
+            "x_fip": "ROUND((COALESCE(((13 * (SUM(fly_ball) * MAX(hr_flyball_pct)/100)) + (3 * SUM(bb + ibb)) - (2 * SUM(strikeouts)))/ROUND(NULLIF(SUM(outs) / 3, 0), 1)) + MAX(fip_constant)), 3)",
             # "losses": "sum(num_loss)",
             # "wins": "sum(num_win)",
             # specific to lb - this is from the mv_pitcher_game_stat_for_leaderboard mv
@@ -416,13 +417,13 @@ class Leaderboard(Resource):
     # this ugly method is used to replace any and all relevant constants that are available and set in the method above. This is a replacement for performing sub-selects
     def replace_constants(self):
         
-        self.aggregate_fields['fip'] = self.aggregate_fields['fip'].replace("_self.pitch_estimator_constants.get('fip_constant')_", self.pitch_estimator_constants.get('fip_constant'))
+        # self.aggregate_fields['fip'] = self.aggregate_fields['fip'].replace("_self.pitch_estimator_constants.get('fip_constant')_", self.pitch_estimator_constants.get('fip_constant'))
         
         self.aggregate_fields['x_era'] = self.aggregate_fields['x_era'].replace("_self.league_average_constants.get('era')_", self.league_average_constants.get('era'))
         self.aggregate_fields['x_era'] = self.aggregate_fields['x_era'].replace("_self.league_average_constants.get('x_woba')_", self.league_average_constants.get('x_woba'))
 
-        self.aggregate_fields['x_fip'] = self.aggregate_fields['x_fip'].replace("_self.league_average_constants.get('hr_flyball_pct')_", self.league_average_constants.get('hr_flyball_pct'))
-        self.aggregate_fields['x_fip'] = self.aggregate_fields['x_fip'].replace("_self.pitch_estimator_constants.get('fip_constant')_", self.pitch_estimator_constants.get('fip_constant'))
+        # self.aggregate_fields['x_fip'] = self.aggregate_fields['x_fip'].replace("_self.league_average_constants.get('hr_flyball_pct')_", self.league_average_constants.get('hr_flyball_pct'))
+        # self.aggregate_fields['x_fip'] = self.aggregate_fields['x_fip'].replace("_self.pitch_estimator_constants.get('fip_constant')_", self.pitch_estimator_constants.get('fip_constant'))
 
     def fetch_result(self, query_type, **query_args):
         # Caching wrapper for fetch_data
