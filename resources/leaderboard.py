@@ -12,8 +12,6 @@ from webargs.flaskparser import use_kwargs, parser, abort
 import json as json
 from marshmallow import Schema, fields
 
-from helpers.db import get_connection
-
 ##
 # This is the flask_restful Resource Class for the Leaderboard API.
 ##
