@@ -48,10 +48,59 @@ class Auction(Resource):
         # the rest of the paramaters (listed above) can be included below.
         # for ease on our end, I would probably have each position have it's own kwarg. catcher is listed below
         # also, we need to know how many of each position we want to be able to handle.
-        "c": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5))
+        "c": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "1b": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "2b": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "3b": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "ss": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "of": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "dh": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "util": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "mi": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "ci": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "sp": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "rp": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "p": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "bn": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5)),
+        "mp": fields.Int(required = False, missing = 0, validate = validate.Range(min = 0, max = 162)),
+        "msp": fields.Int(required = False, missing = 0, validate = validate.Range(min = 0, max = 162)),
+        "mrp": fields.Int(required = False, missing = 0, validate = validate.Range(min = 0, max = 162)),
+        "mb": fields.Int(required = False, missing = 1, validate = validate.Range(min = 1)),
+        "split": fields.Float(required = False, missing = 0, validate = validate.Range(min = 0, max = 100)),
 
-        #the points will be trickier, but i think each pitching & hitting category can also have it's own auction_kwarg attribute and validator.
-    }
+        # hitting - points & roto
+        "h": fields.Int(required = False, missing = 1),
+        "s": fields.Int(required = False, missing = 1),
+        "d": fields.Int(required = False, missing = 1),
+        "t": fields.Int(required = False, missing = 1),
+        "hr": fields.Int(required = False, missing = 1),
+        "so": fields.Int(required = False, missing = 1),
+        "bb": fields.Int(required = False, missing = 1),
+        "sb": fields.Int(required = False, missing = 1),
+        "r": fields.Int(required = False, missing = 1),
+        "rbi": fields.Int(required = False, missing = 1),
+
+        # hitting - points
+        "pa": fields.Int(required = False, missing = 1),       
+        "hbp": fields.Int(required = False, missing = 1),
+        "cs": fields.Int(required = False, missing = 1),
+
+        # hitting - roto
+        "avg": fields.Int(required = False, missing = 1),
+        "obp": fields.Int(required = False, missing = 1),
+        "slg": fields.Int(required = False, missing = 1),
+        "ops": fields.Int(required = False, missing = 1),
+        "tb": fields.Int(required = False, missing = 1),
+        "rbi+r": fields.Int(required = False, missing = 1),
+        "xbh": fields.Int(required = False, missing = 1),
+        "sb-cs": fields.Int(required = False, missing = 1),
+        "woba": fields.Int(required = False, missing = 1),
+
+        #pitching - shared
+
+        #pitching - points
+
+        #pitching - roto
 
     # def __init__(self):
 
@@ -68,11 +117,7 @@ class Auction(Resource):
     # use kwargs is another helpful annotation that will allow the kwargs param to take on the previously defined dictionary, auction_kwargs
     @use_kwargs(auction_kwargs)
     def get(self, **kwargs):
-        
-        # here's an example of using the kwargs (the query paramaters from the URL) to get a piece of data.
-        #       We can set kwargs.get('points') to a variable if it's being used more than once, or simply call kwargs.get('points') where it's needed below.
-        print(kwargs.get('points'))
-        
+                
         points_URL='https://pitcherlist-api-staging.herokuapp.com/v4/leaderboard/?leaderboard=pitch&pos=1,1,1,1,1,3,0,2,1,1,2,2,5,10&dollars=260&teams=6&mp=20&msp=5&mrp=5&mb=1&split=0.7&points=p|0,1,1,2,3,4,-1,1,1,1,-1,1,1|1,2,5,-5,5,2,1,-1,-1,-2,0,-1,0&lg=MLB'
         cats_URL='https://pitcherlist-api-staging.herokuapp.com/v4/leaderboard/?type=bat&pos=1,1,1,1,1,3,0,2,1,1,2,2,5,10&dollars=260&teams=12&mp=20&msp=5&mrp=5&mb=1&split=0.7&points=c|0,1,2,3,4|0,1,2,3,4&lg=NL'
         parsed_url = urlparse(points_URL)
