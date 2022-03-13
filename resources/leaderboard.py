@@ -405,6 +405,7 @@ class Leaderboard(Resource):
                                     ds.ip as num_ip,
                                     ds.w as wins,
                                     ds.l as losses,
+                                    ds.wp,
                                     ds.qs,
                                     ds.era,
                                     ds.whip,
@@ -425,6 +426,13 @@ class Leaderboard(Resource):
                 objs = [reliever_df, starter_df],
                 join = "outer"
             )
+
+            print(pitcher_df)
+            for i, row in pitcher_df.iterrows():
+
+                pitcher_df.at[i, "era"] = "{:.2f}".format(row.get("era"))
+                pitcher_df.at[i, "whip"] = "{:.2f}".format(row.get("whip"))
+                pitcher_df.at[i, "wp"] = "{:.2f}".format(row.get("wp"))
 
             return json.loads(pitcher_df.to_json(orient='records'))
 
@@ -448,7 +456,6 @@ class Leaderboard(Resource):
                 db.cs as caught_stealing,
                 db.so as num_k, 
                 db.bb as num_bb, 
-                db.obp as on_base_pct, 
                 db."avg" as batting_average, 
                 db.obp as on_base_percentage,
                 db.slg as slugging,
@@ -457,6 +464,13 @@ class Leaderboard(Resource):
             where db.team = teams.abbreviation"""
 
             df = fetch_dataframe(query)
+
+            for i, row in df.iterrows():
+                df.at[i, "on_base_percentage"] = "{:.3f}".format(row.get("on_base_percentage"))
+                df.at[i, "batting_average"] = "{:.3f}".format(row.get("batting_average"))
+                df.at[i, "slugging"] = "{:.3f}".format(row.get("slugging"))
+                df.at[i, "on_base_plus_slugging"] = "{:.3f}".format(row.get("on_base_plus_slugging"))
+
             return json.loads(df.to_json(orient='records'))
 
 
