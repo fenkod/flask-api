@@ -156,10 +156,6 @@ class Auction(Resource):
         positions_sql = "select * from dfs_player_pos_data"
         df_positions = pd.read_sql_query(positions_sql, connection)
 
-        #df_hitters = pd.read_csv("2022_batters_jan4.csv")
-        #df_starters = pd.read_csv("2022_starters_updated_feb21.csv")
-        #df_relievers = pd.read_csv("2022_relievers_feb4.csv")
-
         ## read in position data for players
         ## this is another static csv file
 
