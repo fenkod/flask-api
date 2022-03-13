@@ -81,17 +81,6 @@ class Auction(Resource):
     @use_kwargs(auction_kwargs)
     def get(self, **kwargs):
         
-        # here's an example of using the kwargs (the query paramaters from the URL) to get a piece of data.
-        #       We can set kwargs.get('points') to a variable if it's being used more than once, or simply call kwargs.get('points') where it's needed below.
-        print(kwargs.get('points'))
-        print(kwargs.get('budget'))
-        
-        points_URL='https://pitcherlist-api-staging.herokuapp.com/v4/leaderboard/?leaderboard=pitch&pos=1,1,1,1,1,3,0,2,1,1,2,2,5,10&dollars=260&teams=6&mp=20&msp=5&mrp=5&mb=1&split=0.7&points=p|0,1,1,2,3,4,-1,1,1,1,-1,1,1|1,2,5,-5,5,2,1,-1,-1,-2,0,-1,0&lg=MLB'
-        cats_URL='https://pitcherlist-api-staging.herokuapp.com/v4/leaderboard/?type=bat&pos=1,1,1,1,1,3,0,2,1,1,2,2,5,10&dollars=260&teams=12&mp=20&msp=5&mrp=5&mb=1&split=0.7&points=c|0,1,2,3,4|0,1,2,3,4&lg=NL'
-        parsed_url = urlparse(points_URL)
-        parameters = parse_qs(parsed_url.query)
-        #parameters
-
         league_format = kwargs.get('points')
 
         batting_categories = ['AVG', 'RBI', 'R', 'SB', 'HR', 'OBP', 'SLG', 'OPS', 'H', 'SO', 'S', 'D', 'T', 'TB', 'BB', 'RBI+R', 'xBH', 'SB-CS', 'wOBA']
