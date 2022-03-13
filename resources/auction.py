@@ -45,10 +45,22 @@ class Auction(Resource):
         "teams": fields.Int(required=False, missing=12, validate=validate.Range(min = 4, max = 24)),
         # what should the min and max budget be?
         "budget": fields.Int(required=False, missing=260, validate=validate.Range(min= 0, max= 1000000)),
+        # max roster size
+        "mp": fields.Int(required=False, missing=20, validate=validate.Range(min= 1, max= 100)),
+        # max starting pitchers
+        "msp": fields.Int(required=False, missing=5, validate=validate.Range(min= 0, max= 20)),
+        # max relief pitchers
+        "mrp": fields.Int(required=False, missing=5, validate=validate.Range(min= 0, max= 20)),
+        # minimum bid
+        "mb": fields.Int(required=False, missing=1, validate=validate.Range(min= 1, max= 1000000)),
+        # how much should the league be split hitters/pitchers
+        "split": fields.Float(required=False, missing=0.7, validate=validate.Range(min= 0.1, max= 0.9)),
         # the rest of the paramaters (listed above) can be included below.
         # for ease on our end, I would probably have each position have it's own kwarg. catcher is listed below
         # also, we need to know how many of each position we want to be able to handle.
-        "c": fields.Int(required = False, missing = 1, validate = validate.Range(min = 0, max = 5))
+        "h": fields.Str(required = False, missing = "0,0,1,2,3,4,-1,1,0,1,0,1,1"),
+        "p": fields.Str(required = False, missing = "1,0,5,-5,5,0,1,-1,0,-2,0,-1,0"),
+        "pos": fields.Str(required = False, missing = "1,1,1,1,1,3,0,2,1,1,2,2,5,10")
 
         #the points will be trickier, but i think each pitching & hitting category can also have it's own auction_kwarg attribute and validator.
     }
@@ -72,6 +84,7 @@ class Auction(Resource):
         # here's an example of using the kwargs (the query paramaters from the URL) to get a piece of data.
         #       We can set kwargs.get('points') to a variable if it's being used more than once, or simply call kwargs.get('points') where it's needed below.
         print(kwargs.get('points'))
+        print(kwargs.get('budget'))
         
         points_URL='https://pitcherlist-api-staging.herokuapp.com/v4/leaderboard/?leaderboard=pitch&pos=1,1,1,1,1,3,0,2,1,1,2,2,5,10&dollars=260&teams=6&mp=20&msp=5&mrp=5&mb=1&split=0.7&points=p|0,1,1,2,3,4,-1,1,1,1,-1,1,1|1,2,5,-5,5,2,1,-1,-1,-2,0,-1,0&lg=MLB'
         cats_URL='https://pitcherlist-api-staging.herokuapp.com/v4/leaderboard/?type=bat&pos=1,1,1,1,1,3,0,2,1,1,2,2,5,10&dollars=260&teams=12&mp=20&msp=5&mrp=5&mb=1&split=0.7&points=c|0,1,2,3,4|0,1,2,3,4&lg=NL'
@@ -79,8 +92,7 @@ class Auction(Resource):
         parameters = parse_qs(parsed_url.query)
         #parameters
 
-        view = parameters['leaderboard'][0]
-        league_format = parameters['points'][0][0]
+        league_format = kwargs.get('points')
 
         batting_categories = ['AVG', 'RBI', 'R', 'SB', 'HR', 'OBP', 'SLG', 'OPS', 'H', 'SO', 'S', 'D', 'T', 'TB', 'BB', 'RBI+R', 'xBH', 'SB-CS', 'wOBA']
         pitching_categories = ['W', 'SV', 'ERA', 'WHIP', 'SO', 'AVG', 'K/9', 'BB/9', 'K/BB', 'IP', 'QS', 'HR', 'HLD', 'SV+HLD']
@@ -88,8 +100,8 @@ class Auction(Resource):
         selected_batting_stats = []
         selected_pitching_stats = []
 
-        url_bat_cats = parameters['points'][0].split('|')[1].split(',')
-        url_pitch_cats = parameters['points'][0].split('|')[2].split(',')
+        url_bat_cats = kwargs.get('h').split(',')
+        url_pitch_cats = kwargs.get('p').split(',')
 
         points_cats_batters = ['PA', 'H', 'S', 'D', 'T', 'HR', 'SO', 'BB', 'HBP', 'SB', 'CS', 'R', 'RBI']
         points_cats_pitchers = ['Out', 'QS', 'W', 'L', 'SV', 'HLD', 'K', 'BB', 'HBP', 'ER', 'R', 'H', 'HR']
@@ -100,8 +112,8 @@ class Auction(Resource):
         default_points_batters = [0, 0, 1, 2, 3, 4, -1, 1, 0, 1, 0, 1, 1]
         default_points_pitchers = [1, 0, 5, -5, 5, 0, 1, -1, 0, -2, 0, -1, 0]
 
-        url_bat_points = parameters['points'][0].split('|')[1].split(',')
-        url_pitch_points = parameters['points'][0].split('|')[2].split(',')
+        url_bat_points = kwargs.get('h').split(',')
+        url_pitch_points = kwargs.get('p').split(',')
 
         if league_format == 'c':
             for cat in url_bat_cats:
@@ -116,14 +128,14 @@ class Auction(Resource):
             for cat in url_pitch_points:
                 custom_points_pitchers.append(int(cat))
 
-        budget = int(parameters['dollars'][0])
-        min_bid = int(parameters['mb'][0])
-        teams = int(parameters['teams'][0])
-        bat_split = float(parameters['split'][0])
+        budget = int(kwargs.get('budget'))
+        min_bid = int(kwargs.get('mb'))
+        teams = int(kwargs.get('teams'))
+        bat_split = float(kwargs.get('split'))
         p_split = 1 - bat_split
-        player_universe = parameters['lg'][0]
+        player_universe = kwargs.get('lg')
 
-        pos_list = parameters['pos'][0].split(',')
+        pos_list = kwargs.get('pos').split(',')
 
         # instead of doing pos_list, we could as the front end team if they could define each postition as it's own query param.
         # e.g.: {whatever_url}/auction/calculator?league=MLB&c=1&1b=1&2b=3, etc.
@@ -568,5 +580,4 @@ class Auction(Resource):
         ## to the webpage
 
         jsonResponse = json.loads(final_hitter_df.to_json(orient='table',index=False))
-        print(len(draft_stats_hitters), len(bench_pool_hitters))
         return {'hitter': json.loads(final_hitter_df.to_json(orient='records')),'pitcher': json.loads(final_pitcher_df.to_json(orient='records'))}
