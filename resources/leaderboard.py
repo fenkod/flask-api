@@ -434,6 +434,7 @@ class Leaderboard(Resource):
                 db."name" as player_name, 
                 teams.team_name as player_team, 
                 db.team as player_team_abbr,
+                null as num_games,
                 db.pa as num_pa, 
                 db.h as num_hit, 
                 null as num_1b,
