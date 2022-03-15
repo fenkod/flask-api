@@ -366,61 +366,112 @@ class Leaderboard(Resource):
         abort(error_status_code, errors=err.messages)
         
     def get_lb_projections(self, kwargs):
-        pitcher_fill_in_data = [{
-                "rank": 1,
-                "player_id": 656550,
-                "player_name": "Rob Erskine",
-                "player_team": "Philadelphia Phillies",
-                "player_team_abbr": "PHI",
-                "num_games": 35,
-                "num_starts": 35,
-                "num_ip": 250.2,
-                "wins": 20,
-                "losses": 3,
-                "qs": 25, 
-                "saves": 0,
-                "holds": 0,
-                "era": 2.44,
-                "whip": 1.6,
-                "num_hit": 112, 
-                "hrs": 22, 
-                "strikeout_pct": 30.332,
-                "walk_pct": 4.8,
-                "strikeouts": 340,
-                "walks": 65,
-            }]
-        hitter_fill_in_data = [
-            {
-                "rank": 1,
-                "player_id": 656550,
-                "player_name": "Rob Erskine",
-                "player_team": "Philadelphia Phillies",
-                "player_team_abbr": "PHI",
-                "num_games": 35,
-                "num_pa": 92.0,
-                "num_hit": 17.0,
-                "num_1b": 12.0,
-                "num_2b": 0.0,
-                "num_3b": 0.0,
-                "num_hr": 5.0,
-                "num_run": 60,
-                "num_rbi": 141,
-                "num_stolen_base": 15,
-                "num_k": 13.0,
-                "num_bb": 2.0,
-                "on_base_pct": 0.456,
-                "batting_average": 0.332,
-                "called_strike_pct": 19.7,
-                "on_base_plus_slugging": 0.544,
-                "slugging": 0.598 
-            }]
-        
+
+        # check hitter or pitcher
+
         lb_type = kwargs.get('leaderboard')
-        print(lb_type)
+
         if(lb_type == "pitcher"):
-            return pitcher_fill_in_data
+            reliever_query = """select dr.mlbid as player_id,
+                                    dr."name" as player_name,
+                                    teams.team_name as player_team,
+                                    dr.team as player_team_abbr,
+                                    dr.g as num_games,
+                                    dr.gs as num_starts,
+                                    dr.ip as num_ip,
+                                    dr.qs,
+                                    dr.w as wins,
+                                    dr.l as losses,
+                                    dr.sv as saves,
+                                    dr.hld as holds,
+                                    dr.era,
+                                    dr.whip,
+                                    dr.h as num_hit,
+                                    dr.r as runs,
+                                    dr.hr as hrs,
+                                    dr.sop as strikeout_pct,
+                                    dr.bbp as walk_pct,
+                                    dr.so as strikeouts,
+                                    dr.bb as walks
+                                from dfs_2022_relievers dr, teams teams
+                                where dr.team = teams.abbreviation"""
+
+            starter_query = """select ds.mlbid as player_id,
+                                    ds."name" as player_name,
+                                    teams.team_name as player_team,
+                                    ds.team as player_team_abbr,
+                                    ds.g as num_games,
+                                    ds.gs as num_starts,
+                                    ds.ip as num_ip,
+                                    ds.w as wins,
+                                    ds.l as losses,
+                                    ds.wp,
+                                    ds.qs,
+                                    ds.era,
+                                    ds.whip,
+                                    ds.h as num_hit,
+                                    ds.r as runs,
+                                    ds.hr as hrs,
+                                    ds.sop as strikeout_pct,
+                                    ds.bbp as walk_pct,
+                                    ds.so as strikeouts,
+                                    ds.bb as walks
+                                from dfs_2022_starters ds, teams teams
+                                where ds.team = teams.abbreviation"""
+
+            reliever_df = fetch_dataframe(reliever_query)
+            starter_df = fetch_dataframe(starter_query)
+
+            pitcher_df = pd.concat(
+                objs = [reliever_df, starter_df],
+                join = "outer"
+            )
+
+            print(pitcher_df)
+            for i, row in pitcher_df.iterrows():
+
+                pitcher_df.at[i, "era"] = "{:.2f}".format(row.get("era"))
+                pitcher_df.at[i, "whip"] = "{:.2f}".format(row.get("whip"))
+                pitcher_df.at[i, "wp"] = "{:.2f}".format(row.get("wp"))
+
+            return json.loads(pitcher_df.to_json(orient='records'))
+
         elif(lb_type == "hitter"):
-            return hitter_fill_in_data
+            
+            query = """select 
+                db.mlbid as player_id, 
+                db."name" as player_name, 
+                teams.team_name as player_team, 
+                db.team as player_team_abbr,
+                null as num_games,
+                db.pa as num_pa, 
+                db.h as num_hit, 
+                db.s as num_1b,
+                db.d as num_2b,
+                db.t as num_3b,
+                db.hr as num_hr, 
+                db.r as num_run,
+                db.rbi as num_rbi, 
+                db.sb as num_stolen_base, 
+                db.cs as caught_stealing,
+                db.so as num_k, 
+                db.bb as num_bb, 
+                db."avg" as batting_average, 
+                db.obp as on_base_percentage,
+                db.slg as slugging,
+                db.obp + db.slg as on_base_plus_slugging
+            from dfs_2022_batters db, teams teams
+            where db.team = teams.abbreviation"""
+
+            df = fetch_dataframe(query)
+
+            for i, row in df.iterrows():
+                df.at[i, "on_base_percentage"] = "{:.3f}".format(row.get("on_base_percentage"))
+                df.at[i, "batting_average"] = "{:.3f}".format(row.get("batting_average"))
+                df.at[i, "slugging"] = "{:.3f}".format(row.get("slugging"))
+                df.at[i, "on_base_plus_slugging"] = "{:.3f}".format(row.get("on_base_plus_slugging"))
+
+            return json.loads(df.to_json(orient='records'))
 
 
     @use_kwargs(leaderboard_kwargs)
