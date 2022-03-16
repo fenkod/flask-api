@@ -95,7 +95,7 @@ class Leaderboard(Resource):
                             'num_strikes', 'num_balls', 'batting_average', 'slug_pct', 'woba'],
             },
             "pitcher": {
-                "games_overview_standard":["wins", "losses", "num_games", "sho", "cg", "num_ip", "qs", "holds", "saves", "era", "lob_pct", "fip", "x_fip"],
+                "games_overview_standard":["wins", "losses", "num_games", "sho", "cg", "num_ip", "qs", "holds", "saves", "era", "lob_pct", "fip", "x_fip", "ipg", "ppg"],
                 "overview": ['num_pitches', 'num_starts', "x_era", "num_hits_per_nine",
                             'whip', 'strikeout_pct', 'walk_pct', 'swinging_strike_pct', 'csw_pct',
                             'put_away_pct', 'babip_pct', 'hr_flyball_pct', 'plus_pct',
@@ -152,8 +152,8 @@ class Leaderboard(Resource):
             "qs": "sum(qs)",
             "holds": "sum(hold)",
             "saves": "sum(save)",
-            # "ppg": 0,
-            # "ipg": "ROUND(NULLIF(SUM(num_outs) / 3, 0), 1) / sum(g)",
+            "ppg": "ROUND(cast (sum(pitches) as decimal(6,2)) / NULLIF(cast (sum(g) as decimal(2)),0),2)",
+            "ipg": "ROUND(NULLIF(SUM(outs) / 3, 0), 1) / sum(g)",
             "lob_pct": "ROUND(COALESCE(SUM(hits + bb + ibb + hbp - runs)/NULLIF(SUM(hits + bb + ibb + hbp - (1.4 * home_run)),0)),3)",
             "num_hits_per_nine": "ROUND(COALESCE(9 * SUM(num_hit) / (ROUND(NULLIF(SUM(num_outs) / 3, 0), 1))),2)",
             "fip": "ROUND(COALESCE((13 * SUM(home_run) + 3 * SUM(bb + ibb) - 2 * SUM(strikeouts) )/(ROUND(NULLIF(SUM(outs) / 3, 0), 1)) + MAX(fip_constant)), 3)",
@@ -556,7 +556,7 @@ class Leaderboard(Resource):
 
                 
                 
-                if query_args.get('leaderboard') == 'pitcher' and (query_args.get('tab') == 'overview' or query_args.get('tab') == "standard"):
+                if query_args.get('leaderboard') == 'pitcher': # and (query_args.get('tab') == 'overview' or query_args.get('tab') == "standard"):
                     result = self.handle_pitcher_overview_standard(**query_args)
                 
                 else:
