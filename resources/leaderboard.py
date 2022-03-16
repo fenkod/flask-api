@@ -375,7 +375,7 @@ class Leaderboard(Resource):
             reliever_query = """select dr.mlbid as player_id,
                                     dr."name" as player_name,
                                     teams.team_name as player_team,
-                                    dr.team as player_team_abbr,
+                                    dr.team as player_team_abb,
                                     dr.g as num_games,
                                     dr.gs as num_starts,
                                     dr.ip as num_ip,
@@ -399,7 +399,7 @@ class Leaderboard(Resource):
             starter_query = """select ds.mlbid as player_id,
                                     ds."name" as player_name,
                                     teams.team_name as player_team,
-                                    ds.team as player_team_abbr,
+                                    ds.team as player_team_abb,
                                     ds.g as num_games,
                                     ds.gs as num_starts,
                                     ds.ip as num_ip,
@@ -442,7 +442,7 @@ class Leaderboard(Resource):
                 db.mlbid as player_id, 
                 db."name" as player_name, 
                 teams.team_name as player_team, 
-                db.team as player_team_abbr,
+                db.team as player_team_abb,
                 null as num_games,
                 db.pa as num_pa, 
                 db.h as num_hit, 
@@ -576,7 +576,7 @@ class Leaderboard(Resource):
 
         merged_df = pd.merge(daily, lb, how='inner', left_on=['player_id'], right_on =['player_id'])
 
-        player_team_query = "select t.abbreviation as player_team_abbr, t.team_name as player_team, p.mlb_player_id from players p, teams t where p.current_team_id = t.team_id "
+        player_team_query = "select t.abbreviation as player_team_abb, t.team_name as player_team, p.mlb_player_id from players p, teams t where p.current_team_id = t.team_id "
         player_team_df = fetch_dataframe(player_team_query)
         merged_player_df = pd.merge(merged_df, player_team_df, how = 'left', left_on=['player_id'], right_on = ['mlb_player_id'])
 
@@ -599,7 +599,7 @@ class Leaderboard(Resource):
             return raw
 
         ## same code as just above to tie a player team and player team abb to each player data object
-        player_team_query = "select t.abbreviation as player_team_abbr, t.team_name as player_team, p.mlb_player_id from players p, teams t where p.current_team_id = t.team_id "
+        player_team_query = "select t.abbreviation as player_team_abb, t.team_name as player_team, p.mlb_player_id from players p, teams t where p.current_team_id = t.team_id "
         player_team_df = fetch_dataframe(player_team_query)
         merged_player_df = pd.merge(raw, player_team_df, how = 'left', left_on=['player_id'], right_on = ['mlb_player_id'])
 
