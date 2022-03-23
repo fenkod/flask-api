@@ -1,4 +1,5 @@
 import re
+from statistics import mode
 from flask import current_app
 from flask_restful import Resource
 from sqlalchemy import false
@@ -24,28 +25,41 @@ class Roundup(Resource):
         "type": fields.Str(required=False, missing="pitcher", validate=validate.OneOf(["pitcher","hitter"])),
         "day": fields.Str(required=False, missing="NA"), #ISO date format
         "bypass_cache": fields.Str(required=False, missing="NA", validate=validate.OneOf(["true","false"])),
+        "mode": fields.Str(required=False, missing="original", validate=validate.OneOf(["original","advanced"])),
     }
     def __init__(self, *args, **kwargs):
         self.bypass_cache = False
+        
 
     @use_kwargs(roundup_kwargs)
-    def get(self, **kwargs):     
+    def get(self, **kwargs):
+        # Pitcher or Hitter     
         player_type = kwargs['type']
+        # Date
         if ( kwargs['day'] != 'NA'):
             input_date = datetime.strptime(kwargs['day'], '%Y-%m-%d')
         else:
             input_date = date.today()
+        # Mode
+        mode = kwargs['mode']
+        # Bypass cache
         if(kwargs['bypass_cache'] != 'NA'):
             self.bypass_cache = bool(kwargs['bypass_cache'])
-            
+
         # Get the latest day
         self.day = input_date
         self.player_type = player_type
+        self.mode = mode
 
-        return self.fetch_result(player_type, input_date)
+        return self.fetch_result(player_type, input_date, mode)
 
+    def fetch_result(self, player_type, input_date, mode):
+        data = self.fetch_data(player_type, input_date, mode)
+        results = self.get_json(player_type, input_date, mode, data)
+
+        return results
     
-    def fetch_result(self, player_type, input_date):
+    def fetch_data(self, player_type, input_date, mode):
 
         # Caching wrapper for fetch_data
         games = []
@@ -60,7 +74,7 @@ class Roundup(Resource):
             # Get list of games for the day
             daily_games = daily_summary['league']['games']
             # Iterrate through games
-            for row in daily_games[:3]:
+            for row in daily_games: #[:3]:
                 game = row['game']
                 game_id = game['id']
                 home_team = game['home']
@@ -89,7 +103,8 @@ class Roundup(Resource):
 
                 game_model = {
                     'game-date': scheduled_date,
-                    'reference': game['reference']
+                    'reference': game['reference'],
+                    'status': game_status
                 }
 
                 if 'venue' in game:
@@ -125,7 +140,10 @@ class Roundup(Resource):
                 # If game is one of these statuses, it has not started. Figure out who the projected
                 # pitchers are/were and return a basic model with game status
                 if(game_status in ('scheduled', 'canceled', 'postponed', 'if-necessary')):
-                    print("")
+                    home_pitcher_model = self.BuildScheduledGame("HOME", home_team, away_team, game_model)
+                    games.append(home_pitcher_model)
+                    away_pitcher_model = self.BuildScheduledGame("AWAY", away_team, home_team, game_model)
+                    games.append(away_pitcher_model)
                 # Game has started. Get details
                 else:
                     # Gather hit play-by-play endpoint, build model, set cache and return data
@@ -146,14 +164,36 @@ class Roundup(Resource):
         cache_key_resource_type = self.__class__.__name__
         return f'{cache_key_resource_type}-{game_id}-{team_id}'
 
-    def BuildScheduledGame(self, home_away, team, game_model):
-        pitcher_model = {}
+    def BuildScheduledGame(self, home_away, team, opponent, game_model):
+        pitcher = None
+        if 'probable_pitcher' in team:
+            pitcher = team['probable_pitcher']
 
-        return pitcher_model
+        model = {
+            # Legacy Data
+            'player_id': 0,
+            'team': team['abbr'],
+            'playername': None,
+            'park': home_away,
+            'opponent': opponent['abbr'],
+            'game_pk': game_model['reference'],
+            'stats': None,
+            'ingame': None,
+            # New Data
+            'pitcher': None,   
+            'game': game_model,
+            'pitches': None,
+            'gamestarted': False
+        }
+
+        if pitcher is not None:
+            model['playername'] = f"{pitcher['preferred_name']} {pitcher['last_name']}"
+            model['pitcher'] = pitcher
+    
+        return model
 
     def BuildInProgressGame(self, home_away, team, opponent, game_model, play_by_play_data):
         pitcher = team['starting_pitcher']
-        pitcher_model = pitcher
         
         game_stats = team['statistics']['pitching']['starters']
 
@@ -180,6 +220,12 @@ class Roundup(Resource):
                                                     pitch['at-bat-description'] = atBat['description']   
                                                 pitches.append(pitch)                                                                             
 
+        still_in_game = True
+        lineups = team['lineup']
+        for lineuprecord in lineups:
+            if lineuprecord['position'] == 1 and lineuprecord['inning'] > 0:
+                still_in_game = False
+                break
         model = {
             # Legacy Data
             'player_id': 0,
@@ -189,15 +235,17 @@ class Roundup(Resource):
             'opponent': opponent['abbr'],
             'game_pk': game_model['reference'],
             'stats': game_stats,
+            'ingame': still_in_game,
             # New Data
-            'pitcher': pitcher_model,   
+            'pitcher': pitcher,   
             'game': game_model,
-            'pitches': pitches
+            'pitches': pitches,
+            'gamestarted': True
         }
     
         return model
 
-    def get_json(self, player_type, day, results):
+    def get_json(self, player_type, day, mode, results):
         
         def default():
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
@@ -207,33 +255,85 @@ class Roundup(Resource):
             return json.loads(results.to_json(orient='records', date_format='iso'))
         
         def roundup():
-            results.fillna(value=0, inplace=True)
-            records = json.loads(results.to_json(orient='records'))
+            if(self.player_type == 'pitcher'):
+                if(self.mode == 'original'):
+                    #results.fillna(value=0, inplace=True)
+                    #records = json.loads(results.to_json(orient='records'))
+                    
+                    output = {
+                        "date": results["date"]
+                    }
+                    startedgames = []
+                    scheduledgames = []
+                    # Keep game data on top level and move all stats to its own object. Allows us to use for pitchers and hitters without needing to change code.
+                    if "games" in results:
+                        for game in results["games"]:
+                            pitcher = {
+                                "player_id": game["player_id"], 
+                                "team": game["team"],
+                                "playername": game["playername"],
+                                "park": game["park"],
+                                "opponent": game["opponent"],
+                                "game_pk": game["game_pk"]
+                            }
+                            
+                            # Line Status
+                            line_status = ""
+                            if not game['gamestarted']:
+                                line_status = "Scheduled"
+                            elif 'final' in game['game']:
+                                line_status = "Final"
+                            elif game['ingame']:
+                                line_status = "Still in Game"
+                            elif not game['ingame']:
+                                line_status = "Out of Game"
+                            pitcher['line_status'] = line_status
 
-            output = []
-            # Keep game data on top level and move all stats to its own object. Allows us to use for pitchers and hitters without needing to change code.
-            for value in records:
-                data_struct = { 
-                    "player_id": value["player_id"], 
-                    "team": value["team"],
-                    "playername": value["playername"],
-                    "park": value["park"],
-                    "opponent": value["opponent"],
-                    "game_pk": value["game_pk"],
-                    "ghuid": value["ghuid"],
-                }
-                del value['player_id']
-                del value['team']
-                del value['playername']
-                del value['park']
-                del value['opponent']
-                del value['game_pk']
-                del value['ghuid']
+                            if game["stats"] != None:
+                                gamestats = game["stats"]
 
-                data_struct['stats'] = value
-                output.append(data_struct)
+                                # Decision
+                                if gamestats['games']['win'] == 1:
+                                    pitcher['decision'] = "W"
+                                elif gamestats['games']['loss'] == 1:
+                                    pitcher['decision'] = "L"
+                                else:
+                                    pitcher['decision'] = "ND"
+                                # Pitch Related Data
+                                pitches = game["pitches"]
+                                calledstrikes = 0
+                                whiffs = 0
+                                for pitch in pitches:
+                                    pitchoutcome = pitch["outcome_id"]
+                                    if "KL" in pitchoutcome:
+                                        calledstrikes = calledstrikes + 1
+                                    if "KS" in pitchoutcome or pitchoutcome == "kFT" :
+                                        whiffs = whiffs + 1
+                                # Pitcher stats object
+                                pitcher["stats"] = {
+                                    "ip": gamestats["ip_2"],
+                                    "er": gamestats["runs"]["earned"],
+                                    "hits": gamestats["onbase"]["h"],
+                                    "k": gamestats["outs"]["ktotal"],
+                                    "bb": gamestats["onbase"]["bb"] + gamestats["onbase"]["ibb"],
+                                    "pitch-count": gamestats["pitch_count"],
+                                    "whiff": whiffs,
+                                    "csw_pct": round(100 * (calledstrikes + whiffs) / gamestats["pitch_count"], 2)
+                                }
+                                startedgames.append(pitcher)
+                            else:
+                                pitcher["stats"] = None
+                                scheduledgames.append(pitcher) 
 
-            return output
+                            
+                    # Sort by ER, then IP (desc)
+                    startedgames.sort(key=lambda x: (x['stats']['er'], -x['stats']['ip']))
+                    output["games"] = startedgames + scheduledgames
+                    return output
+                elif(self.mode == 'advanced'):
+                    return results
+            else:
+                return results
 
         json_data = {
             "hitter": roundup,
