@@ -42,10 +42,6 @@ def init_resource_endpoints():
         '/v4/player'
     ]
     v4_roundup_routes = [
-        '/v4/roundup/<string:player_type>/<string:day>/',
-        '/v4/roundup/<string:player_type>/<string:day>',
-        '/v4/roundup/<string:player_type>/',
-        '/v4/roundup/<string:player_type>',
         '/v4/roundup/',
         '/v4/roundup'
     ]
