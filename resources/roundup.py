@@ -60,19 +60,21 @@ class Roundup(Resource):
         return results
     
     def fetch_data(self, player_type, input_date, mode):
-
-        # Caching wrapper for fetch_data
-        games = []
         endpoints = SportRadarEndpoints()
-        if player_type == 'pitcher':
-            year = input_date.strftime('%Y') 
-            month = input_date.strftime('%m')
-            day = input_date.strftime('%d')
 
-            # Get daily summary data from Sport Radar
-            daily_summary = endpoints.daily_summary_endpoint(year, month, day)
-            # Get list of games for the day
-            daily_games = daily_summary['league']['games']
+        # Parse Date
+        year = input_date.strftime('%Y') 
+        month = input_date.strftime('%m')
+        day = input_date.strftime('%d')
+
+        # Get daily summary data from Sport Radar
+        daily_summary = endpoints.daily_summary_endpoint(year, month, day)
+        # Get list of games for the day
+        daily_games = daily_summary['league']['games']
+
+        if player_type == 'pitcher':
+            # Caching wrapper for fetch_data
+            games = []
             # Iterrate through games
             for row in daily_games: #[:3]:
                 game = row['game']
@@ -81,8 +83,8 @@ class Roundup(Resource):
                 away_team = game['away']
                 needs_home_data = True
                 needs_away_data = True
-                home_pitcher_cache_key = self.BuildCacheKey(game_id, home_team['id'])
-                away_pitcher_cache_key = self.BuildCacheKey(game_id, away_team['id'])      
+                home_pitcher_cache_key = self.BuildCacheKey(game_id, home_team['id'], player_type)
+                away_pitcher_cache_key = self.BuildCacheKey(game_id, away_team['id'], player_type)      
                 # If cache is not bypassed, see if both results are available in the cache 
                 if(self.bypass_cache == False):
                     home_pitcher_cache_result = current_app.cache.get(home_pitcher_cache_key)
@@ -159,10 +161,63 @@ class Roundup(Resource):
             result = {'date': input_date.strftime("%a %m/%d/%Y"), 'games': games}
             return result
         else:
-            return {}
-    def BuildCacheKey(self, game_id, team_id):
+            hitters = []
+            # Iterrate through games
+            for row in daily_games: #[:3]:
+                game = row['game']
+                game_id = game['id']
+                home_team = game['home']
+                away_team = game['away']
+                needs_home_data = True
+                needs_away_data = True
+                home_hitters_cache_key = self.BuildCacheKey(game_id, home_team['id'], player_type)
+                away_hitters_cache_key = self.BuildCacheKey(game_id, away_team['id'], player_type) 
+                # If cache is not bypassed, see if both results are available in the cache 
+                if(self.bypass_cache == False):
+                    home_hitters_cache_result = current_app.cache.get(home_hitters_cache_key)
+                    if home_hitters_cache_result is not None:
+                        hitters = hitters + home_hitters_cache_result
+                        needs_home_data = False
+                    away_hitters_cache_result = current_app.cache.get(away_hitters_cache_key)
+                    if away_hitters_cache_result is not None:
+                        hitters = hitters + away_hitters_cache_result
+                        needs_away_data = False
+
+                # If both results are cached, continue to next game
+                if(needs_home_data == False and needs_away_data == False):
+                    continue
+                # Gather other basic game information to build a game model
+                scheduled_date = game['scheduled']
+                game_status = game['status']
+
+                # If game is one of these statuses, it has not started. Skip game.
+                if(game_status in ('scheduled', 'canceled', 'postponed', 'if-necessary')):
+                    continue
+
+                print(f"Building Game: {away_team['abbr']} @ {home_team['abbr']}")
+
+                # Basic game model
+                game_model = {
+                    'game-date': scheduled_date,
+                    'reference': game['reference'],
+                    'status': game_status
+                }
+
+                # Game has started. Get details
+                if(needs_home_data):
+                    home_hitters = self.BuildHitterGame("HOME", home_team, away_team, game_model)
+                    hitters = hitters + home_hitters
+                    current_app.cache.set(home_hitters_cache_key, home_hitters, cache_timeout(cache_invalidate_hour()))
+                if(needs_away_data):
+                    away_hitters = self.BuildHitterGame("AWAY", away_team, home_team, game_model)
+                    hitters = hitters + away_hitters
+                    current_app.cache.set(away_hitters_cache_key, away_hitters, cache_timeout(cache_invalidate_hour()))
+            result = {'date': input_date.strftime("%a %m/%d/%Y"), 'hitters': hitters}
+            return result
+
+    def BuildCacheKey(self, game_id, team_id, player_type):
         cache_key_resource_type = self.__class__.__name__
-        return f'{cache_key_resource_type}-{game_id}-{team_id}'
+        return f'{cache_key_resource_type}-{game_id}-{team_id}-{player_type}'
 
     def BuildScheduledGame(self, home_away, team, opponent, game_model):
         pitcher = None
@@ -244,6 +299,35 @@ class Roundup(Resource):
         }
     
         return model
+    def BuildHitterGame(self, home_away, team, opponent, game_model):
+        hitters = []
+
+        if 'players' in team:
+            players = team['players']
+            for player in players:
+                if 'statistics' in player:
+                    statistics = player['statistics']
+                    if 'hitting' in statistics:
+                        hittingstatistics = statistics['hitting']
+                        if 'overall' in hittingstatistics:
+                            game_stats = hittingstatistics['overall']
+                            model = {
+                                # Legacy Data
+                                'player_id': 0,
+                                'team': team['abbr'],
+                                'playername': f"{player['preferred_name']} {player['last_name']}",
+                                'park': home_away,
+                                'opponent': opponent['abbr'],
+                                'game_pk': game_model['reference'],
+                                'stats': game_stats,
+                                # New Data
+                                'hitter': player,   
+                                #'game': game_model,
+                                #'pitches': pitches,
+                                'gamestarted': True
+                            }
+                            hitters.append(model)
+        return hitters
 
     def get_json(self, player_type, day, mode, results):
         
@@ -333,7 +417,54 @@ class Roundup(Resource):
                 elif(self.mode == 'advanced'):
                     return results
             else:
-                return results
+                if(self.mode == 'original'):
+                    #results.fillna(value=0, inplace=True)
+                    #records = json.loads(results.to_json(orient='records'))
+                    
+                    output = {
+                        "date": results["date"]
+                    }
+                    hitters = []
+                    # Keep game data on top level and move all stats to its own object. Allows us to use for pitchers and hitters without needing to change code.
+                    if "hitters" in results:
+                        for hitter in results["hitters"]:
+                            model = {
+                                "player_id": hitter["player_id"], 
+                                "team": hitter["team"],
+                                "playername": hitter["playername"],
+                                "park": hitter["park"],
+                                "opponent": hitter["opponent"],
+                                "game_pk": hitter["game_pk"]
+                            }
+
+                            gamestats = hitter["stats"]
+
+                            # Pitcher stats object
+                            model["stats"] = {
+                                "pa": gamestats["ap"],
+                                "ab": gamestats["ab"],
+                                "hits": gamestats["onbase"]["h"],
+                                "1b": gamestats["onbase"]["s"],
+                                "2b": gamestats["onbase"]["d"],
+                                "3b": gamestats["onbase"]["t"],
+                                "hr": gamestats["onbase"]["hr"],
+                                "r": gamestats["runs"]["total"],
+                                "rbi": gamestats["onbase"]["h"],
+                                "k": gamestats["outs"]["ktotal"],
+                                "bb": gamestats["onbase"]["bb"] + gamestats["onbase"]["ibb"],
+                                "ibb": gamestats["onbase"]["ibb"],
+                                "hbp": gamestats["onbase"]["hbp"],
+                                "sb": gamestats["steal"]["stolen"],
+                                "cs": gamestats["steal"]["caught"]
+                            }
+                            hitters.append(model)
+                            
+                    # Sort by ER, then IP (desc)
+                    hitters.sort(key=lambda x: (-(x['stats']['1b'] + (2 * x['stats']['2b']) + (3 * x['stats']['3b']) + (4 * x['stats']['hr']) + x['stats']['r'] + x['stats']['rbi'] + x['stats']['bb'] + x['stats']['sb'] )))
+                    output["hitters"] = hitters
+                    return output
+                elif(self.mode == 'advanced'):
+                    return results
 
         json_data = {
             "hitter": roundup,
