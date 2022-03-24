@@ -82,7 +82,7 @@ class Roundup(Resource):
                 needs_home_data = True
                 needs_away_data = True
                 home_pitcher_cache_key = self.BuildCacheKey(game_id, home_team['id'])
-                away_pitcher_cache_key = self.BuildCacheKey(game_id, home_team['id'])      
+                away_pitcher_cache_key = self.BuildCacheKey(game_id, away_team['id'])      
                 # If cache is not bypassed, see if both results are available in the cache 
                 if(self.bypass_cache == False):
                     home_pitcher_cache_result = current_app.cache.get(home_pitcher_cache_key)
