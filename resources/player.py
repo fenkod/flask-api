@@ -1344,7 +1344,10 @@ class Player(Resource):
                                 f'g.avg_x_movement_rank,'
                                 f'g.avg_y_movement,'
                                 f'g.avg_y_movement_percentile,'
+                                f'100 - g.avg_y_movement_percentile as avg_y_movement_percentile_inverse,'
                                 f'g.avg_y_movement_rank,'
+                                # TODO: Extract hardcoded max rank
+                                f'201 - g.avg_y_movement_rank as avg_y_movement_rank_inverse,'
                                 f'g.avg_spin_rate,'
                                 f'g.avg_spin_rate_percentile,'
                                 f'g.avg_spin_rate_rank,'
@@ -1356,6 +1359,7 @@ class Player(Resource):
                                 f'yearly_averages.x_wobacon as league_x_wobacon,'
                                 f'yearly_averages.avg_x_movement as league_avg_x_movement,'
                                 f'yearly_averages.avg_y_movement as league_avg_y_movement,'
+                                f'100 - yearly_averages.avg_y_movement as league_avg_y_movement_inverse,'
                                 f'yearly_averages.avg_spin_rate as league_avg_spin_rate,'
                                 f'yearly_averages.league_usage_pct_percentage,'
                                 f'yearly_averages.league_avg_velocity_percentage,'
@@ -1365,6 +1369,7 @@ class Player(Resource):
                                 f'yearly_averages.league_x_wobacon_percentage,'
                                 f'yearly_averages.league_avg_x_movement_percentage,'
                                 f'yearly_averages.league_avg_y_movement_percentage,'
+                                f'100 - yearly_averages.league_avg_y_movement_percentage as league_avg_y_movement_percentage_inverse,'
                                 f'yearly_averages.league_avg_spin_rate_percentage '
                         f'from '
                         f'( '
@@ -1689,7 +1694,10 @@ class Player(Resource):
                                 f'g.avg_x_movement_rank,'
                                 f'g.avg_y_movement,'
                                 f'g.avg_y_movement_percentile,'
+                                f'100 - g.avg_y_movement_percentile as avg_y_movement_percentile_inverse,'
                                 f'g.avg_y_movement_rank,'
+                                # TODO: Extract hardcoded max rank
+                                f'351 - g.avg_y_movement_rank as avg_y_movement_rank_inverse,'
                                 f'g.avg_spin_rate,'
                                 f'g.avg_spin_rate_percentile,'
                                 f'g.avg_spin_rate_rank,'
@@ -1710,6 +1718,7 @@ class Player(Resource):
                                 f'yearly_averages.league_x_wobacon_percentage,'
                                 f'yearly_averages.league_avg_x_movement_percentage,'
                                 f'yearly_averages.league_avg_y_movement_percentage,'
+                                f'100 - yearly_averages.league_avg_y_movement_percentage as league_avg_y_movement_percentage_inverse,'
                                 f'yearly_averages.league_avg_spin_rate_percentage '
                         f'from '
                         f'( '
@@ -2634,7 +2643,7 @@ class Player(Resource):
             avg_x_movement_model['player-stat-percentile'] = float(pitchrow['avg_x_movement_percentile'])
             avg_x_movement_model['league-average-stat-value'] = float(pitchrow['league_avg_x_movement'])
             avg_x_movement_model['league-average-stat-percentile'] = float(pitchrow['league_avg_x_movement_percentage'])
-            pitch_model['x-release-avg'] = avg_x_movement_model
+            pitch_model['x-movement-avg'] = avg_x_movement_model
 
             avg_y_movement_model = {}
             avg_y_movement_model['player-stat-value'] = float(pitchrow['avg_y_movement'])
@@ -2642,7 +2651,15 @@ class Player(Resource):
             avg_y_movement_model['player-stat-percentile'] = float(pitchrow['avg_y_movement_percentile'])
             avg_y_movement_model['league-average-stat-value'] = float(pitchrow['league_avg_y_movement'])
             avg_y_movement_model['league-average-stat-percentile'] = float(pitchrow['league_avg_y_movement_percentage'])
-            pitch_model['y-release-avg'] = avg_y_movement_model
+            pitch_model['y-movement-avg'] = avg_y_movement_model
+
+            avg_y_movement_model = {}
+            avg_y_movement_model['player-stat-value'] = float(pitchrow['avg_y_movement'])
+            avg_y_movement_model['player-stat-rank'] = int(pitchrow['avg_y_movement_rank_inverse'])
+            avg_y_movement_model['player-stat-percentile'] = float(pitchrow['avg_y_movement_percentile_inverse'])
+            avg_y_movement_model['league-average-stat-value'] = float(pitchrow['league_avg_y_movement'])
+            avg_y_movement_model['league-average-stat-percentile'] = float(pitchrow['league_avg_y_movement_percentage_inverse'])
+            pitch_model['y-movement-avg-inverse'] = avg_y_movement_model
 
             avg_spin_rate_model = {}
             avg_spin_rate_model['player-stat-value'] = float(pitchrow['avg_spin_rate'])
