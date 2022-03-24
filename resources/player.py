@@ -1347,7 +1347,7 @@ class Player(Resource):
                                 f'100 - g.avg_y_movement_percentile as avg_y_movement_percentile_inverse,'
                                 f'g.avg_y_movement_rank,'
                                 # TODO: Extract hardcoded max rank
-                                f'200 - g.avg_y_movement_rank as avg_y_movement_rank_inverse,'
+                                f'201 - g.avg_y_movement_rank as avg_y_movement_rank_inverse,'
                                 f'g.avg_spin_rate,'
                                 f'g.avg_spin_rate_percentile,'
                                 f'g.avg_spin_rate_rank,'
@@ -1697,7 +1697,7 @@ class Player(Resource):
                                 f'100 - g.avg_y_movement_percentile as avg_y_movement_percentile_inverse,'
                                 f'g.avg_y_movement_rank,'
                                 # TODO: Extract hardcoded max rank
-                                f'350 - g.avg_y_movement_rank as avg_y_movement_rank_inverse,'
+                                f'351 - g.avg_y_movement_rank as avg_y_movement_rank_inverse,'
                                 f'g.avg_spin_rate,'
                                 f'g.avg_spin_rate_percentile,'
                                 f'g.avg_spin_rate_rank,'
