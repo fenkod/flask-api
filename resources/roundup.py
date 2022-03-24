@@ -155,7 +155,7 @@ class Roundup(Resource):
                     if(needs_away_data):
                         away_pitcher_model = self.BuildInProgressGame("AWAY", away_team, home_team, game_model, play_by_play_data)
                         games.append(away_pitcher_model)
-                        current_app.cache.set(home_pitcher_cache_key, home_pitcher_model, cache_timeout(cache_invalidate_hour()))
+                        current_app.cache.set(away_pitcher_cache_key, away_pitcher_model, cache_timeout(cache_invalidate_hour()))
             result = {'date': input_date.strftime("%a %m/%d/%Y"), 'games': games}
             return result
         else:
