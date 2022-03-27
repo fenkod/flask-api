@@ -50,6 +50,7 @@ class Roundup(Resource):
         self.day = input_date
         self.player_type = player_type
         self.mode = mode
+        self.player_mlb_ids = self.sportradar_mlb_player_dictionary()
 
         return self.fetch_result(player_type, input_date, mode)
 
@@ -71,6 +72,8 @@ class Roundup(Resource):
         daily_summary = endpoints.daily_summary_endpoint(year, month, day)
         # Get list of games for the day
         daily_games = daily_summary['league']['games']
+
+        
 
         if player_type == 'pitcher':
             # Caching wrapper for fetch_data
@@ -221,12 +224,14 @@ class Roundup(Resource):
 
     def BuildScheduledGame(self, home_away, team, opponent, game_model):
         pitcher = None
+        player_id = None
         if 'probable_pitcher' in team:
             pitcher = team['probable_pitcher']
-
+            player_id = self.find_mlb_player_id(self.player_mlb_ids, pitcher['id'])
+            
         model = {
             # Legacy Data
-            'player_id': 0,
+            'player_id': player_id,
             'team': team['abbr'],
             'playername': None,
             'park': home_away,
@@ -281,9 +286,10 @@ class Roundup(Resource):
             if lineuprecord['position'] == 1 and lineuprecord['inning'] > 0:
                 still_in_game = False
                 break
+        player_id = self.find_mlb_player_id(self.player_mlb_ids, pitcher['id'])
         model = {
             # Legacy Data
-            'player_id': 0,
+            'player_id': player_id,
             'team': team['abbr'],
             'playername': f"{pitcher['preferred_name']} {pitcher['last_name']}",
             'park': home_away,
@@ -305,6 +311,7 @@ class Roundup(Resource):
         if 'players' in team:
             players = team['players']
             for player in players:
+                player_id = self.find_mlb_player_id(self.player_mlb_ids, player['id'])
                 if 'statistics' in player:
                     statistics = player['statistics']
                     if 'hitting' in statistics:
@@ -313,7 +320,7 @@ class Roundup(Resource):
                             game_stats = hittingstatistics['overall']
                             model = {
                                 # Legacy Data
-                                'player_id': 0,
+                                'player_id': player_id,
                                 'team': team['abbr'],
                                 'playername': f"{player['preferred_name']} {player['last_name']}",
                                 'park': home_away,
@@ -473,7 +480,24 @@ class Roundup(Resource):
 
         return json_data.get(player_type, default)()
 
+    # Look up table for mapping an MLB player ID from a SR player ID
+    def sportradar_mlb_player_dictionary(self):
+            # Execute Query
+            query = "select sportradar_player_id, mlb_player_id from players"
+            df = fetch_dataframe(query)
 
+            # Convert to look up table (dictionary)
+            df.set_index('sportradar_player_id', inplace=True)
+            df = df.to_dict()['mlb_player_id']
+            df = {x:y for x,y in df.items()}
+
+            return df
+    # Look up an MLB player ID from a SR player ID
+    def find_mlb_player_id(self, player_mlb_ids, sport_radar_player_id):
+        player_id = None
+        if sport_radar_player_id in player_mlb_ids:
+            player_id = player_mlb_ids[sport_radar_player_id]
+        return player_id
 class SportRadarEndpoints:
     def __init__(self):
        self.access_level = 'tracking'
@@ -557,3 +581,5 @@ class SportRadarEndpoints:
         data = json.loads(data) 
 
         return data
+
+    
