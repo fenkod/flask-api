@@ -9,6 +9,8 @@ import json as json
 from webargs import fields, validate
 from webargs.flaskparser import use_kwargs, parser, abort
 
+import csv
+
 
 #pd.set_option('display.max_columns', None)
 #pd.set_option('display.max_rows', None)
@@ -43,6 +45,8 @@ class Auction(Resource):
         "league" : fields.Str(required=False, missing="MLB", validate=validate.OneOf(["MLB", "AL", "NL"])),
         # what should the min and max number of teams be?
         "teams": fields.Int(required=False, missing=12, validate=validate.Range(min = 4, max = 24)),
+        # how many of each position are rostered? in this order: C, 1B, 2B, 3B, SS, OF, DH, UTIL, MI, CI, SP, RP, P, BN
+        "pos": fields.Str(required = False, missing = "1,1,1,1,1,3,0,2,1,1,2,2,5,10"),
         # what should the min and max budget be?
         "budget": fields.Int(required=False, missing=260, validate=validate.Range(min= 0, max= 1000000)),
         # max roster size
@@ -58,9 +62,8 @@ class Auction(Resource):
         # the rest of the paramaters (listed above) can be included below.
         # for ease on our end, I would probably have each position have it's own kwarg. catcher is listed below
         # also, we need to know how many of each position we want to be able to handle.
-        "h": fields.Str(required = False, missing = "0,0,1,2,3,4,-1,1,0,1,0,1,1"),
-        "p": fields.Str(required = False, missing = "1,0,5,-5,5,0,1,-1,0,-2,0,-1,0"),
-        "pos": fields.Str(required = False, missing = "1,1,1,1,1,3,0,2,1,1,2,2,5,10")
+        "h": fields.Str(required = False),
+        "p": fields.Str(required = False)
 
         #the points will be trickier, but i think each pitching & hitting category can also have it's own auction_kwarg attribute and validator.
     }
@@ -83,11 +86,24 @@ class Auction(Resource):
         
         league_format = kwargs.get('points')
 
-        batting_categories = ['AVG', 'RBI', 'R', 'SB', 'HR', 'OBP', 'SLG', 'OPS', 'H', 'SO', 'S', 'D', 'T', 'TB', 'BB', 'RBI+R', 'xBH', 'SB-CS', 'wOBA']
-        pitching_categories = ['W', 'SV', 'ERA', 'WHIP', 'SO', 'AVG', 'K/9', 'BB/9', 'K/BB', 'IP', 'QS', 'HR', 'HLD', 'SV+HLD']
+        batting_categories = ['avg', 'rbi', 'r', 'sb', 'hr', 'obp', 'slg', 'ops', 'h', 'so', 's', 'd', 't', 'tb', 'bb', 'RBI+R', 'xBH', 'SB-CS', 'woba']
+        pitching_categories = ['w', 'sv', 'era', 'whip', 'so', 'avg', 'K/9', 'BB/9', 'K/BB', 'ip', 'qs', 'hr', 'hld', 'SV+HLD']
 
         selected_batting_stats = []
         selected_pitching_stats = []
+
+        #defaults
+        if kwargs.get('points') == 'c' and not kwargs.get('h'):
+            kwargs['h'] = "AVG,RBI,R,SB,HR"
+
+        if kwargs.get('points') == 'c' and not kwargs.get('p'):
+            kwargs['p'] = "W,SO,ERA,WHIP,SV"
+
+        if kwargs.get('points') == 'p' and not kwargs.get('h'):
+            kwargs['h'] = "0,0,1,2,3,4,-1,1,0,1,0,1,1"
+
+        if kwargs.get('points') == 'p' and not kwargs.get('p'):
+            kwargs['p'] = "1,0,5,-5,5,0,1,-1,0,-2,0,-1,0"
 
         url_bat_cats = kwargs.get('h').split(',')
         url_pitch_cats = kwargs.get('p').split(',')
@@ -106,11 +122,9 @@ class Auction(Resource):
 
         if league_format == 'c':
             for cat in url_bat_cats:
-                bat_placeholder = batting_categories[int(cat)]
-                selected_batting_stats.append(bat_placeholder)
+                selected_batting_stats.append(cat)
             for cat in url_pitch_cats:
-                pitch_placeholder = pitching_categories[int(cat)]
-                selected_pitching_stats.append(pitch_placeholder)
+                selected_pitching_stats.append(cat)
         elif league_format == 'p':
             for cat in url_bat_points:
                 custom_points_batters.append(int(cat))
@@ -181,16 +195,16 @@ class Auction(Resource):
 
         # Derive certain stats not included in initial projection files
 
-        df_hitters_merged['OPS'] = df_hitters_merged.apply(lambda x: x['obp'] + x['slg'], axis=1)
-        df_hitters_merged['TB'] = df_hitters_merged.apply(lambda x: x['s'] + (2 * x['d']) + (3 * x['t']) + (4 * x['hr']), axis=1)
+        df_hitters_merged['ops'] = df_hitters_merged.apply(lambda x: x['obp'] + x['slg'], axis=1)
+        df_hitters_merged['tb'] = df_hitters_merged.apply(lambda x: x['s'] + (2 * x['d']) + (3 * x['t']) + (4 * x['hr']), axis=1)
         df_hitters_merged['RBI+R'] = df_hitters_merged.apply(lambda x: x['rbi'] + x['r'], axis=1)
         df_hitters_merged['xBH'] = df_hitters_merged.apply(lambda x: x['d'] + x['t'] + x['hr'], axis=1)
         df_hitters_merged['SB-CS'] = df_hitters_merged.apply(lambda x: x['sb'] - x['cs'], axis=1)
         df_hitters_merged['HBP'] = 0
 
-        df_pitchers['Outs'] = df_pitchers.apply(lambda x: x.ip * 3, axis=1)
-        df_pitchers['AB'] = df_pitchers.apply(lambda x: x.Outs + x.h, axis=1)
-        df_pitchers['AVG'] = df_pitchers.apply(lambda x: round(x.h / x.AB, 3), axis=1)
+        df_pitchers['outs'] = df_pitchers.apply(lambda x: x.ip * 3, axis=1)
+        df_pitchers['ab'] = df_pitchers.apply(lambda x: x.outs + x.h, axis=1)
+        df_pitchers['avg'] = df_pitchers.apply(lambda x: round(x.h / x.ab, 3), axis=1)
         df_pitchers['K/9'] = df_pitchers.apply(lambda x: round((x.so / x.ip ) * 9, 1), axis=1)
         df_pitchers['BB/9'] = df_pitchers.apply(lambda x: round((x.bb / x.ip) * 9, 1) , axis=1)
         df_pitchers['K/BB'] = df_pitchers.apply(lambda x: round(x.so / (x.bb + 0.01), 1) , axis=1)
@@ -245,7 +259,7 @@ class Auction(Resource):
                                                                             x.h,
                                                                             x.s, 
                                                                             x.d,                       
-                                                                            x['t'],
+                                                                            x.t,
                                                                             x.hr,                                                               
                                                                             x.so,
                                                                             x.bb,
@@ -268,8 +282,8 @@ class Auction(Resource):
                                                                             points_list_hitters[11], 
                                                                             points_list_hitters[12]),axis=1)
 
-        df_pitchers['FantasyPoints_Pitching'] = df_pitchers.apply(lambda x: calculate_pitching(x.Outs,
-                                                                            x.QS,
+        df_pitchers['FantasyPoints_Pitching'] = df_pitchers.apply(lambda x: calculate_pitching(x.outs,
+                                                                            x.qs,
                                                                             x.w, 
                                                                             x.l,                       
                                                                             x.sv,
@@ -351,74 +365,81 @@ class Auction(Resource):
             j+=1
             
         draft_pool_hitters = pd.concat(df_list_hitters)
+
         bench_pool_hitters = df_hit_pared
         draft_pool_pitchers = pd.concat(df_list_pitchers)
         bench_pool_pitchers = df_pitch_pared
 
         batting_stats_dict = {
-            'AVG': 'mHaAVG',
-            'RBI': 'mRBI',
-            'R': 'mR',
-            'SB': 'mSB',
-            'HR': 'mHR',
-            'OBP': 'mOBaAVG',
-            'SLG': 'mTBaAVG',
-            'OPS': 'mOPSaAVG',
-            'H': 'mH',
-            'SO': 'mSO',
-            'S': 'mS',
-            'D': 'mD',
-            'T': 'mT',
-            'TB': 'mTB',
-            'BB': 'mBB',
-            'RBI+R': 'mRBI+R',
-            'xBH': 'mxBH',
-            'SB-CS': 'mSB-CS',
-            'wOBA': 'mwOBA'
+            'AVG': 'mhaavg',
+            'RBI': 'mrbi',
+            'R': 'mr',
+            'SB': 'msb',
+            'HR': 'mhr',
+            'OBP': 'mobaavg',
+            'SLG': 'mtbaavg',
+            'OPS': 'mopsaavg',
+            'H': 'mh',
+            'SO': 'mso',
+            'S': 'ms',
+            'D': 'md',
+            'T': 'mt',
+            'TB': 'mtb',
+            'BB': 'mbb',
+            'RBI+R': 'mrbi+r',
+            'xBH': 'mxbh',
+            'SB-CS': 'msb-cs',
+            'wOBA': 'mwoba'
         }
 
         pitching_stats_dict = {
-            'W': 'mW',
-            'SV': 'mSV',
+            'W': 'mw',
+            'SV': 'msv',
             'ERA': 'mERaAVG',
             'WHIP': 'mWHaAVG',
-            'SO': 'mSO',
-            'AVG': 'mHaAVG',
-            'K/9': 'mK/9',
-            'BB/9': 'mBB/9',
-            'K/BB': 'mK/BB',
-            'IP': 'mIP',
-            'QS': 'mQS',
-            'HR': 'mHR',
-            'HLD': 'mHLD',
-            'SV+HLD': 'mSV+HLD',
+            'SO': 'mso',
+            'AVG': 'mhaavg',
+            'K/9': 'mk/9',
+            'BB/9': 'mbb/9',
+            'K/BB': 'mk/BB',
+            'IP': 'mip',
+            'QS': 'mqs',
+            'HR': 'mhr',
+            'HLD': 'mhld',
+            'SV+HLD': 'msv+hld',
         }
 
         ## Derive marginal player value in roto leagues
 
         if league_format == 'c':
-            league_avg = sum(draft_pool_hitters.H.to_list()) / sum(draft_pool_hitters.AB.to_list())
-            league_obp = (sum(draft_pool_hitters.H.to_list()) + sum(draft_pool_hitters.BB.to_list())) / sum(draft_pool_hitters.PA.to_list())
-            league_slg = sum(draft_pool_hitters.TB.to_list()) / sum(draft_pool_hitters.AB.to_list())
-            league_woba = ((sum(draft_pool_hitters.BB.to_list()) * .692) + (sum(draft_pool_hitters.S.to_list()) * .879) + (sum(draft_pool_hitters.D.to_list()) * 1.242) + (sum(draft_pool_hitters['T'].to_list()) * 1.568) + (sum(draft_pool_hitters.HR.to_list()) * 2.007)) / (sum(draft_pool_hitters.AB.to_list()) + sum(draft_pool_hitters.BB.to_list()))
 
-            draft_pool_hitters['HaAVG'] = draft_pool_hitters.apply(lambda x: x.H - (x.AB * league_avg), axis=1)
-            draft_pool_hitters['OBaAVG'] = draft_pool_hitters.apply(lambda x: (x.H + x.BB) - (x.PA * league_obp), axis=1)
-            draft_pool_hitters['TBaAVG'] = draft_pool_hitters.apply(lambda x: x.TB - (x.AB * league_slg), axis=1)
+            league_avg = sum(draft_pool_hitters.h.to_list()) / sum(draft_pool_hitters.ab.to_list())
+            league_obp = (sum(draft_pool_hitters.h.to_list()) + sum(draft_pool_hitters.bb.to_list())) / sum(draft_pool_hitters.pa.to_list())
+
+            draft_pool_hitters['tb'] = draft_pool_hitters.apply(lambda x: ((x.s * 1) + (x.d * 2) + (x.t * 3) + (x.hr * 4)), axis=1)
+
+            league_slg = sum(draft_pool_hitters.tb.to_list()) / sum(draft_pool_hitters.ab.to_list())
+            league_woba = ((sum(draft_pool_hitters.bb.to_list()) * .692) + (sum(draft_pool_hitters.s.to_list()) * .879) + (sum(draft_pool_hitters.d.to_list()) * 1.242) + (sum(draft_pool_hitters.t.to_list()) * 1.568) + (sum(draft_pool_hitters.hr.to_list()) * 2.007)) / (sum(draft_pool_hitters.ab.to_list()) + sum(draft_pool_hitters.bb.to_list()))
+
+            draft_pool_hitters['HaAVG'] = draft_pool_hitters.apply(lambda x: x.h - (x.ab * league_avg), axis=1)
+            draft_pool_hitters['OBaAVG'] = draft_pool_hitters.apply(lambda x: (x.h + x.bb) - (x.pa * league_obp), axis=1)
+            draft_pool_hitters['TBaAVG'] = draft_pool_hitters.apply(lambda x: x.tb - (x.ab * league_slg), axis=1)
             draft_pool_hitters['OPSaAVG'] = draft_pool_hitters.apply(lambda x: x.OBaAVG + x.TBaAVG, axis=1)
-            draft_pool_hitters['wOBAaAVG'] = draft_pool_hitters.apply(lambda x: ((x.BB * .692) + (x.S * .879) + (x.D * 1.242) + (x['T'] * 1.568) + (x.HR * 2.007)) - ((x.BB + x.AB) * league_woba), axis=1)
+            draft_pool_hitters['wOBAaAVG'] = draft_pool_hitters.apply(lambda x: ((x.bb * .692) + (x.s * .879) + (x.d * 1.242) + (x.t * 1.568) + (x.hr * 2.007)) - ((x.bb + x.ab) * league_woba), axis=1)
 
-            league_era = sum(draft_pool_pitchers.ER.to_list()) / (sum(draft_pool_pitchers.IP.to_list()) / 9)
-            league_whip = (sum(draft_pool_pitchers.BB.to_list()) + sum(draft_pool_pitchers.H.to_list())) / sum(draft_pool_pitchers.IP.to_list())
-            league_avg_p = sum(draft_pool_pitchers.H.to_list()) / sum(draft_pool_pitchers.AB.to_list())
+            league_era = sum(draft_pool_pitchers.er.to_list()) / (sum(draft_pool_pitchers.ip.to_list()) / 9)
+            league_whip = (sum(draft_pool_pitchers.bb.to_list()) + sum(draft_pool_pitchers.h.to_list())) / sum(draft_pool_pitchers.ip.to_list())
+            league_avg_p = sum(draft_pool_pitchers.h.to_list()) / sum(draft_pool_pitchers.ab.to_list())
             
-            draft_pool_pitchers['ERaAVG'] = draft_pool_pitchers.apply(lambda x: ((x.IP / 9) * league_era) - x.ER, axis=1)
-            draft_pool_pitchers['WHaAVG'] = draft_pool_pitchers.apply(lambda x: (x.IP * league_whip) - (x.H + x.BB), axis=1)
-            draft_pool_pitchers['HaAVG'] = draft_pool_pitchers.apply(lambda x: (x.AB * league_avg_p) - x.H, axis=1)
+            draft_pool_pitchers['ERaAVG'] = draft_pool_pitchers.apply(lambda x: ((x.ip / 9) * league_era) - x.er, axis=1)
+            draft_pool_pitchers['WHaAVG'] = draft_pool_pitchers.apply(lambda x: (x.ip * league_whip) - (x.h + x.bb), axis=1)
+            draft_pool_pitchers['HaAVG'] = draft_pool_pitchers.apply(lambda x: (x.ab * league_avg_p) - x.h, axis=1)
             
             all_cats_bat = batting_categories + ['HaAVG', 'OBaAVG', 'TBaAVG', 'OPSaAVG', 'wOBAaAVG']
             all_cats_pitch = pitching_categories + ['ERaAVG', 'WHaAVG', 'HaAVG']
 
+            print(draft_pool_hitters)
+            print(all_cats_bat)
             agg_stats_bat = draft_pool_hitters[all_cats_bat]
             agg_stats_pitch = draft_pool_pitchers[all_cats_pitch]
 
@@ -500,15 +521,15 @@ class Auction(Resource):
             bench_pool_hitters['mV'] = bench_pool_hitters.apply(lambda x: (x['FantasyPoints_Hitting'] - analysis_bat['mean']) / (analysis_bat['std']), axis=1)
             bench_pool_pitchers['mV'] = bench_pool_pitchers.apply(lambda x: (x['FantasyPoints_Pitching'] - analysis_pitch['mean']) / (analysis_pitch['std']), axis=1)
         elif league_format == 'c':
-            bench_pool_hitters['HaAVG'] = bench_pool_hitters.apply(lambda x: x.H - (x.AB * league_avg), axis=1)
-            bench_pool_hitters['OBaAVG'] = bench_pool_hitters.apply(lambda x: (x.H + x.BB) - (x.PA * league_obp), axis=1)
-            bench_pool_hitters['TBaAVG'] = bench_pool_hitters.apply(lambda x: x.TB - (x.AB * league_slg), axis=1)
+            bench_pool_hitters['HaAVG'] = bench_pool_hitters.apply(lambda x: x.h - (x.avg * league_avg), axis=1)
+            bench_pool_hitters['OBaAVG'] = bench_pool_hitters.apply(lambda x: (x.h + x.bb) - (x.pa * league_obp), axis=1)
+            bench_pool_hitters['TBaAVG'] = bench_pool_hitters.apply(lambda x: x.tb - (x.ab * league_slg), axis=1)
             bench_pool_hitters['OPSaAVG'] = bench_pool_hitters.apply(lambda x: x.OBaAVG + x.TBaAVG, axis=1)
-            bench_pool_hitters['wOBAaAVG'] = bench_pool_hitters.apply(lambda x: ((x.BB * .692) + (x.S * .879) + (x.D * 1.242) + (x['T'] * 1.568) + (x.HR * 2.007)) - ((x.BB + x.AB) * league_woba), axis=1)
+            bench_pool_hitters['wOBAaAVG'] = bench_pool_hitters.apply(lambda x: ((x.bb * .692) + (x.s * .879) + (x.d * 1.242) + (x.t * 1.568) + (x.hr * 2.007)) - ((x.bb + x.ab) * league_woba), axis=1)
 
-            bench_pool_pitchers['ERaAVG'] = bench_pool_pitchers.apply(lambda x: ((x.IP / 9) * league_era) - x.ER, axis=1)
-            bench_pool_pitchers['WHaAVG'] = bench_pool_pitchers.apply(lambda x: (x.IP * league_whip) - (x.H + x.BB), axis=1)
-            bench_pool_pitchers['HaAVG'] = bench_pool_pitchers.apply(lambda x: (x.AB * league_avg_p) - x.H, axis=1)
+            bench_pool_pitchers['ERaAVG'] = bench_pool_pitchers.apply(lambda x: ((x.ip / 9) * league_era) - x.er, axis=1)
+            bench_pool_pitchers['WHaAVG'] = bench_pool_pitchers.apply(lambda x: (x.ip * league_whip) - (x.h + x.bb), axis=1)
+            bench_pool_pitchers['HaAVG'] = bench_pool_pitchers.apply(lambda x: (x.ab * league_avg_p) - x.h, axis=1)
             
             for cat in all_cats_bat:
                 bench_pool_hitters['m' + cat] = bench_pool_hitters.apply(lambda x: (x[cat] - analysis_bat.at['mean', cat]) / (analysis_bat.at['std', cat]), axis=1)
@@ -536,8 +557,8 @@ class Auction(Resource):
 
         ## Form final tables with relevant columns/headers
 
-        draft_stats_hitters = draft_stats_hitters[['name', 'team', 'pa', 'h', 's', 'd', 't', 'hr', 'r', 'rbi', 'sb', 'cs', 'so', 'bb', 'avg', 'obp', 'slg', 'OPS', 'auction$']]
-        bench_pool_hitters = bench_pool_hitters[['name', 'team', 'pa', 'h', 's', 'd', 't', 'hr', 'r', 'rbi', 'sb', 'cs', 'so', 'bb', 'avg', 'obp', 'slg', 'OPS', 'auction$']]
+        draft_stats_hitters = draft_stats_hitters[['name', 'team', 'mlbid', 'pa', 'h', 's', 'd', 't', 'hr', 'r', 'rbi', 'sb', 'cs', 'so', 'bb', 'avg', 'obp', 'slg', 'ops', 'auction$']]
+        bench_pool_hitters = bench_pool_hitters[['name', 'team', 'mlbid', 'pa', 'h', 's', 'd', 't', 'hr', 'r', 'rbi', 'sb', 'cs', 'so', 'bb', 'avg', 'obp', 'slg', 'ops', 'auction$']]
         final_hitter_df = pd.concat([draft_stats_hitters, bench_pool_hitters])
         final_hitter_df = final_hitter_df.sort_values(by=['auction$'], ascending=False)
         final_hitter_df = final_hitter_df.reset_index(drop=True).reset_index()
@@ -546,10 +567,10 @@ class Auction(Resource):
         cols.insert(0, cols.pop(cols.index('Rank')))
         final_hitter_df = final_hitter_df.loc[:, cols]
         final_hitter_df.drop(['index'], axis=1, inplace=True)
-        final_hitter_df.rename(columns={"H": "Hits", "S": "1B", 'D': '2B', 'T': '3B', 'auction$': 'Dollars'}, inplace=True)
+        final_hitter_df.rename(columns={"H": "Hits", "S": "1B", 'D': '2B', 'T': '3B', 'auction$': 'Dollars', 'mlbid': 'player_id'}, inplace=True)
 
-        draft_stats_pitchers = draft_stats_pitchers[['name', 'team', 'gs', 'g', 'ip', 'w', 'l', 'QS', 'sv', 'hld', 'era', 'whip', 'h', 'hr', 'sop', 'bbp', 'so', 'bb', 'auction$']]
-        bench_pool_pitchers = bench_pool_pitchers[['name', 'team', 'gs', 'g', 'ip', 'w', 'l', 'QS', 'sv', 'hld', 'era', 'whip', 'h', 'hr', 'sop', 'bbp', 'so', 'bb', 'auction$']]
+        draft_stats_pitchers = draft_stats_pitchers[['name', 'team', 'mlbid', 'gs', 'g', 'ip', 'w', 'l', 'QS', 'sv', 'hld', 'era', 'whip', 'h', 'hr', 'sop', 'bbp', 'so', 'bb', 'auction$']]
+        bench_pool_pitchers = bench_pool_pitchers[['name', 'team', 'mlbid', 'gs', 'g', 'ip', 'w', 'l', 'QS', 'sv', 'hld', 'era', 'whip', 'h', 'hr', 'sop', 'bbp', 'so', 'bb', 'auction$']]
         final_pitcher_df = pd.concat([draft_stats_pitchers, bench_pool_pitchers])
         final_pitcher_df = final_pitcher_df.sort_values(by=['auction$'], ascending=False)
         final_pitcher_df = final_pitcher_df.reset_index(drop=True).reset_index()
@@ -558,7 +579,7 @@ class Auction(Resource):
         cols.insert(0, cols.pop(cols.index('Rank')))
         final_pitcher_df = final_pitcher_df.loc[:, cols]
         final_pitcher_df.drop(['index'], axis=1, inplace=True)
-        final_pitcher_df.rename(columns={"H": "Hits", "SO%": "K%", 'SO': 'K', 'auction$': 'Dollars'}, inplace=True)
+        final_pitcher_df.rename(columns={"H": "Hits", "SO%": "K%", 'SO': 'K', 'auction$': 'Dollars', 'mlbid': 'player_id'}, inplace=True)
 
         ## Program generates both pitcher and hitter csv's separately
         ## I have it set up so the initial 'Type' parameter in the url indicates whether to return hitter or pitcher tables
