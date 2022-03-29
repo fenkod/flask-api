@@ -567,7 +567,7 @@ class Auction(Resource):
         cols.insert(0, cols.pop(cols.index('Rank')))
         final_hitter_df = final_hitter_df.loc[:, cols]
         final_hitter_df.drop(['index'], axis=1, inplace=True)
-        final_hitter_df.rename(columns={"H": "Hits", "S": "1B", 'D': '2B', 'T': '3B', 'auction$': 'Dollars', 'mlbid': 'player_id'}, inplace=True)
+        final_hitter_df.rename(columns={"h": "Hits", "s": "1B", 'd': '2B', 't': '3B', 'auction$': 'Dollars', 'mlbid': 'player_id'}, inplace=True)
 
         draft_stats_pitchers = draft_stats_pitchers[['name', 'team', 'mlbid', 'gs', 'g', 'ip', 'w', 'l', 'QS', 'sv', 'hld', 'era', 'whip', 'h', 'hr', 'sop', 'bbp', 'so', 'bb', 'auction$']]
         bench_pool_pitchers = bench_pool_pitchers[['name', 'team', 'mlbid', 'gs', 'g', 'ip', 'w', 'l', 'QS', 'sv', 'hld', 'era', 'whip', 'h', 'hr', 'sop', 'bbp', 'so', 'bb', 'auction$']]
@@ -579,7 +579,7 @@ class Auction(Resource):
         cols.insert(0, cols.pop(cols.index('Rank')))
         final_pitcher_df = final_pitcher_df.loc[:, cols]
         final_pitcher_df.drop(['index'], axis=1, inplace=True)
-        final_pitcher_df.rename(columns={"H": "Hits", "SO%": "K%", 'SO': 'K', 'auction$': 'Dollars', 'mlbid': 'player_id'}, inplace=True)
+        final_pitcher_df.rename(columns={"h": "Hits", "SO%": "K%", 'SO': 'K', 'auction$': 'Dollars', 'mlbid': 'player_id'}, inplace=True)
 
         ## Program generates both pitcher and hitter csv's separately
         ## I have it set up so the initial 'Type' parameter in the url indicates whether to return hitter or pitcher tables
