@@ -371,14 +371,14 @@ class Auction(Resource):
         bench_pool_pitchers = df_pitch_pared
 
         batting_stats_dict = {
-            'AVG': 'mhaavg',
+            'AVG': 'mHaAVG',
             'RBI': 'mrbi',
             'R': 'mr',
             'SB': 'msb',
             'HR': 'mhr',
-            'OBP': 'mobaavg',
-            'SLG': 'mtbaavg',
-            'OPS': 'mopsaavg',
+            'OBP': 'mOBaAVG',
+            'SLG': 'mTBaAVG',
+            'OPS': 'mOPSaAVG',
             'H': 'mh',
             'SO': 'mso',
             'S': 'ms',
@@ -386,10 +386,10 @@ class Auction(Resource):
             'T': 'mt',
             'TB': 'mtb',
             'BB': 'mbb',
-            'RBI+R': 'mrbi+r',
-            'xBH': 'mxbh',
-            'SB-CS': 'msb-cs',
-            'wOBA': 'mwoba'
+            'RBI+R': 'mRBI+R',
+            'xBH': 'mxBH',
+            'SB-CS': 'mSB-CS',
+            'wOBA': 'mwOBA'
         }
 
         pitching_stats_dict = {
@@ -398,15 +398,15 @@ class Auction(Resource):
             'ERA': 'mERaAVG',
             'WHIP': 'mWHaAVG',
             'SO': 'mso',
-            'AVG': 'mhaavg',
-            'K/9': 'mk/9',
-            'BB/9': 'mbb/9',
-            'K/BB': 'mk/BB',
+            'AVG': 'mHaAVG',
+            'K/9': 'mK/9',
+            'BB/9': 'mBB/9',
+            'K/BB': 'mK/BB',
             'IP': 'mip',
             'QS': 'mqs',
             'HR': 'mhr',
             'HLD': 'mhld',
-            'SV+HLD': 'msv+hld',
+            'SV+HLD': 'mSV+HLD',
         }
 
         ## Derive marginal player value in roto leagues
