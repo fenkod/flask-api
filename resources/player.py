@@ -2568,8 +2568,8 @@ class Player(Resource):
         x_woba_model['player-stat-value'] = float(year_data['x-woba'])
         x_woba_model['player-stat-rank'] = int(year_data['x-woba-rank'])
         x_woba_model['player-stat-percentile'] = float(year_data['x-woba-percentile'])
-        x_woba_model['league-avwobage-stat-value'] = float(year_data['league-x-woba'])
-        x_woba_model['league-avwobage-stat-percentile'] = float(year_data['league-x-woba-percentile'])
+        x_woba_model['league-average-stat-value'] = float(year_data['league-x-woba'])
+        x_woba_model['league-average-stat-percentile'] = float(year_data['league-x-woba-percentile'])
         year_model['x-woba-pct'] = x_woba_model
 
         if 'sv' in year_data:
@@ -2815,8 +2815,8 @@ class Player(Resource):
         x_woba_model['player-stat-value'] = float(year_data['x-woba'])
         x_woba_model['player-stat-rank'] = int(year_data['x-woba-rank'])
         x_woba_model['player-stat-percentile'] = float(year_data['x-woba-percentile'])
-        x_woba_model['league-avwobage-stat-value'] = float(year_data['league-x-woba'])
-        x_woba_model['league-avwobage-stat-percentile'] = float(year_data['league-x-woba-percentile'])
+        x_woba_model['league-average-stat-value'] = float(year_data['league-x-woba'])
+        x_woba_model['league-average-stat-percentile'] = float(year_data['league-x-woba-percentile'])
         year_model['x-woba-pct'] = x_woba_model
 
         return year_model
