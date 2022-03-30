@@ -101,3 +101,25 @@ The URL structure for the v2 of the leaderboard API is http://api.dfccnp.com/v2_
 
 
 NA is always used when not submitting an explicit value for a field.
+
+# Auction Calculator
+
+## Consuming
+
+- staging: https://pitcherlist-api-staging.herokuapp.com/v4/auction/calculator
+- production: https://api.dfccnp.com/v4/auction/calculator
+
+parameters:
+|value|values|required|default|description|
+|-|-|-|-|-|
+|points|`p`, `c`|no|`p`|How the auction calculator should intake relevant categories. `c` = categories; `p` = points|
+|league|`MLB`, `AL`, `NL`|no|`MLB`||
+|teams|4 <= teams <= 24|no|12|Number of teams in the league.|
+|pos|see description|no|`1,1,1,1,1,3,0,2,1,1,2,2,5,10`|Number of positions rosterable in the following order: C, 1B, 2B, 3B, SS, OF, DH, UTIL, MI, CI, SP, RP, P, BN|
+|mp|1<=mp<=100|no|20|Max roster size (but this isn't used)|
+|msp|0<=msp<=20|no|20|Max starting pitchers|
+|mrp|0<=mrp<=20|no|20|Max relief pitchers|
+|mb|1<=mb<=1000000|no|1|Minimum bid during the draft|
+|split|0.1<=split<=0.9|no|0.7|Percent of league that is allocated to hitters|
+|h|If points = p, a string of 13 numbers correlated to the categories listed in the descriptions. <br><hr> If points = c, a string of categories that should be applied for the calculation.<br>Valid categores: 'AVG', 'RBI', 'R', 'SB', 'HR', 'OBP', 'SLG', 'OPS', 'H', 'SO', 'S', 'D', 'T', 'TB', 'BB', 'RBI+R', 'xBH', 'SB-CS', 'wOBA'|no|If points = p: `0,0,1,2,3,4,-1,1,0,1,0,1,1` <br><hr> If points = `c`: `AVG,RBI,R,SB,HR` |If points = `p`, this correlates to the number of points associated with each unit in the following order: 'PA', 'H', 'S', 'D', 'T', 'HR', 'SO', 'BB', 'HBP', 'SB', 'CS', 'R', 'RBI'.  <br><hr> If points = `c`, these are the relevant categories. Example: `p=HR,RBI,SB,AVG,R`
+|p|If points = p, a string of 13 numbers correlated to the categories listed in the descriptions. <br><hr> If points = c, a string of categories that should be applied for the calculation. Valid categories: 'W', 'SV', 'ERA', 'WHIP', 'SO', 'AVG', 'K/9', 'BB/9', 'K/BB', 'IP', 'QS', 'HR', 'HLD', 'SV+HLD'|no|If points = `p` : `1,0,5,-5,5,0,1,-1,0,-2,0,-1,0` <br><hr> If points = c: `W,SO,ERA,WHIP,SV` |If points = `p`, this correlates to the number of points associated with each unit in the following order: 'Out', 'QS', 'W', 'L', 'SV', 'HLD', 'K', 'BB', 'HBP', 'ER', 'R', 'H', 'HR'. <br><hr> If points = `c`, these are the relevant categories. Example: `p=SO,WHIP,QS,ERA,SV`
