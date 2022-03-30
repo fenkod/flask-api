@@ -372,62 +372,39 @@ class Leaderboard(Resource):
         lb_type = kwargs.get('leaderboard')
 
         if(lb_type == "pitcher"):
-            reliever_query = """select dr.mlbid as player_id,
-                                    dr."name" as player_name,
+            pitcher_query = """select proj.mlb_player_id as player_id,
+                                    players.full_name as player_name,
                                     teams.team_name as player_team,
-                                    dr.team as player_team_abb,
-                                    dr.g as num_games,
-                                    dr.gs as num_starts,
-                                    dr.ip as num_ip,
-                                    dr.qs,
-                                    dr.w as wins,
-                                    dr.l as losses,
-                                    dr.sv as saves,
-                                    dr.hld as holds,
-                                    dr.era,
-                                    dr.whip,
-                                    dr.h as num_hit,
-                                    dr.r as runs,
-                                    dr.hr as hrs,
-                                    dr.sop as strikeout_pct,
-                                    dr.bbp as walk_pct,
-                                    dr.so as strikeouts,
-                                    dr.bb as walks
-                                from dfs_2022_relievers dr, teams teams
-                                where dr.team = teams.abbreviation"""
+                                    teams.abbreviation as player_team_abb,
+                                    proj.cg_p as cg,
+                                    proj.sho_p as sho,
+                                    proj.r_p as runs,
+                                    proj.g_p as num_games,
+                                    proj.gs_p as num_starts,
+                                    proj.ip_p as num_ip,
+                                    proj.w_p as wins,
+                                    proj.l_p as losses,
+                                    proj.pct_p as wp,
+                                    proj.qs_p as qs,
+                                    proj.era_p as era,
+                                    proj.whip_p as whip,
+                                    proj.er_p as er,
+                                    proj.hr_p as hrs,
+                                    proj.so_p as strikeouts,
+                                    proj.bb_p as walks,
+                                    proj.so_pct_p as strikeout_pct,
+                                    proj.bb_pct_p as walk_pct,
+                                    proj.hld_p as holds,
+                                    proj.sv_p as saves,
+                                    proj.sv_pct_p as sv_pct,
+                                    proj.bs_p as bs
+                                from projections proj
+                                    join players on players.mlb_player_id = proj.mlb_player_id
+                                    left join teams on teams.team_id = players.current_team_id
+                                where proj.ip_p > 0"""
 
-            starter_query = """select ds.mlbid as player_id,
-                                    ds."name" as player_name,
-                                    teams.team_name as player_team,
-                                    ds.team as player_team_abb,
-                                    ds.g as num_games,
-                                    ds.gs as num_starts,
-                                    ds.ip as num_ip,
-                                    ds.w as wins,
-                                    ds.l as losses,
-                                    ds.wp,
-                                    ds.qs,
-                                    ds.era,
-                                    ds.whip,
-                                    ds.h as num_hit,
-                                    ds.r as runs,
-                                    ds.hr as hrs,
-                                    ds.sop as strikeout_pct,
-                                    ds.bbp as walk_pct,
-                                    ds.so as strikeouts,
-                                    ds.bb as walks
-                                from dfs_2022_starters ds, teams teams
-                                where ds.team = teams.abbreviation"""
+            pitcher_df = fetch_dataframe(pitcher_query)
 
-            reliever_df = fetch_dataframe(reliever_query)
-            starter_df = fetch_dataframe(starter_query)
-
-            pitcher_df = pd.concat(
-                objs = [reliever_df, starter_df],
-                join = "outer"
-            )
-
-            print(pitcher_df)
             for i, row in pitcher_df.iterrows():
 
                 pitcher_df.at[i, "era"] = "{:.2f}".format(row.get("era"))
@@ -438,30 +415,32 @@ class Leaderboard(Resource):
 
         elif(lb_type == "hitter"):
             
-            query = """select 
-                db.mlbid as player_id, 
-                db."name" as player_name, 
-                teams.team_name as player_team, 
-                db.team as player_team_abb,
-                null as num_games,
-                db.pa as num_pa, 
-                db.h as num_hit, 
-                db.s as num_1b,
-                db.d as num_2b,
-                db.t as num_3b,
-                db.hr as num_hr, 
-                db.r as num_run,
-                db.rbi as num_rbi, 
-                db.sb as num_stolen_base, 
-                db.cs as caught_stealing,
-                db.so as num_k, 
-                db.bb as num_bb, 
-                db."avg" as batting_average, 
-                db.obp as on_base_percentage,
-                db.slg as slugging,
-                db.obp + db.slg as on_base_plus_slugging
-            from dfs_2022_batters db, teams teams
-            where db.team = teams.abbreviation"""
+            query = """select proj.mlb_player_id as player_id,
+                    players.full_name as player_name,
+                    teams.team_name as player_team,
+                    teams.abbreviation as player_team_abb,
+                    null as num_games,
+                    proj.pa_h as num_pa,
+                    proj.ab_h as num_ab,
+                    proj.h_h as num_hit,
+                    proj.si_h as num_1b,
+                    proj.do_h as num_2b,
+                    proj.tr_h as num_3b,
+                    proj.hr_h as num_hr,
+                    proj.r_h as num_run,
+                    proj.rbi_h as num_rbi,
+                    proj.bb_h as num_bb,
+                    proj.so_h as num_k,
+                    proj.sb_h as num_stolen_base,
+                    proj.cs_h as caught_stealing,
+                    proj.avg_h as batting_average,
+                    proj.obp_h as on_base_percentage,
+                    proj.slg_h as slugging,
+                    proj.obp_h + proj.slg_h as on_base_plus_slugging
+                from projections proj
+                    join players on players.mlb_player_id = proj.mlb_player_id
+                    left join teams on teams.team_id = players.current_team_id
+                where proj.pa_h > 0"""
 
             df = fetch_dataframe(query)
 
