@@ -47,6 +47,7 @@ class Player(Resource):
                 self.last_name = player_info[0]['name_last']
                 self.dob = player_info[0]['birth_date']
                 self.is_pitcher = bool(player_info[0]['is_pitcher'])
+                self.is_hitter = bool(player_info[0]['is_hitter'])
                 self.is_active = bool(player_info[0]['is_active'])
                 self.primary_position = player_info[0]['primary_position']
                 self.hitter_depth_chart_position = player_info[0]['hitter_depth_chart_position']
@@ -188,49 +189,50 @@ class Player(Resource):
         def bio():
             sql_query = ''
 
-            table_select =  (f'select 	players.mlb_player_id as "mlbamid",'
-                                        f'players.full_name as "playername",'
-                                        f'cast(current_team.team_id as int4) as "teamid",'
-                                        f'current_team.abbreviation as "team",'
-                                        f'last_game.game_date as "lastgame",'
-                                        f'case when players.primary_position in (\'SP\', \'RP\', \'P\') then 1 else 0 end as "is_pitcher",'
-                                        f'case when players.status in (\'A\') then 1 else 0 end as "is_active",'
-                                        f'players.first_name as "name_first",'
-                                        f'players.last_name as "name_last",'
-                                        f'players.birth_date as "birth_date",'
-                                        f'players.primary_position as "primary_position",'
-                                        f'players.status as "status",'
-                                        f'players.batting_hand as "batting_hand",'
-                                        f'players.throwing_hand as "throwing_hand",'
-                                        f'players.birth_city as "birth_city",'
-                                        f'players.birth_country as "birth_country",'
-                                        f'players.birth_state as "birth_state",'
-                                        f'players.college as "college",'
-                                        f'players.high_school as "high_school",'
-                                        f'cast(players.pro_debut_date as date) as "pro_debut_date",'
-                                        f'players.draft_round as "draft_round",'
-                                        f'players.draft_pick as "draft_pick",'
-                                        f'players.draft_year as "draft_year",'
-                                        f'draft_team.team_id as "draft_team_id",'
-                                        f'draft_team.abbreviation as "draft_team",'
-                                        f'players.jersey_number as "jersey_number",'
-                                        f'players.height as "height",'
-                                        f'players.weight as "weight",'
-                                        f'highest_hitter_depth_chart_position.position as hitter_depth_chart_position,'
-                                        f'highest_hitter_depth_chart_position.depth as hitter_depth_chart_depth,'
-                                        f'highest_pitcher_depth_chart_position.position as pitcher_depth_chart_position,'
-                                        f'highest_pitcher_depth_chart_position.depth as pitcher_depth_chart_depth,'
-                                        f'cast(players.updated as date) as "updated",'
-                                        f'case when last_game.game_date > cast(players.updated as date) then last_game.game_date else cast(players.updated as date) end as "last_update" '
-                                f'from players '
-                                f'left join teams as current_team on current_team.team_id = players.current_team_id '
-                                f'left join teams as draft_team on draft_team.team_id = players.draft_team_id '
-                                f'left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = current_team.team_id and depth_charts."position" not in (\'SP\', \'BP\', \'CL\') order by depth_charts."depth" fetch first row only) highest_hitter_depth_chart_position on true '
-                                f'left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = current_team.team_id and depth_charts."position" in (\'SP\', \'BP\', \'CL\') order by depth_charts."depth" fetch first row only) highest_pitcher_depth_chart_position on true '
-                                f'left join lateral (select games.game_id from pitching_game_log inner join games on games.game_id = pitching_game_log.game_id where pitching_game_log.player_id = players.player_id order by games.game_date desc fetch first row only) last_pitching_game on true '
-                                f'left join lateral (select games.game_id from hitting_game_log inner join games on games.game_id = hitting_game_log.game_id where hitting_game_log.player_id = players.player_id order by games.game_date desc fetch first row only) last_hitting_game on true '
-                                f'left join lateral (select games.game_id from fielding_game_log inner join games on games.game_id = fielding_game_log.game_id where fielding_game_log.player_id = players.player_id order by games.game_date desc fetch first row only) last_fielding_game on true '
-                                f'left join lateral (select games.game_date from games where games.game_id in (last_pitching_game.game_id, last_hitting_game.game_id, last_fielding_game.game_id) order by games.game_date desc fetch first row only) last_game on true \n ')
+            table_select =  ("""select 	players.mlb_player_id as "mlbamid",
+                                        players.full_name as "playername",
+                                        cast(current_team.team_id as int4) as "teamid",
+                                        current_team.abbreviation as "team",
+                                        last_game.game_date as "lastgame",
+                                        case when players.primary_position in ('SP', 'RP', 'P') or highest_pitcher_depth_chart_position.position is not null then 1 else 0 end as "is_pitcher",
+                                        case when players.primary_position not in ('SP', 'RP', 'P') or highest_hitter_depth_chart_position.position is not null then 1 else 0 end as "is_hitter",
+                                        case when players.status in ('A') then 1 else 0 end as "is_active",
+                                        players.first_name as "name_first",
+                                        players.last_name as "name_last",
+                                        players.birth_date as "birth_date",
+                                        players.primary_position as "primary_position",
+                                        players.status as "status",
+                                        players.batting_hand as "batting_hand",
+                                        players.throwing_hand as "throwing_hand",
+                                        players.birth_city as "birth_city",
+                                        players.birth_country as "birth_country",
+                                        players.birth_state as "birth_state",
+                                        players.college as "college",
+                                        players.high_school as "high_school",
+                                        cast(players.pro_debut_date as date) as "pro_debut_date",
+                                        players.draft_round as "draft_round",
+                                        players.draft_pick as "draft_pick",
+                                        players.draft_year as "draft_year",
+                                        draft_team.team_id as "draft_team_id",
+                                        draft_team.abbreviation as "draft_team",
+                                        players.jersey_number as "jersey_number",
+                                        players.height as "height",
+                                        players.weight as "weight",
+                                        highest_hitter_depth_chart_position.position as hitter_depth_chart_position,
+                                        highest_hitter_depth_chart_position.depth as hitter_depth_chart_depth,
+                                        highest_pitcher_depth_chart_position.position as pitcher_depth_chart_position,
+                                        highest_pitcher_depth_chart_position.depth as pitcher_depth_chart_depth,
+                                        cast(players.updated as date) as "updated",
+                                        case when last_game.game_date > cast(players.updated as date) then last_game.game_date else cast(players.updated as date) end as "last_update"
+                                from players
+                                left join teams as current_team on current_team.team_id = players.current_team_id
+                                left join teams as draft_team on draft_team.team_id = players.draft_team_id
+                                left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = current_team.team_id and depth_charts."position" not in ('SP', 'BP', 'CL') order by depth_charts."depth" fetch first row only) highest_hitter_depth_chart_position on true
+                                left join lateral (select * from depth_charts where depth_charts.player_id = players.player_id and depth_charts.team_id = current_team.team_id and depth_charts."position" in ('SP', 'BP', 'CL') order by depth_charts."depth" fetch first row only) highest_pitcher_depth_chart_position on true
+                                left join lateral (select games.game_id from pitching_game_log inner join games on games.game_id = pitching_game_log.game_id where pitching_game_log.player_id = players.player_id order by games.game_date desc fetch first row only) last_pitching_game on true
+                                left join lateral (select games.game_id from hitting_game_log inner join games on games.game_id = hitting_game_log.game_id where hitting_game_log.player_id = players.player_id order by games.game_date desc fetch first row only) last_hitting_game on true
+                                left join lateral (select games.game_id from fielding_game_log inner join games on games.game_id = fielding_game_log.game_id where fielding_game_log.player_id = players.player_id order by games.game_date desc fetch first row only) last_fielding_game on true
+                                left join lateral (select games.game_date from games where games.game_id in (last_pitching_game.game_id, last_hitting_game.game_id, last_fielding_game.game_id) order by games.game_date desc fetch first row only) last_game on true """)
             player_select = ''
 
             if player_id != 'NA':
@@ -2065,7 +2067,7 @@ class Player(Resource):
             # Convert datetime to usable json format
             results['game-date'] = pd.to_datetime(results['game-date']).dt.strftime("%a %m/%d/%Y")
 
-            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'logs': {} }
+            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_hitter': self.is_hitter, 'is_active': self.is_active, 'logs': {} }
 
             # Ensure we have valid data for NaN entries using json.dumps of Python None object
             result_dict = json.loads(results.to_json(orient='index'))
@@ -2219,7 +2221,7 @@ class Player(Resource):
                 return output_dict
                 
         def locationlogs():
-            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, 'logs': {} }
+            output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_hitter': self.is_hitter, 'is_active': self.is_active, 'logs': {} }
             results.fillna(value=0, inplace=True)
             result_dict = json.loads(results.to_json(orient='index'))
             
@@ -2249,7 +2251,7 @@ class Player(Resource):
 
             if (self.is_pitcher):
                 # Sort our DataFrame so we have a prettier JSON format for the API
-                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
+                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_hitter': self.is_hitter, 'is_active': self.is_active, query_type: {'pitches':{}} }
 
                 # Make sure our index keys exist in our dict structure then push on our data values
                 for keys, value in result_dict.items():
@@ -2273,7 +2275,7 @@ class Player(Resource):
                     output_dict[query_type]['pitches'][pitch_key]['years'][year_key]['splits'][rl_split_key]['park'][ha_split_key] = value       
             else:
                 # Sort our DataFrame so we have a prettier JSON format for the API
-                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_active': self.is_active, query_type: {'pitches':{}} }
+                output_dict = { 'player_id': player_id, 'is_pitcher': self.is_pitcher, 'is_hitter': self.is_hitter, 'is_active': self.is_active, query_type: {'pitches':{}} }
 
                 # Make sure our index keys exist in our dict structure then push on our data values
                 for keys, value in result_dict.items():
