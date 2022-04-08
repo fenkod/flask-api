@@ -883,7 +883,7 @@ class Leaderboard(Resource):
 
             fields = {
                 "player_id": "pitchermlbamid",
-                "player_home_away": "pitcher_home_away",
+                # "player_home_away": "pitcher_home_away",
                 # "player_division": "pitcherdivision",
                 # "player_league": "pitcherleague"
             }
@@ -945,17 +945,23 @@ class Leaderboard(Resource):
         if (kwargs['half'] in ['First','Second']):
             stmts['half_played'] = f"{kwargs['half']}"
 
-        if (kwargs.get('handedness') != 'NA' and kwargs.get('tab') != 'games_overview_standard'):
-            if(kwargs.get('leaderboard') == 'pitcher'):
-                stmts['pitcherside'] = f"{kwargs.get('handedness')}"
-            else:
-                stmts['hitterside'] = f"{kwargs.get('handedness')}"
-
-        if (kwargs.get('opponnent_handedness') != 'NA' and kwargs.get('tab') != 'games_overview_standard'):
+        if (kwargs.get('handedness') in ['L', 'R'] and kwargs.get('tab') != 'games_overview_standard'):
             if(kwargs.get('leaderboard') == 'hitter'):
                 stmts['hitterside'] = f"{kwargs.get('handedness')}"
             else:
                 stmts['pitcherside'] = f"{kwargs.get('handedness')}"
+
+        if (kwargs.get('opponent_handedness')  in ['L', 'R'] and kwargs.get('tab') != 'games_overview_standard'):
+            if(kwargs.get('leaderboard') == 'hitter'):
+                stmts['hitterside'] = f"{kwargs.get('opponent_handedness')}"
+            else:
+                stmts['pitcherside'] = f"{kwargs.get('opponent_handedness')}"
+
+        if (kwargs.get('home_away') in ['Home', 'Away'] and kwargs.get('tab') != 'games_overview_standard'):
+            if(kwargs.get('leaderboard') == 'hitter'):
+                stmts['hitter_home_away'] = f"{kwargs.get('home_away')}"
+            else:
+                stmts['pitcher_home_away'] = f"{kwargs.get('home_away')}"
 
         # Iterate though our filters. Leaderboard specific cols have been included via the `get_cols()` method
         # Add the corresponding cols to the WHERE conditions
@@ -966,6 +972,7 @@ class Leaderboard(Resource):
         if kwargs.get('tab') == 'games_overview_standard':
             fields_to_filter.pop('opponent_handedness')
             fields_to_filter.pop('handedness')
+            fields_to_filter.pop('home_away')
 
         for filter, fieldname in fields_to_filter.items():
             if (kwargs[filter] != 'NA'):
@@ -984,9 +991,9 @@ class Leaderboard(Resource):
         # handedness doesn't exist in the table that the games_overvie_standard has
         fields_to_filter = self.filter_fields.copy()
         if kwargs.get('tab') == 'games_overview_standard':
-            
             fields_to_filter.pop('opponent_handedness')
             fields_to_filter.pop('handedness')
+            fields_to_filter.pop('home_away')
 
         for filter, fieldname in fields_to_filter.items():
             if (kwargs[filter] != 'NA'):
@@ -1068,7 +1075,7 @@ class Leaderboard(Resource):
             if conditions.get('hitterside'):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
-                conditions.pop('pitcherside')    
+                conditions.pop('pitcherside')  
 
             if conditions:
                 stmt = f"{stmt} WHERE"
@@ -1099,12 +1106,10 @@ class Leaderboard(Resource):
             groupby = ''
             
             conditions = self.get_conditions(**kwargs)
-
-            #get ride of hitterside and pitcherside from the inner join; probably not really necessary in the pitcher tab 
             if conditions.get('hitterside'):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
-                conditions.pop('pitcherside')
+                conditions.pop('pitcherside')  
  
             if conditions:
                 stmt = f"{stmt} WHERE"
@@ -1128,12 +1133,10 @@ class Leaderboard(Resource):
 
             #get ride of hitterside and pitcherside from the inner join; probably not really necessary in the pitcher tab 
             conditions = self.get_conditions(**kwargs)
-
             if conditions.get('hitterside'):
                 conditions.pop('hitterside')
             if conditions.get('pitcherside'):
-                conditions.pop('pitcherside')
-            
+                conditions.pop('pitcherside')  
             if conditions:
                 stmt = f"{stmt} WHERE"
                 for col, val in conditions.items():
