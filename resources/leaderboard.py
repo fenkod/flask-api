@@ -945,9 +945,29 @@ class Leaderboard(Resource):
         if (kwargs['half'] in ['First','Second']):
             stmts['half_played'] = f"{kwargs['half']}"
 
+        if (kwargs.get('handedness') != 'NA' and kwargs.get('tab') != 'games_overview_standard'):
+            if(kwargs.get('leaderboard') == 'pitcher'):
+                stmts['pitcherside'] = f"{kwargs.get('handedness')}"
+            else:
+                stmts['hitterside'] = f"{kwargs.get('handedness')}"
+
+        if (kwargs.get('opponnent_handedness') != 'NA' and kwargs.get('tab') != 'games_overview_standard'):
+            if(kwargs.get('leaderboard') == 'hitter'):
+                stmts['hitterside'] = f"{kwargs.get('handedness')}"
+            else:
+                stmts['pitcherside'] = f"{kwargs.get('handedness')}"
+
         # Iterate though our filters. Leaderboard specific cols have been included via the `get_cols()` method
         # Add the corresponding cols to the WHERE conditions
-        for filter, fieldname in self.filter_fields.items():
+
+        fields_to_filter = self.filter_fields.copy()
+
+        # handedness doesn't exist in the table that the games_overvie_standard has
+        if kwargs.get('tab') == 'games_overview_standard':
+            fields_to_filter.pop('opponent_handedness')
+            fields_to_filter.pop('handedness')
+
+        for filter, fieldname in fields_to_filter.items():
             if (kwargs[filter] != 'NA'):
 
                 key = self.cols[fieldname]
@@ -961,7 +981,14 @@ class Leaderboard(Resource):
         # Iterate though our filters. Leaderboard specific cols have been included via the `get_cols()` method
         # Add the corresponding cols to the WHERE conditions
         
-        for filter, fieldname in self.filter_fields.items():
+        # handedness doesn't exist in the table that the games_overvie_standard has
+        fields_to_filter = self.filter_fields.copy()
+        if kwargs.get('tab') == 'games_overview_standard':
+            
+            fields_to_filter.pop('opponent_handedness')
+            fields_to_filter.pop('handedness')
+
+        for filter, fieldname in fields_to_filter.items():
             if (kwargs[filter] != 'NA'):
                 groupby.append(fieldname)
 
