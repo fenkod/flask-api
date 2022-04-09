@@ -2,7 +2,7 @@ import re
 from statistics import mode
 from flask import current_app
 from flask_restful import Resource
-from sqlalchemy import false
+from sqlalchemy import false, true
 from helpers import fetch_dataframe, date_validate, var_dump
 import json as json
 from datetime import date, datetime
@@ -127,6 +127,7 @@ class Roundup(Resource):
                 if 'weather' in game:
                     weather = game['weather']
                     game_model['weather'] = weather
+                final = None
                 if 'final' in game:
                     final = game['final']
                     game_model['final'] = final
@@ -142,25 +143,34 @@ class Roundup(Resource):
                     #del outcome['pitcher']['pitch_y']
                     game_model['outcome'] = outcome
 
+                
                 # If game is one of these statuses, it has not started. Figure out who the projected
                 # pitchers are/were and return a basic model with game status
-                if(game_status in ('scheduled', 'canceled', 'postponed', 'if-necessary')):
-                    home_pitcher_model = self.BuildScheduledGame("HOME", home_team, away_team, game_model)
-                    games.append(home_pitcher_model)
-                    away_pitcher_model = self.BuildScheduledGame("AWAY", away_team, home_team, game_model)
-                    games.append(away_pitcher_model)
+                # Probably will keep this commented out until we need it for a gameday like experience
+                #if(game_status in ('scheduled', 'if-necessary', 'cancelled', 'postponed', 'fdelay')):
+                #   #home_pitcher_model = self.BuildScheduledGame("HOME", home_team, away_team, game_model)
+                    #games.append(home_pitcher_model)
+                    #away_pitcher_model = self.BuildScheduledGame("AWAY", away_team, home_team, game_model)
+                    #games.append(away_pitcher_model)
+
                 # Game has started. Get details
-                else:
+                if ('outcome' in game and game['outcome']['current_inning'] > 0) or final is not None:
                     # Gather hit play-by-play endpoint, build model, set cache and return data
                     play_by_play_data = endpoints.play_by_play_endpoint(game_id)
                     if(needs_home_data):
                         home_pitcher_model = self.BuildInProgressGame("HOME", home_team, away_team, game_model, play_by_play_data)
                         games.append(home_pitcher_model)
-                        current_app.cache.set(home_pitcher_cache_key, home_pitcher_model, cache_timeout(cache_invalidate_hour()))
+                        # The game is over, cache the results
+                        # Waiting till the game is over to figure out W/L/ND
+                        if final is not None:
+                            current_app.cache.set(home_pitcher_cache_key, home_pitcher_model, cache_timeout(cache_invalidate_hour()))
                     if(needs_away_data):
                         away_pitcher_model = self.BuildInProgressGame("AWAY", away_team, home_team, game_model, play_by_play_data)
                         games.append(away_pitcher_model)
-                        current_app.cache.set(away_pitcher_cache_key, away_pitcher_model, cache_timeout(cache_invalidate_hour()))
+                        # The game is over, cache the results
+                        # Waiting till the game is over to figure out W/L/ND
+                        if final is not None:
+                            current_app.cache.set(away_pitcher_cache_key, away_pitcher_model, cache_timeout(cache_invalidate_hour()))
             result = {'date': input_date.strftime("%a %m/%d/%Y"), 'games': games}
             return result
         else:
@@ -255,7 +265,9 @@ class Roundup(Resource):
     def BuildInProgressGame(self, home_away, team, opponent, game_model, play_by_play_data):
         pitcher = team['starting_pitcher']
         
-        game_stats = team['statistics']['pitching']['starters']
+        game_stats = None
+        if 'pitching' in team['statistics']:
+            game_stats = team['statistics']['pitching']['starters']
 
         innings = play_by_play_data['game']['innings']
     
@@ -277,7 +289,8 @@ class Roundup(Resource):
                                                 pitch['inning'] = inning['number']
                                                 pitch['inning-half'] = h
                                                 if(atBatEvent.get('flags').get('is_ab_over')):
-                                                    pitch['at-bat-description'] = atBat['description']   
+                                                    if 'description' in atBat:
+                                                        pitch['at-bat-description'] = atBat['description']   
                                                 pitches.append(pitch)                                                                             
 
         still_in_game = True
