@@ -469,7 +469,7 @@ class Roundup(Resource):
                                 "3b": gamestats["onbase"]["t"],
                                 "hr": gamestats["onbase"]["hr"],
                                 "r": gamestats["runs"]["total"],
-                                "rbi": gamestats["onbase"]["h"],
+                                "rbi": gamestats["rbi"],
                                 "k": gamestats["outs"]["ktotal"],
                                 "bb": gamestats["onbase"]["bb"] + gamestats["onbase"]["ibb"],
                                 "ibb": gamestats["onbase"]["ibb"],
