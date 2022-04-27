@@ -18,7 +18,7 @@ from marshmallow import Schema, fields
 class Leaderboard(Resource):
     teams = get_team_info()
     valid_teams = list(teams.keys())
-    valid_years = ['2021']
+    valid_years = ['2021', '2022']
     current_date = date.today()
     pitch_estimator_constants_fields = ["woba","woba_scale","woba_bb","woba_hbp","woba_single","woba_double","woba_triple","woba_home_run","fip_constant"]
     pitch_estimator_constants = {}
@@ -35,7 +35,7 @@ class Leaderboard(Resource):
         "division": fields.Str(required=False, missing="NA", validate=validate.OneOf(["East","Central","West","NA"])),
         "team": fields.Str(required=False, missing="NA", validate=validate.OneOf(valid_teams + ['NA'])),
         "home_away": fields.Str(required=False, missing="NA", validate=validate.OneOf(["Home","Away","NA"])),
-        "year": fields.Str(required=False, missing='2021'),
+        "year": fields.Str(required=False, missing="2022"),
         "month": fields.Str(required=False, missing="NA", validate=validate.OneOf(["1","2","3","4","5","6","7","8","9","10","11","12","NA"])),
         "half": fields.Str(required=False, missing="NA", validate=validate.OneOf(["First","Second","NA"])),
         "arbitrary_start": fields.Str(required=False, missing="NA"), #ISO date format
@@ -920,8 +920,8 @@ class Leaderboard(Resource):
 
         table = 'pl_leaderboard_daily'
 
-
-        if (self.query_year):
+        
+        if (self.query_year) and (self.query_year ==  self.current_year):
             if(self.query_year in self.valid_years):
                 table = f'{table}_{self.query_year}'
             else:
