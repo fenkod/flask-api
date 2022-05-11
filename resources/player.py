@@ -1320,131 +1320,131 @@ class Player(Resource):
                         )  
 
         def startingpitcherpitchcustomrankings():
-            return (f'select	g.year_played as "year",'
-                                f'g.pitchtype,'
-                                f'g.qualified_rank AS "qualified-rank",'
-                                f'g.usage_pct,'
-                                f'g.usage_pct_percentile,'
-                                f'g.usage_pct_rank,'
-                                f'g.avg_velocity,'
-                                f'g.avg_velocity_percentile,'
-                                f'g.avg_velocity_rank,'
-                                f'g.swinging_strike_pct,'
-                                f'g.swinging_strike_pct_percentile,'
-                                f'g.swinging_strike_pct_rank,'
-                                f'g.csw_pct,'
-                                f'g.csw_pct_percentile,'
-                                f'g.csw_pct_rank,'
-                                f'g.x_avg,'
-                                f'g.x_avg_percentile,'
-                                f'g.x_avg_rank,'
-                                f'g.x_wobacon,'
-                                f'g.x_wobacon_percentile,'
-                                f'g.x_wobacon_rank,'
-                                f'g.avg_x_movement,'
-                                f'g.avg_x_movement_percentile,'
-                                f'g.avg_x_movement_rank,'
-                                f'g.avg_y_movement,'
-                                f'g.avg_y_movement_percentile,'
-                                f'100 - g.avg_y_movement_percentile as avg_y_movement_percentile_inverse,'
-                                f'g.avg_y_movement_rank,'
-                                # TODO: Extract hardcoded max rank
-                                f'201 - g.avg_y_movement_rank as avg_y_movement_rank_inverse,'
-                                f'g.avg_spin_rate,'
-                                f'g.avg_spin_rate_percentile,'
-                                f'g.avg_spin_rate_rank,'
-                                f'yearly_averages.usage_pct as league_usage_pct,'
-                                f'yearly_averages.avg_velocity as league_avg_velocity,'
-                                f'yearly_averages.swinging_strike_pct as league_swinging_strike_pct,'
-                                f'yearly_averages.csw_pct as league_csw_pct,'
-                                f'yearly_averages.x_avg as league_x_avg,'
-                                f'yearly_averages.x_wobacon as league_x_wobacon,'
-                                f'yearly_averages.avg_x_movement as league_avg_x_movement,'
-                                f'yearly_averages.avg_y_movement as league_avg_y_movement,'
-                                f'100 - yearly_averages.avg_y_movement as league_avg_y_movement_inverse,'
-                                f'yearly_averages.avg_spin_rate as league_avg_spin_rate,'
-                                f'yearly_averages.league_usage_pct_percentage,'
-                                f'yearly_averages.league_avg_velocity_percentage,'
-                                f'yearly_averages.league_swinging_strike_pct_percentage,'
-                                f'yearly_averages.league_csw_pct_percentage,'
-                                f'yearly_averages.league_x_avg_percentage,'
-                                f'yearly_averages.league_x_wobacon_percentage,'
-                                f'yearly_averages.league_avg_x_movement_percentage,'
-                                f'yearly_averages.league_avg_y_movement_percentage,'
-                                f'100 - yearly_averages.league_avg_y_movement_percentage as league_avg_y_movement_percentage_inverse,'
-                                f'yearly_averages.league_avg_spin_rate_percentage '
-                        f'from '
-                        f'( '
-                            f'select 	f.year_played,'
-                                    f'f.pitchtype,'
-                                    f'f.pitcher_rank AS qualified_rank,'
-                                    f'f.usage_pct,'
-                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.usage_pct))::numeric, 2) AS usage_pct_percentile,'
-                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.usage_pct DESC) AS usage_pct_rank,'
-                                    f'f.avg_velocity,'
-                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_velocity))::numeric, 2) AS avg_velocity_percentile,'
-                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_velocity DESC) AS avg_velocity_rank,'
-                                    f'f.swinging_strike_pct,'
-                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.swinging_strike_pct))::numeric, 2) AS swinging_strike_pct_percentile,'
-                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.swinging_strike_pct DESC) AS swinging_strike_pct_rank,'
-                                    f'f.csw_pct,'
-                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.csw_pct))::numeric, 2) AS csw_pct_percentile,'
-                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.csw_pct DESC) AS csw_pct_rank,'
-                                    f'f.x_avg,'
-                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_avg DESC))::numeric, 2) AS x_avg_percentile,'
-                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_avg) AS x_avg_rank,'
-                                    f'f.x_wobacon,'
-                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_wobacon DESC))::numeric, 2) AS x_wobacon_percentile,'
-                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_wobacon) AS x_wobacon_rank,'
-                                    f'f.avg_x_movement,'
-                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_x_movement))::numeric, 2) AS avg_x_movement_percentile,'
-                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_x_movement DESC) AS avg_x_movement_rank,'
-                                    f'f.avg_y_movement,'
-                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_y_movement))::numeric, 2) AS avg_y_movement_percentile,'
-                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_y_movement DESC) AS avg_y_movement_rank,'
-                                    f'f.avg_spin_rate,'
-                                    f'round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_spin_rate))::numeric, 2) AS avg_spin_rate_percentile,'
-                                    f'rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_spin_rate DESC) AS avg_spin_rate_rank '
-                            f'from '
-                            f'( '
-                                f'select 	year_played,'
-                                        f'pitchtype,'
-                                        f'usage_pct,'
-                                        f'avg_velocity,'
-                                        f'swinging_strike_pct,'
-                                        f'csw_pct,'
-                                        f'x_avg,'
-                                        f'x_wobacon,'
-                                        f'avg_x_movement,'
-                                        f'avg_y_movement,'
-                                        f'avg_spin_rate,'
-                                        f'pitcher_rank '
-                                f'from mv_starting_pitcher_pitch_pool '
-                                f'inner join players on mv_starting_pitcher_pitch_pool.pitcher_id = players.player_id '
-                                f'where mv_starting_pitcher_pitch_pool.pitchtype != \'ALL\' '
-                                f'and players.mlb_player_id != %s  '
-                                f'union '
-                                f'select 	year_played,'
-                                        f'pitchtype,'
-                                        f'usage_pct,'
-                                        f'avg_velocity,'
-                                        f'swinging_strike_pct,'
-                                        f'csw_pct,'
-                                        f'x_avg,'
-                                        f'x_wobacon,'
-                                        f'avg_x_movement,'
-                                        f'avg_y_movement,'
-                                        f'avg_spin_rate,'
-                                        f'0 as pitcher_rank '
-                                f'from mv_pitcher_repertoire_by_position '
-                                f'inner join players on mv_pitcher_repertoire_by_position.pitcher_id = players.player_id '
-                                f'where players.mlb_player_id = %s '
-                                f'and mv_pitcher_repertoire_by_position.pitchtype != \'ALL\' '
-                                f'and mv_pitcher_repertoire_by_position.position = \'ALL\' '
-                            f') f '
-                        f') g '
-                        f'inner join lateral (select * from mv_starting_pitcher_pitch_averages where mv_starting_pitcher_pitch_averages.year_played = g.year_played and mv_starting_pitcher_pitch_averages.pitchtype = g.pitchtype) yearly_averages on true '
-                        f'where g.qualified_rank = 0 ')
+            return """select	g.year_played as "year",
+                                g.pitchtype,
+                                g.qualified_rank AS "qualified-rank",
+                                g.usage_pct,
+                                case when g.usage_pct = 0 then 0 when usage_pct_rank = 1 then 100 else g.usage_pct_percentile end as usage_pct_percentile,
+                                g.usage_pct_rank,
+                                g.avg_velocity,
+                                case when g.avg_velocity = 0 then 0 when avg_velocity_rank = 1 then 100 else g.avg_velocity_percentile end as avg_velocity_percentile,
+                                g.avg_velocity_rank,
+                                g.swinging_strike_pct,
+                                case when g.swinging_strike_pct = 0 then 0 when g.swinging_strike_pct_rank = 1 then 100 else g.swinging_strike_pct_percentile end as swinging_strike_pct_percentile,
+                                g.swinging_strike_pct_rank,
+                                g.csw_pct,
+                                case when g.csw_pct = 0 then 0 when g.csw_pct_rank = 1 then 100 else g.csw_pct_percentile end as csw_pct_percentile,
+                                g.csw_pct_rank,
+                                g.x_avg,
+                                case when g.x_avg = 0 then 100 when g.x_avg_rank = 1 then 100 else g.x_avg_percentile end as x_avg_percentile,
+                                g.x_avg_rank,
+                                g.x_wobacon,
+                                case when g.x_wobacon = 0 then 100 when g.x_wobacon_rank = 1 then 100 else g.x_wobacon_percentile end as x_wobacon_percentile,
+                                g.x_wobacon_rank,
+                                g.avg_x_movement,
+                                case when g.avg_x_movement_rank = 1 then 100 else g.avg_x_movement_percentile end as avg_x_movement_percentile,
+                                g.avg_x_movement_rank,
+                                g.avg_y_movement,
+                                case when avg_y_movement_rank = 1 then 100 else g.avg_y_movement_percentile end as avg_y_movement_percentile,
+                                100 - (case when avg_y_movement_rank = 1 then 100 else g.avg_y_movement_percentile end) as avg_y_movement_percentile_inverse,
+                                g.avg_y_movement_rank,
+                                --TODO: Extract hardcoded max rank
+                                201 - g.avg_y_movement_rank as avg_y_movement_rank_inverse,
+                                g.avg_spin_rate,
+                                case when g.avg_spin_rate = 0 then 0 when g.avg_spin_rate_rank = 1 then 100 else g.avg_spin_rate_percentile end as avg_spin_rate_percentile,
+                                g.avg_spin_rate_rank,
+                                yearly_averages.usage_pct as league_usage_pct,
+                                yearly_averages.avg_velocity as league_avg_velocity,
+                                yearly_averages.swinging_strike_pct as league_swinging_strike_pct,
+                                yearly_averages.csw_pct as league_csw_pct,
+                                yearly_averages.x_avg as league_x_avg,
+                                yearly_averages.x_wobacon as league_x_wobacon,
+                                yearly_averages.avg_x_movement as league_avg_x_movement,
+                                yearly_averages.avg_y_movement as league_avg_y_movement,
+                                100 - yearly_averages.avg_y_movement as league_avg_y_movement_inverse,
+                                yearly_averages.avg_spin_rate as league_avg_spin_rate,
+                                yearly_averages.league_usage_pct_percentage,
+                                yearly_averages.league_avg_velocity_percentage,
+                                yearly_averages.league_swinging_strike_pct_percentage,
+                                yearly_averages.league_csw_pct_percentage,
+                                yearly_averages.league_x_avg_percentage,
+                                yearly_averages.league_x_wobacon_percentage,
+                                yearly_averages.league_avg_x_movement_percentage,
+                                yearly_averages.league_avg_y_movement_percentage,
+                                100 - yearly_averages.league_avg_y_movement_percentage as league_avg_y_movement_percentage_inverse,
+                                yearly_averages.league_avg_spin_rate_percentage
+                        from
+                        (
+                            select 	f.year_played,
+                                    f.pitchtype,
+                                    f.pitcher_rank AS qualified_rank,
+                                    f.usage_pct,
+                                    round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.usage_pct))::numeric, 2) AS usage_pct_percentile,
+                                    rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.usage_pct DESC) AS usage_pct_rank,
+                                    f.avg_velocity,
+                                    round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_velocity))::numeric, 2) AS avg_velocity_percentile,
+                                    rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_velocity DESC) AS avg_velocity_rank,
+                                    f.swinging_strike_pct,
+                                    round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.swinging_strike_pct))::numeric, 2) AS swinging_strike_pct_percentile,
+                                    rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.swinging_strike_pct DESC) AS swinging_strike_pct_rank,
+                                    f.csw_pct,
+                                    round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.csw_pct))::numeric, 2) AS csw_pct_percentile,
+                                    rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.csw_pct DESC) AS csw_pct_rank,
+                                    f.x_avg,
+                                    round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_avg DESC))::numeric, 2) AS x_avg_percentile,
+                                    rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_avg) AS x_avg_rank,
+                                    f.x_wobacon,
+                                    round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_wobacon DESC))::numeric, 2) AS x_wobacon_percentile,
+                                    rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.x_wobacon) AS x_wobacon_rank,
+                                    f.avg_x_movement,
+                                    round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_x_movement))::numeric, 2) AS avg_x_movement_percentile,
+                                    rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_x_movement DESC) AS avg_x_movement_rank,
+                                    f.avg_y_movement,
+                                    round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_y_movement))::numeric, 2) AS avg_y_movement_percentile,
+                                    rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_y_movement DESC) AS avg_y_movement_rank,
+                                    f.avg_spin_rate,
+                                    round((100::numeric::double precision * percent_rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_spin_rate))::numeric, 2) AS avg_spin_rate_percentile,
+                                    rank() OVER (PARTITION BY f.year_played, f.pitchtype ORDER BY f.avg_spin_rate DESC) AS avg_spin_rate_rank
+                            from
+                            (
+                                select 	year_played,
+                                        pitchtype,
+                                        usage_pct,
+                                        avg_velocity,
+                                        swinging_strike_pct,
+                                        csw_pct,
+                                        x_avg,
+                                        x_wobacon,
+                                        avg_x_movement,
+                                        avg_y_movement,
+                                        avg_spin_rate,
+                                        pitcher_rank
+                                from mv_starting_pitcher_pitch_pool
+                                inner join players on mv_starting_pitcher_pitch_pool.pitcher_id = players.player_id
+                                where mv_starting_pitcher_pitch_pool.pitchtype != 'ALL'
+                                and players.mlb_player_id != %s 
+                                union
+                                select 	year_played,
+                                        pitchtype,
+                                        usage_pct,
+                                        avg_velocity,
+                                        swinging_strike_pct,
+                                        csw_pct,
+                                        x_avg,
+                                        x_wobacon,
+                                        avg_x_movement,
+                                        avg_y_movement,
+                                        avg_spin_rate,
+                                        0 as pitcher_rank
+                                from mv_pitcher_repertoire_by_position
+                                inner join players on mv_pitcher_repertoire_by_position.pitcher_id = players.player_id
+                                where players.mlb_player_id = %s
+                                and mv_pitcher_repertoire_by_position.pitchtype != 'ALL'
+                                and mv_pitcher_repertoire_by_position.position = 'ALL'
+                            ) f
+                        ) g
+                        inner join lateral (select * from mv_starting_pitcher_pitch_averages where mv_starting_pitcher_pitch_averages.year_played = g.year_played and mv_starting_pitcher_pitch_averages.pitchtype = g.pitchtype) yearly_averages on true
+                        where g.qualified_rank = 0  """
 
         def reliefpitcherpoolrankingslookup():
             return (f'select 	mv_pitcher_career_stats."year"::int as "year",'
